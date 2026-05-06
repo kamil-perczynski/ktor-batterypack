@@ -1,0 +1,10 @@
+ktor:
+  deployment:
+    port: 8080
+  application:
+    modules:
+      - io.github.kperczynski.SerializationKt.configureSerialization
+      - io.github.kperczynski.PostgresKt.configurePostgres
+      - io.github.kperczynski.ExposedKt.configureExposed
+      - io.github.kperczynski.StatusPagesKt.configureStatusPages
+      - io.github.kperczynski.RoutingKt.configureRouting
