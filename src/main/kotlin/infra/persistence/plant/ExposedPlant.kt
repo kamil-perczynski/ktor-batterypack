@@ -1,4 +1,4 @@
-package io.github.kperczynski.infra.persistence
+package io.github.kperczynski.infra.persistence.plant
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue

@@ -1,4 +1,4 @@
-package io.github.kperczynski.infra.persistence
+package io.github.kperczynski.infra.persistence.plant
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.github.kperczynski.domain.plant.model.Plant
@@ -123,7 +123,7 @@ class ExposedPlantRepo(
         }
     }
 
-    override fun findByTempIdentityId(tempIdentityId: UUID): Plant? {
+    override fun    findByTempIdentityId(tempIdentityId: UUID): Plant? {
         return transaction(database) {
             table.selectAll()
                 .where { table.tempIdentityId eq tempIdentityId }

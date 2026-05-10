@@ -16,10 +16,9 @@ class HealthController(private val readinessEndpoint: ReadinessEndpoint) : KtorC
         routing.get("/actuator/health/readiness") {
             val response = readinessEndpoint.check()
 
-            val statusCode = if (response.status == HealthStatus.UP) {
-                HttpStatusCode.OK
-            } else {
-                HttpStatusCode.ServiceUnavailable
+            val statusCode = when (response.status) {
+                HealthStatus.UP -> HttpStatusCode.OK
+                else -> HttpStatusCode.ServiceUnavailable
             }
 
             call.respond(statusCode, response)

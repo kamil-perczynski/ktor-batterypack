@@ -1,4 +1,4 @@
-package io.github.kperczynski.infra.persistence
+package io.github.kperczynski.infra.persistence.user
 
 import io.github.kperczynski.libs.exception.ResourceMissingException
 import io.github.kperczynski.domain.user.User

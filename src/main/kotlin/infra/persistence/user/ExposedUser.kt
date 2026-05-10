@@ -1,4 +1,4 @@
-package io.github.kperczynski.infra.persistence
+package io.github.kperczynski.infra.persistence.user
 
 import org.jetbrains.exposed.v1.core.dao.id.UIntIdTable
 

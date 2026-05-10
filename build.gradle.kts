@@ -26,6 +26,7 @@ dependencies {
     implementation(ktorLibs.server.contentNegotiation)
     implementation(ktorLibs.server.core)
     implementation(ktorLibs.server.netty)
+    implementation("io.ktor:ktor-server-metrics-micrometer:3.4.0")
     implementation(ktorLibs.server.statusPages)
 
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.18.3")
@@ -45,6 +46,7 @@ dependencies {
     implementation(libs.hoplite.core)
     implementation(libs.hoplite.yaml)
     implementation(libs.koin.annotations)
+    implementation(libs.micrometer.registry.prometheus)
     implementation(libs.koin.core)
     implementation(libs.koin.ktor)
     implementation(libs.logback.classic)

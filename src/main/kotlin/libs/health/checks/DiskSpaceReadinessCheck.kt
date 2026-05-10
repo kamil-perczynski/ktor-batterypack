@@ -1,4 +1,4 @@
-package io.github.kperczynski.infra.health
+package io.github.kperczynski.libs.health.checks
 
 import io.github.kperczynski.libs.health.HealthCheckResult
 import io.github.kperczynski.libs.health.HealthStatus

@@ -8,6 +8,7 @@ koin = "4.2.1"
 koin-plugin = "1.0.0-RC2"
 kotlin = "2.3.20"
 logback = "1.5.21"
+micrometer = "1.14.0"
 mockito = "5.2.1"
 
 [libraries]
@@ -28,6 +29,7 @@ koin-annotations = { module = "io.insert-koin:koin-annotations", version.ref = "
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus", version.ref = "micrometer" }
 postgresql = { module = "org.postgresql:postgresql", version = "42.7.10" }
 
 [plugins]
