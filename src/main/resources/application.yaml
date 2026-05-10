@@ -3,8 +3,10 @@ ktor:
     port: 8080
   application:
     modules:
-      - io.github.kperczynski.SerializationKt.configureSerialization
-      - io.github.kperczynski.PostgresKt.configurePostgres
       - io.github.kperczynski.ExposedKt.configureExposed
-      - io.github.kperczynski.StatusPagesKt.configureStatusPages
-      - io.github.kperczynski.RoutingKt.configureRouting
+
+database:
+  url: jdbc:postgresql://localhost:5432/ktordb
+  user: ktor
+  password: ktorpassword
+  driver: org.postgresql.Driver

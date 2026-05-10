@@ -1,58 +1,94 @@
 package io.github.kperczynski
 
-import io.ktor.http.HttpStatusCode
+import io.github.kperczynski.controllers.KtorController
+import io.github.kperczynski.di.KtorFrameApp
+import io.github.kperczynski.di.LifecycleListener
+import io.github.kperczynski.di.jacksonSerialization
+import io.github.kperczynski.exception.ResourceMissingException
+import io.github.kperczynski.models.ProblemDetail
+import io.ktor.http.*
 import io.ktor.server.application.*
-import io.ktor.server.request.receive
-import io.ktor.server.response.respond
-import io.ktor.server.routing.delete
-import io.ktor.server.routing.get
-import io.ktor.server.routing.post
-import io.ktor.server.routing.put
-import io.ktor.server.routing.routing
-import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
+import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.plugins.statuspages.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+import org.koin.ktor.ext.get
+import org.koin.ktor.plugin.Koin
+import org.koin.ktor.plugin.KoinApplicationStarted
+import org.koin.ktor.plugin.KoinApplicationStopPreparing
+import org.koin.ktor.plugin.koin
+import org.koin.plugin.module.dsl.withConfiguration
 
-suspend fun Application.configureExposed() {
-    val database = R2dbcDatabase.connect(
-        url = "r2dbc:h2:file:///./h2",
-        user = "root",
-        password = "",
-    )
-    val userService = ExposedUserService(database).also {
-        it.createSchema()
+fun Application.configureExposed() {
+    monitor.subscribe(KoinApplicationStarted) {
+        log.debug("Application has started. Notifying lifecycle listener")
+        val lifecycleListener: LifecycleListener = get()
+        lifecycleListener.onStart()
     }
 
+    monitor.subscribe(KoinApplicationStopPreparing) {
+        log.debug("Application is stopping. Notifying lifecycle listener")
+        val lifecycleListener: LifecycleListener = get()
+        lifecycleListener.onStop()
+    }
+
+    install(Koin) {
+        withConfiguration<KtorFrameApp>()
+        createEagerInstances()
+    }
+
+    install(StatusPages) {
+        exception<Throwable> { call, cause ->
+            val problemDetail = ProblemDetail(
+                type = "about:blank",
+                title = "Internal Server Error",
+                status = 500,
+                detail = cause.message ?: "An unexpected error occurred",
+                instance = call.request.uri
+            )
+            call.respond(HttpStatusCode.InternalServerError, problemDetail)
+        }
+
+        exception<ResourceMissingException> { call, cause ->
+            val problemDetail = ProblemDetail(
+                type = "about:blank",
+                title = "Not Found",
+                status = 404,
+                detail = cause.message,
+                instance = call.request.uri,
+                extensionData = mapOf(
+                    "entity_type" to cause.clazz.simpleName,
+                    "identifier" to cause.identifier,
+                    "identifier_type" to cause.identifierType
+                )
+            )
+            call.respond(HttpStatusCode.NotFound, problemDetail)
+        }
+
+        status(HttpStatusCode.NotFound) { call, status ->
+            val problemDetail = ProblemDetail(
+                type = "about:blank",
+                title = "Not Found",
+                status = status.value,
+                detail = "The requested static resource was not found",
+                instance = call.request.uri
+            )
+            call.respond(status, problemDetail)
+        }
+    }
+
+    install(ContentNegotiation) {
+        jacksonSerialization()
+    }
+
+    val koin = koin()
+
+    val controllers = koin.getAll<KtorController>()
+
     routing {
-        // Create user
-        post("/users") {
-            val user = call.receive<ExposedUser>()
-            val id = userService.create(user)
-            call.respond(HttpStatusCode.Created, id)
-        }
-
-        // Read user
-        get("/users/{id}") {
-            val id = call.parameters["id"]?.toUInt() ?: throw IllegalArgumentException("Invalid ID")
-            val user = userService.read(id)
-            if (user != null) {
-                call.respond(HttpStatusCode.OK, user)
-            } else {
-                call.respond(HttpStatusCode.NotFound)
-            }
-        }
-
-        // Update user
-        put("/users/{id}") {
-            val id = call.parameters["id"]?.toUInt() ?: throw IllegalArgumentException("Invalid ID")
-            val user = call.receive<ExposedUser>()
-            userService.update(id, user)
-            call.respond(HttpStatusCode.NoContent)
-        }
-
-        // Delete user
-        delete("/users/{id}") {
-            val id = call.parameters["id"]?.toUInt() ?: throw IllegalArgumentException("Invalid ID")
-            userService.delete(id)
-            call.respond(HttpStatusCode.NoContent)
+        for (controller in controllers) {
+            controller.register(this)
         }
     }
 }

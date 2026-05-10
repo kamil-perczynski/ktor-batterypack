@@ -1,57 +1,33 @@
 package io.github.kperczynski
 
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.singleOrNull
-import kotlinx.serialization.Serializable
-import org.jetbrains.exposed.v1.core.*
-import org.jetbrains.exposed.v1.core.dao.id.UIntIdTable
-import org.jetbrains.exposed.v1.r2dbc.*
-import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
-import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
+import io.github.kperczynski.repository.User
+import io.github.kperczynski.repository.UsersRepository
+import org.koin.core.annotation.Singleton
+import org.slf4j.LoggerFactory
 
-@Serializable
-data class ExposedUser(val name: String, val age: Int)
+private val log = LoggerFactory.getLogger(UserService::class.java)
 
-class ExposedUserService(val database: R2dbcDatabase) {
-    object Users : UIntIdTable() {
-        val name = varchar("name", length = 50)
-        val age = integer("age")
+@Singleton
+class UserService(private val usersRepository: UsersRepository) {
+
+    fun create(user: User): UInt {
+        log.info("Creating user: {}", user)
+        return usersRepository.create(user)
     }
 
-    suspend fun createSchema() {
-        suspendTransaction(database) {
-            SchemaUtils.create(Users)
-        }
+    fun read(id: UInt): User {
+        log.info("Reading user with id: {}", id)
+        return usersRepository.read(id)
     }
 
-    suspend fun create(user: ExposedUser): UInt = suspendTransaction(database) {
-        val newRecord = Users.insert {
-            it[name] = user.name
-            it[age] = user.age
-        }
-        newRecord[Users.id].value
+    fun update(id: UInt, user: User) {
+        log.info("Updating user with id: {} to new values: {}", id, user)
+        usersRepository.update(id, user)
     }
 
-    suspend fun read(id: UInt): ExposedUser? {
-        return suspendTransaction(database) {
-            Users.selectAll()
-                .where { Users.id eq id }
-                .map { ExposedUser(it[Users.name], it[Users.age]) }
-                .singleOrNull()
-        }
-    }
-
-    suspend fun update(id: UInt, user: ExposedUser) {
-        suspendTransaction(database) {
-            Users.update({ Users.id eq id }) {
-                it[name] = user.name
-                it[age] = user.age
-            }
-        }
-    }
-
-    suspend fun delete(id: UInt) {
-        suspendTransaction(database) { Users.deleteWhere { Users.id.eq(id) } }
+    fun delete(id: UInt) {
+        log.info("Deleting user with id: {}", id)
+        usersRepository.delete(id)
     }
 
 }
