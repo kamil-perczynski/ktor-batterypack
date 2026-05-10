@@ -2,6 +2,8 @@ package io.github.kperczynski.infra
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
+import io.github.kperczynski.infra.client.FlorinClientProps
+import io.github.kperczynski.infra.client.KtorHttpClientFactory
 import io.github.kperczynski.infra.health.DatabaseReadinessCheck
 import io.github.kperczynski.infra.health.DiskSpaceReadinessCheck
 import io.github.kperczynski.libs.db.DatabaseProps
@@ -14,6 +16,9 @@ import io.github.kperczynski.libs.health.ReadinessCheck
 import io.github.kperczynski.libs.health.ReadinessEndpoint
 import io.github.kperczynski.libs.ktor.KtorController
 import io.github.kperczynski.libs.ktor.KtorExceptionHandler
+import io.github.kperczynski.libs.ktor.multipart.MultipartParser
+import io.github.kperczynski.libs.ktor.multipart.MultipartProps
+import io.ktor.client.HttpClient
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.koin.core.annotation.*
 import org.slf4j.LoggerFactory
@@ -37,6 +42,31 @@ class KtorFrameModule {
     @Singleton
     fun databaseProps(appProps: AppProps): DatabaseProps {
         return appProps.database
+    }
+
+    @Singleton
+    fun florinClientProps(appProps: AppProps): FlorinClientProps {
+        return appProps.florin
+    }
+
+    @Singleton
+    @Named("florin")
+    fun florinHttpClient(factory: KtorHttpClientFactory, props: FlorinClientProps): HttpClient {
+        return factory.createHttpClient(
+            baseUrl = props.baseUrl,
+            connectTimeoutMs = props.connectTimeoutMs,
+            readTimeoutMs = props.readTimeoutMs
+        )
+    }
+
+    @Singleton
+    fun multipartProps(appProps: AppProps): MultipartProps {
+        return appProps.multipart
+    }
+
+    @Singleton
+    fun multipartParser(props: MultipartProps): MultipartParser {
+        return MultipartParser(props)
     }
 
     @Singleton
@@ -97,7 +127,6 @@ class KtorFrameModule {
     }
 
     @Singleton(binds = [ReadinessCheck::class])
-    @Named("databaseCheck")
     fun databaseCheck(dataSource: DataSource): DatabaseReadinessCheck {
         return DatabaseReadinessCheck(dataSource)
     }

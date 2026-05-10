@@ -4,8 +4,10 @@ import com.sksamuel.hoplite.ConfigLoaderBuilder
 import com.sksamuel.hoplite.ExperimentalHoplite
 import com.sksamuel.hoplite.addResourceSource
 import com.sksamuel.hoplite.sources.EnvironmentVariablesPropertySource
+import io.github.kperczynski.infra.client.FlorinClientProps
 import io.github.kperczynski.libs.db.DatabaseProps
 import io.github.kperczynski.libs.ktor.KtorProps
+import io.github.kperczynski.libs.ktor.multipart.MultipartProps
 
 /**
  * Application configuration data class.
@@ -14,7 +16,9 @@ import io.github.kperczynski.libs.ktor.KtorProps
 data class AppProps(
     val ktor: KtorProps = KtorProps(),
     val banner: String? = null,
-    val database: DatabaseProps = DatabaseProps()
+    val database: DatabaseProps = DatabaseProps(),
+    val florin: FlorinClientProps = FlorinClientProps(),
+    val multipart: MultipartProps = MultipartProps()
 )
 
 @OptIn(ExperimentalHoplite::class)

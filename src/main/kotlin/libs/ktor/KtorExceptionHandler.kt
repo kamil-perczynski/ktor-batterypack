@@ -13,6 +13,7 @@ class KtorExceptionHandler {
     fun register(it: StatusPagesConfig) {
         registerResourceMissing(it)
         registerErrorCodeException(it)
+        registerIllegalArgument(it)
         registerDefaultNotFound(it)
         registerInternalServerError(it)
     }
@@ -41,6 +42,19 @@ class KtorExceptionHandler {
                 extensionData = mapOf()
             )
             call.respond(HttpStatusCode.UnprocessableEntity, problemDetail)
+        }
+    }
+
+    private fun registerIllegalArgument(it: StatusPagesConfig) {
+        it.exception<IllegalArgumentException> { call, cause ->
+            val problemDetail = ProblemDetail(
+                type = "about:blank",
+                title = "Bad Request",
+                status = 400,
+                detail = cause.message ?: "Invalid request",
+                instance = call.request.uri
+            )
+            call.respond(HttpStatusCode.BadRequest, problemDetail)
         }
     }
 

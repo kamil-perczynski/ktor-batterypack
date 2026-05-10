@@ -10,3 +10,7 @@ database:
   user: ktor
   password: ktorpassword
   driver: org.postgresql.Driver
+
+florin:
+  baseUrl: "https://florin-be.k8s.kperczynski.click"
+  timeoutMs: 30000

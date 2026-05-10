@@ -1,18 +1,16 @@
 package io.github.kperczynski.libs.ktor
 
 import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import io.ktor.serialization.jackson.*
 import io.ktor.server.plugins.contentnegotiation.*
 
-/**
- * Configure Jackson serialization for ContentNegotiation.
- * This can be used as an alternative to kotlinx.serialization JSON.
- */
 fun ContentNegotiationConfig.jacksonSerialization() {
     jackson {
-        // Enable pretty printing for development
+        registerModule(KotlinModule.Builder().build())
+        registerModule(JavaTimeModule())
         enable(SerializationFeature.INDENT_OUTPUT)
-        // Disable writing dates as timestamps - write them as ISO strings
         disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
     }
 }

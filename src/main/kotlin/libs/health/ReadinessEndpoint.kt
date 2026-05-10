@@ -1,10 +1,17 @@
 package io.github.kperczynski.libs.health
 
 class ReadinessEndpoint(private val checks: List<ReadinessCheck>) {
+
     fun check(): ReadinessResponse {
         val results = checks.map { it.check() }
         val isUp = results.all { it.status == HealthStatus.UP }
-        val status = if (isUp) HealthStatus.UP else HealthStatus.DOWN
+
+        val status = if (isUp) {
+            HealthStatus.UP
+        } else {
+            HealthStatus.DOWN
+        }
+
         val checksMap = results.associate { it.name to it.status }
 
         return ReadinessResponse(
@@ -12,4 +19,5 @@ class ReadinessEndpoint(private val checks: List<ReadinessCheck>) {
             checks = checksMap
         )
     }
+
 }
