@@ -2,16 +2,20 @@ package io.github.kperczynski.infra
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
+import io.github.kperczynski.infra.health.DatabaseReadinessCheck
+import io.github.kperczynski.infra.health.DiskSpaceReadinessCheck
 import io.github.kperczynski.libs.db.DatabaseProps
 import io.github.kperczynski.libs.di.BannerPrinter
+import io.github.kperczynski.libs.di.InitCallback
 import io.github.kperczynski.libs.di.KoinLifecycleListener
 import io.github.kperczynski.libs.di.LifecycleListener
+import io.github.kperczynski.libs.health.HealthController
+import io.github.kperczynski.libs.health.ReadinessCheck
+import io.github.kperczynski.libs.health.ReadinessEndpoint
+import io.github.kperczynski.libs.ktor.KtorController
+import io.github.kperczynski.libs.ktor.KtorExceptionHandler
 import org.jetbrains.exposed.v1.jdbc.Database
-import org.koin.core.annotation.ComponentScan
-import org.koin.core.annotation.Configuration
-import org.koin.core.annotation.KoinApplication
-import org.koin.core.annotation.Module
-import org.koin.core.annotation.Singleton
+import org.koin.core.annotation.*
 import org.slf4j.LoggerFactory
 import javax.sql.DataSource
 
@@ -31,7 +35,14 @@ class KtorFrameModule {
     }
 
     @Singleton
-    fun databaseProps(appProps: AppProps) = appProps.database
+    fun databaseProps(appProps: AppProps): DatabaseProps {
+        return appProps.database
+    }
+
+    @Singleton
+    fun ktorExceptionHandler(): KtorExceptionHandler {
+        return KtorExceptionHandler()
+    }
 
     @Singleton(createdAtStart = true, binds = [DataSource::class])
     fun dataSource(props: DatabaseProps): HikariDataSource {
@@ -67,15 +78,38 @@ class KtorFrameModule {
         }
     }
 
-    @Singleton
-    fun bannerPrinter(appProps: AppProps) = BannerPrinter(appProps.banner)
+    @Singleton(binds = [InitCallback::class])
+    fun bannerPrinter(appProps: AppProps): BannerPrinter {
+        return BannerPrinter(appProps.banner)
+    }
 
-    @Singleton
+    @Singleton(binds = [LifecycleListener::class])
     fun koinLifecycleListener(
         closeCallbacks: List<AutoCloseable>,
-        initCallbacks: List<BannerPrinter>
-    ): LifecycleListener {
+        initCallbacks: List<InitCallback>
+    ): KoinLifecycleListener {
         return KoinLifecycleListener(closeCallbacks, initCallbacks)
+    }
+
+    @Singleton(binds = [ReadinessCheck::class])
+    fun diskSpaceCheck(): DiskSpaceReadinessCheck {
+        return DiskSpaceReadinessCheck()
+    }
+
+    @Singleton(binds = [ReadinessCheck::class])
+    @Named("databaseCheck")
+    fun databaseCheck(dataSource: DataSource): DatabaseReadinessCheck {
+        return DatabaseReadinessCheck(dataSource)
+    }
+
+    @Singleton
+    fun readinessEndpoint(checks: List<ReadinessCheck>): ReadinessEndpoint {
+        return ReadinessEndpoint(checks)
+    }
+
+    @Singleton(binds = [KtorController::class])
+    fun healthController(readinessEndpoint: ReadinessEndpoint): HealthController {
+        return HealthController(readinessEndpoint)
     }
 
 }

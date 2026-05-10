@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory
 
 private val log = LoggerFactory.getLogger(ExposedUserRepository::class.java)
 
-@Singleton(createdAtStart = true)
+@Singleton
 class ExposedUserRepository(private val database: Database) : UserRepository, InitCallback {
 
     override fun onInit() {

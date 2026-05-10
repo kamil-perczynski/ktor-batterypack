@@ -20,7 +20,6 @@ kotlin {
     jvmToolchain(21)
 }
 dependencies {
-    implementation(ktorLibs.serialization.kotlinx.json)
     implementation(ktorLibs.serialization.jackson)
     implementation(ktorLibs.server.config.yaml)
     implementation(ktorLibs.server.contentNegotiation)

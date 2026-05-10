@@ -10,7 +10,7 @@ class KoinLifecycleListener(
 ) : LifecycleListener {
 
     override fun onStart() {
-        log.info("Application has started. Running initialization callbacks...")
+        log.info("Application has started. Running {} initialization callbacks...", initCallbacks.size)
 
         for (callback in initCallbacks) {
             try {
