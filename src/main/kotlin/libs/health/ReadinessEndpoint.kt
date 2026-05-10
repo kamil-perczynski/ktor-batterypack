@@ -2,7 +2,7 @@ package io.github.kperczynski.libs.health
 
 class ReadinessEndpoint(private val checks: List<ReadinessCheck>) {
 
-    fun check(): ReadinessResponse {
+    suspend fun check(): ReadinessResponse {
         val results = checks.map { it.check() }
         val isUp = results.all { it.status == HealthStatus.UP }
 

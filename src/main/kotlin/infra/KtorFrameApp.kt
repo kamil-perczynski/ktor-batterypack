@@ -1,9 +1,13 @@
 package io.github.kperczynski.infra
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.github.kperczynski.infra.client.FlorinClientProps
-import io.github.kperczynski.infra.client.KtorHttpClientFactory
+import io.github.kperczynski.libs.ktor.KtorHttpClientFactory
 import io.github.kperczynski.infra.health.DatabaseReadinessCheck
 import io.github.kperczynski.infra.health.DiskSpaceReadinessCheck
 import io.github.kperczynski.libs.db.DatabaseProps
@@ -36,27 +40,23 @@ class KtorFrameModule {
 
     @Singleton(createdAtStart = true)
     fun appConfig(): AppProps {
-        return loadConfig()
+        val profiles = System.getenv("APP_PROFILES")?.split(",")?.map { it.trim() } ?: listOf("local")
+        log.info("Loading application configuration with profiles: $profiles")
+        return loadConfig(profiles)
+    }
+
+    @Singleton
+    fun objectMapper(): ObjectMapper {
+        return ObjectMapper()
+            .registerModule(KotlinModule.Builder().build())
+            .registerModule(JavaTimeModule())
+            .enable(SerializationFeature.INDENT_OUTPUT)
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
     }
 
     @Singleton
     fun databaseProps(appProps: AppProps): DatabaseProps {
         return appProps.database
-    }
-
-    @Singleton
-    fun florinClientProps(appProps: AppProps): FlorinClientProps {
-        return appProps.florin
-    }
-
-    @Singleton
-    @Named("florin")
-    fun florinHttpClient(factory: KtorHttpClientFactory, props: FlorinClientProps): HttpClient {
-        return factory.createHttpClient(
-            baseUrl = props.baseUrl,
-            connectTimeoutMs = props.connectTimeoutMs,
-            readTimeoutMs = props.readTimeoutMs
-        )
     }
 
     @Singleton
@@ -73,6 +73,45 @@ class KtorFrameModule {
     fun ktorExceptionHandler(): KtorExceptionHandler {
         return KtorExceptionHandler()
     }
+
+    @Singleton(binds = [InitCallback::class])
+    fun bannerPrinter(appProps: AppProps): BannerPrinter {
+        return BannerPrinter(appProps.banner)
+    }
+
+    @Singleton(binds = [LifecycleListener::class])
+    fun koinLifecycleListener(
+        closeCallbacks: List<AutoCloseable>,
+        initCallbacks: List<InitCallback>
+    ): KoinLifecycleListener {
+        return KoinLifecycleListener(closeCallbacks, initCallbacks)
+    }
+
+}
+
+@Module
+@Configuration
+class FlorinModule {
+
+    @Singleton
+    fun florinClientProps(appProps: AppProps): FlorinClientProps {
+        return appProps.florin
+    }
+
+    @Singleton
+    @Named("florin")
+    fun florinHttpClient(factory: KtorHttpClientFactory, props: FlorinClientProps): HttpClient {
+        return factory.createHttpClient(
+            baseUrl = props.baseUrl,
+            connectTimeoutMs = props.connectTimeoutMs,
+            readTimeoutMs = props.readTimeoutMs
+        )
+    }
+}
+
+@Module
+@Configuration
+class DatabaseModule {
 
     @Singleton(createdAtStart = true, binds = [DataSource::class])
     fun dataSource(props: DatabaseProps): HikariDataSource {
@@ -108,18 +147,11 @@ class KtorFrameModule {
         }
     }
 
-    @Singleton(binds = [InitCallback::class])
-    fun bannerPrinter(appProps: AppProps): BannerPrinter {
-        return BannerPrinter(appProps.banner)
-    }
+}
 
-    @Singleton(binds = [LifecycleListener::class])
-    fun koinLifecycleListener(
-        closeCallbacks: List<AutoCloseable>,
-        initCallbacks: List<InitCallback>
-    ): KoinLifecycleListener {
-        return KoinLifecycleListener(closeCallbacks, initCallbacks)
-    }
+@Module
+@Configuration
+class ActuatorModule {
 
     @Singleton(binds = [ReadinessCheck::class])
     fun diskSpaceCheck(): DiskSpaceReadinessCheck {

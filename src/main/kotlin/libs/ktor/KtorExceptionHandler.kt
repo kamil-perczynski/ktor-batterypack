@@ -7,6 +7,9 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.plugins.statuspages.StatusPagesConfig
 import io.ktor.server.request.uri
 import io.ktor.server.response.respond
+import org.slf4j.LoggerFactory
+
+private val log = LoggerFactory.getLogger(KtorExceptionHandler::class.java)
 
 class KtorExceptionHandler {
 
@@ -85,6 +88,13 @@ class KtorExceptionHandler {
                 detail = cause.message ?: "An unexpected error occurred",
                 instance = call.request.uri
             )
+
+            log.error(
+                "Unhandled exception occurred while processing request to {}",
+                call.request.uri,
+                cause
+            )
+
             call.respond(HttpStatusCode.InternalServerError, problemDetail)
         }
     }

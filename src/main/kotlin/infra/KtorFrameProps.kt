@@ -2,6 +2,8 @@ package io.github.kperczynski.infra
 
 import com.sksamuel.hoplite.ConfigLoaderBuilder
 import com.sksamuel.hoplite.ExperimentalHoplite
+import com.sksamuel.hoplite.addFileSource
+import com.sksamuel.hoplite.addResourceOrFileSource
 import com.sksamuel.hoplite.addResourceSource
 import com.sksamuel.hoplite.sources.EnvironmentVariablesPropertySource
 import io.github.kperczynski.infra.client.FlorinClientProps
@@ -22,11 +24,27 @@ data class AppProps(
 )
 
 @OptIn(ExperimentalHoplite::class)
-fun loadConfig(): AppProps {
-    return ConfigLoaderBuilder.default()
-        .addSource(EnvironmentVariablesPropertySource(useUnderscoresAsSeparator = true, allowUppercaseNames = true))
-        .addResourceSource("/application.yaml")
-        .addResourceSource("/application-local.yaml", optional = true)
+fun loadConfig(profiles: List<String>): AppProps {
+    val source = ConfigLoaderBuilder.default()
+        .addSource(
+            EnvironmentVariablesPropertySource(
+                useUnderscoresAsSeparator = true,
+                allowUppercaseNames = true
+            )
+        )
+
+    for (profile in profiles.reversed()) {
+        source.addFileSource("application-$profile.yaml", optional = true)
+    }
+
+    for (profile in profiles.reversed()) {
+        source.addResourceOrFileSource("/application-$profile.yaml", optional = true)
+    }
+
+    source.addFileSource("application.yaml", optional = true)
+    source.addResourceOrFileSource("/application.yaml", optional = true)
+
+    return source
         .withExplicitSealedTypes()
         .build()
         .loadConfigOrThrow()

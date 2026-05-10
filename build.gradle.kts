@@ -1,8 +1,8 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
-    alias(ktorLibs.plugins.ktor)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.koin.compiler)
+    application
 }
 
 tasks.test {
@@ -19,6 +19,7 @@ application {
 kotlin {
     jvmToolchain(21)
 }
+
 dependencies {
     implementation(ktorLibs.serialization.jackson)
     implementation(ktorLibs.server.config.yaml)
@@ -27,18 +28,18 @@ dependencies {
     implementation(ktorLibs.server.netty)
     implementation(ktorLibs.server.statusPages)
 
-    // Jackson JavaTime module for date/time serialization
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.18.3")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.18.3")
 
-    // Ktor HTTP Client for plant identification
     implementation(ktorLibs.client.core)
     implementation(ktorLibs.client.cio)
     implementation(ktorLibs.client.contentNegotiation)
     implementation(ktorLibs.client.logging)
 
     implementation(libs.exposed.core)
+    implementation(libs.exposed.java.time)
     implementation(libs.exposed.jdbc)
+    implementation(libs.exposed.json)
     implementation(libs.exposed.r2dbc)
     implementation(libs.hikari)
     implementation(libs.hoplite.core)

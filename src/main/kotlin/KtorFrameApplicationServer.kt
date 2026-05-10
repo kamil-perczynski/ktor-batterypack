@@ -1,5 +1,6 @@
 package io.github.kperczynski
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.github.kperczynski.infra.KtorFrameApp
 import io.github.kperczynski.libs.di.LifecycleListener
 import io.github.kperczynski.libs.ktor.KtorController
@@ -15,6 +16,9 @@ import org.koin.ktor.plugin.KoinApplicationStarted
 import org.koin.ktor.plugin.KoinApplicationStopPreparing
 import org.koin.ktor.plugin.koin
 import org.koin.plugin.module.dsl.withConfiguration
+import org.slf4j.LoggerFactory
+
+private val log = LoggerFactory.getLogger("KtorFrameApplicationServer")
 
 fun Application.configureServer() {
     monitor.subscribe(KoinApplicationStarted) {
@@ -36,18 +40,20 @@ fun Application.configureServer() {
 
     val koin = koin()
     val ktorExceptionHandler : KtorExceptionHandler = koin.get()
+    val objectMapper: ObjectMapper = koin.get()
 
     install(StatusPages) {
         ktorExceptionHandler.register(this)
     }
 
     install(ContentNegotiation) {
-        jacksonSerialization()
+        jacksonSerialization(objectMapper)
     }
 
     val controllers = koin.getAll<KtorController>()
     routing {
         for (controller in controllers) {
+            log.info("Registering routes for controller: {}", controller::class.simpleName)
             controller.register(this)
         }
     }

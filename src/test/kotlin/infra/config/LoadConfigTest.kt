@@ -8,7 +8,7 @@ class LoadConfigTest {
 
     @Test
     fun `should load default configuration`() {
-        val config = loadConfig()
+        val config = loadConfig(emptyList())
 
         assertThat(config.ktor.deployment.port).isEqualTo(8080)
         assertThat(config.database.url).isEqualTo("jdbc:postgresql://localhost:5432/ktordb")

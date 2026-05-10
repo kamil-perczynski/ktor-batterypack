@@ -10,7 +10,7 @@ private val log = LoggerFactory.getLogger(DatabaseReadinessCheck::class.java)
 
 class DatabaseReadinessCheck(private val dataSource: DataSource) : ReadinessCheck {
 
-    override fun check(): HealthCheckResult {
+    override suspend fun check(): HealthCheckResult {
         val status = try {
             dataSource.connection.use { conn ->
                 conn.prepareStatement("SELECT 1").use { stmt ->

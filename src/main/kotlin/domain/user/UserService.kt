@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory
 private val log = LoggerFactory.getLogger(UserService::class.java)
 
 @Singleton
-class UserService(private val userRepository: UserRepository) {
+class UserService(private val userRepo: UserRepo) {
 
     fun create(userCreate: UserCreate): User {
         checkAge(userCreate.age)
@@ -21,21 +21,21 @@ class UserService(private val userRepository: UserRepository) {
             age = userCreate.age
         )
 
-        return userRepository.create(user)
+        return userRepo.create(user)
     }
 
     fun read(id: UInt): User {
         log.info("Reading user with id: {}", id)
-        return userRepository.find(id)
+        return userRepo.find(id)
     }
 
     fun update(id: UInt, userUpdate: UserUpdate) {
         log.info("Updating user with id: {} to new values: {}", id, userUpdate)
         checkAge(userUpdate.age)
 
-        val existingUser = userRepository.find(id)
+        val existingUser = userRepo.find(id)
 
-        userRepository.update(
+        userRepo.update(
             existingUser.copy(
                 name = userUpdate.name,
                 age = userUpdate.age
@@ -45,7 +45,7 @@ class UserService(private val userRepository: UserRepository) {
 
     fun delete(id: UInt) {
         log.info("Deleting user with id: {}", id)
-        userRepository.delete(id)
+        userRepo.delete(id)
     }
 
 }

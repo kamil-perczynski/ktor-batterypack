@@ -1,0 +1,9 @@
+database:
+  url: jdbc:postgresql://postgres:5432/ktordb
+  poolSize: 5
+banner: |
+  #
+  #    ▌ ▗       ▐▘         
+  #    ▙▘▜▘▛▌▛▘▄▖▜▘▛▘▀▌▛▛▌█▌
+  #    ▛▖▐▖▙▌▌   ▐ ▌ █▌▌▌▌▙▖
+  #

@@ -9,7 +9,7 @@ class BannerPrinter(val bannerText: String?) : InitCallback {
 
     override fun onInit() {
         if (bannerText != null) {
-            log.info("\n{}", bannerText.indent("  "))
+            log.info("\n{}", bannerText.indent(" "))
         }
     }
 

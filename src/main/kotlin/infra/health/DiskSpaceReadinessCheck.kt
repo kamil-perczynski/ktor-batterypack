@@ -3,6 +3,8 @@ package io.github.kperczynski.infra.health
 import io.github.kperczynski.libs.health.HealthCheckResult
 import io.github.kperczynski.libs.health.HealthStatus
 import io.github.kperczynski.libs.health.ReadinessCheck
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
 import java.nio.file.FileSystems
 import java.nio.file.Files
@@ -10,19 +12,29 @@ import java.nio.file.Path
 
 private val log = LoggerFactory.getLogger(DiskSpaceReadinessCheck::class.java)
 
+@Suppress("ObjectPropertyName")
+private const val _100MB = 1024 * 1024 * 100L
+
 class DiskSpaceReadinessCheck(
     private val path: Path = FileSystems.getDefault().getPath(".").toAbsolutePath().normalize(),
-    private val thresholdBytes: Long = 1024 * 1024 * 100 // 100 MB default threshold
+    private val thresholdBytes: Long = _100MB
 ) : ReadinessCheck {
 
-    override fun check(): HealthCheckResult {
+    override suspend fun check(): HealthCheckResult {
         val status = try {
-            val fileStore = Files.getFileStore(path)
+            val fileStore = withContext(Dispatchers.IO) {
+                Files.getFileStore(path)
+            }
             val usableSpace = fileStore.usableSpace
+
             if (usableSpace > thresholdBytes) {
                 HealthStatus.UP
             } else {
-                log.warn("Disk space check failed. Usable space: {} bytes, threshold: {} bytes", usableSpace, thresholdBytes)
+                log.warn(
+                    "Disk space check failed. Usable space: {} bytes, threshold: {} bytes",
+                    usableSpace,
+                    thresholdBytes
+                )
                 HealthStatus.DOWN
             }
         } catch (e: Exception) {
