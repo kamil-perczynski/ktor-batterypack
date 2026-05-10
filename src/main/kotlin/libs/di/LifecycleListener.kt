@@ -1,4 +1,4 @@
-package io.github.kperczynski.di
+package io.github.kperczynski.libs.di
 
 interface LifecycleListener {
     fun onStop()

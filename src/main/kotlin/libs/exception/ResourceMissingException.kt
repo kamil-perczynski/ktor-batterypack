@@ -1,4 +1,4 @@
-package io.github.kperczynski.exception
+package io.github.kperczynski.libs.exception
 
 class ResourceMissingException(val clazz: Class<out Any>, val identifier: Any, val identifierType: String = "id") :
     RuntimeException(

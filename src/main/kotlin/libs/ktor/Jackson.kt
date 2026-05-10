@@ -1,4 +1,4 @@
-package io.github.kperczynski.di
+package io.github.kperczynski.libs.ktor
 
 import com.fasterxml.jackson.databind.SerializationFeature
 import io.ktor.serialization.jackson.*
@@ -16,4 +16,3 @@ fun ContentNegotiationConfig.jacksonSerialization() {
         disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
     }
 }
-

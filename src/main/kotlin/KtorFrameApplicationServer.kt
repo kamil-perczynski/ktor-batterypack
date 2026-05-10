@@ -1,11 +1,12 @@
 package io.github.kperczynski
 
-import io.github.kperczynski.controllers.KtorController
-import io.github.kperczynski.di.KtorFrameApp
-import io.github.kperczynski.di.LifecycleListener
-import io.github.kperczynski.di.jacksonSerialization
-import io.github.kperczynski.exception.ResourceMissingException
-import io.github.kperczynski.models.ProblemDetail
+import io.github.kperczynski.libs.ktor.KtorController
+import io.github.kperczynski.libs.exception.ErrorCodeException
+import io.github.kperczynski.libs.exception.ResourceMissingException
+import io.github.kperczynski.infra.KtorFrameApp
+import io.github.kperczynski.libs.di.LifecycleListener
+import io.github.kperczynski.libs.ktor.jacksonSerialization
+import io.github.kperczynski.libs.problemdetail.ProblemDetail
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.contentnegotiation.*
@@ -20,7 +21,7 @@ import org.koin.ktor.plugin.KoinApplicationStopPreparing
 import org.koin.ktor.plugin.koin
 import org.koin.plugin.module.dsl.withConfiguration
 
-fun Application.configureExposed() {
+fun Application.configureServer() {
     monitor.subscribe(KoinApplicationStarted) {
         log.debug("Application has started. Notifying lifecycle listener")
         val lifecycleListener: LifecycleListener = get()
@@ -64,6 +65,17 @@ fun Application.configureExposed() {
                 )
             )
             call.respond(HttpStatusCode.NotFound, problemDetail)
+        }
+        exception<ErrorCodeException> { call, cause ->
+            val problemDetail = ProblemDetail(
+                type = "about:blank",
+                title = cause.errorCode.code,
+                status = 422,
+                detail = cause.message,
+                instance = call.request.uri,
+                extensionData = mapOf()
+            )
+            call.respond(HttpStatusCode.UnprocessableEntity, problemDetail)
         }
 
         status(HttpStatusCode.NotFound) { call, status ->

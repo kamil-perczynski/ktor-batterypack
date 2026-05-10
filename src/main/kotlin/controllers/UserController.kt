@@ -1,7 +1,9 @@
 package io.github.kperczynski.controllers
 
-import io.github.kperczynski.UserService
-import io.github.kperczynski.repository.User
+import io.github.kperczynski.domain.user.UserCreate
+import io.github.kperczynski.domain.user.UserService
+import io.github.kperczynski.domain.user.UserUpdate
+import io.github.kperczynski.libs.ktor.KtorController
 import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
@@ -13,9 +15,9 @@ class UserController(private val userService: UserService) : KtorController {
 
     override fun register(routing: Routing) {
         routing.post("/users") {
-            val user = call.receive<User>()
-            val id = userService.create(user)
-            call.respond(HttpStatusCode.Created, id)
+            val userCreate = call.receive<UserCreate>()
+            val createdUser = userService.create(userCreate)
+            call.respond(HttpStatusCode.Created, createdUser)
         }
 
         routing.get("/users/{id}") {
@@ -26,8 +28,8 @@ class UserController(private val userService: UserService) : KtorController {
 
         routing.put("/users/{id}") {
             val id = call.parameters["id"]?.toUInt() ?: throw IllegalArgumentException("Invalid ID")
-            val user = call.receive<User>()
-            userService.update(id, user)
+            val userUpdate = call.receive<UserUpdate>()
+            userService.update(id, userUpdate)
             call.respond(HttpStatusCode.NoContent)
         }
 

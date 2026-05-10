@@ -1,10 +1,11 @@
-package io.github.kperczynski.di
+package io.github.kperczynski.infra
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import io.github.kperczynski.config.AppConfig
-import io.github.kperczynski.config.DatabaseConfig
-import io.github.kperczynski.config.loadConfig
+import io.github.kperczynski.libs.db.DatabaseProps
+import io.github.kperczynski.libs.di.BannerPrinter
+import io.github.kperczynski.libs.di.KoinLifecycleListener
+import io.github.kperczynski.libs.di.LifecycleListener
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Configuration
@@ -25,23 +26,23 @@ object KtorFrameApp
 class KtorFrameModule {
 
     @Singleton(createdAtStart = true)
-    fun appConfig(): AppConfig {
+    fun appConfig(): AppProps {
         return loadConfig()
     }
 
     @Singleton
-    fun databaseConfig(appConfig: AppConfig) = appConfig.database
+    fun databaseProps(appProps: AppProps) = appProps.database
 
     @Singleton(createdAtStart = true, binds = [DataSource::class])
-    fun dataSource(config: DatabaseConfig): HikariDataSource {
-        log.info("Connected to database at ${config.url} with pool size ${config.poolSize}")
+    fun dataSource(props: DatabaseProps): HikariDataSource {
+        log.info("Connected to database at ${props.url} with pool size ${props.poolSize}")
 
         val hikariConfig = HikariConfig().apply {
-            jdbcUrl = config.url
-            username = config.user
-            password = config.password
-            driverClassName = config.driver
-            maximumPoolSize = config.poolSize
+            jdbcUrl = props.url
+            username = props.user
+            password = props.password
+            driverClassName = props.driver
+            maximumPoolSize = props.poolSize
             isAutoCommit = false
             transactionIsolation = "TRANSACTION_REPEATABLE_READ"
             validate()
@@ -64,6 +65,17 @@ class KtorFrameModule {
             dataSource.close()
             log.info("DataSource closed successfully.")
         }
+    }
+
+    @Singleton
+    fun bannerPrinter(appProps: AppProps) = BannerPrinter(appProps.banner)
+
+    @Singleton
+    fun koinLifecycleListener(
+        closeCallbacks: List<AutoCloseable>,
+        initCallbacks: List<BannerPrinter>
+    ): LifecycleListener {
+        return KoinLifecycleListener(closeCallbacks, initCallbacks)
     }
 
 }
