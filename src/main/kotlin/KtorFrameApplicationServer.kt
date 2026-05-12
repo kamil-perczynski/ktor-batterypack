@@ -11,19 +11,14 @@ import io.ktor.server.metrics.micrometer.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.routing.*
-import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics
-import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics
-import io.micrometer.core.instrument.binder.system.ProcessorMetrics
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
+import org.koin.dsl.koinConfiguration
 import org.koin.ktor.ext.get
 import org.koin.ktor.plugin.Koin
 import org.koin.ktor.plugin.KoinApplicationStarted
 import org.koin.ktor.plugin.KoinApplicationStopPreparing
 import org.koin.ktor.plugin.koin
 import org.koin.plugin.module.dsl.withConfiguration
-import org.slf4j.LoggerFactory
-
-private val log = LoggerFactory.getLogger("KtorFrameApplicationServer")
 
 fun Application.configureServer() {
     monitor.subscribe(KoinApplicationStarted) {
@@ -38,13 +33,18 @@ fun Application.configureServer() {
         lifecycleListener.onStop()
     }
 
+    val profiles = environment.config.propertyOrNull("app.profiles")?.getString()
+        ?: System.getenv("APP_PROFILES")
+        ?: "local"
+
     install(Koin) {
         withConfiguration<KtorFrameApp>()
+        properties(mapOf("app.profiles" to profiles))
         createEagerInstances()
     }
 
     val koin = koin()
-    val ktorExceptionHandler : KtorExceptionHandler = koin.get()
+    val ktorExceptionHandler: KtorExceptionHandler = koin.get()
     val objectMapper: ObjectMapper = koin.get()
 
     install(StatusPages) {

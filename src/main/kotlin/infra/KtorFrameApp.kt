@@ -36,11 +36,10 @@ object KtorFrameApp
 class KtorFrameModule {
 
     @Singleton(createdAtStart = true)
-    fun appConfig(): AppProps {
-        val profiles =
-            System.getenv("APP_PROFILES")?.split(",")?.map { it.trim() } ?: listOf("local")
-        log.info("Loading application configuration with profiles: $profiles")
-        return loadConfig(profiles)
+    fun appConfig(@Property("app.profiles") profiles: String): AppProps {
+        val profileList = profiles.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+        log.info("Loading application configuration with profiles: $profileList")
+        return loadConfig(profileList)
     }
 
     @Singleton

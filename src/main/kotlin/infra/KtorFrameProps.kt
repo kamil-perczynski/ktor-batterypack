@@ -6,6 +6,7 @@ import com.sksamuel.hoplite.addFileSource
 import com.sksamuel.hoplite.addResourceOrFileSource
 import com.sksamuel.hoplite.addResourceSource
 import com.sksamuel.hoplite.sources.EnvironmentVariablesPropertySource
+import com.sksamuel.hoplite.sources.SystemPropertiesPropertySource
 import io.github.kperczynski.infra.client.FlorinClientProps
 import io.github.kperczynski.libs.db.DatabaseProps
 import io.github.kperczynski.libs.ktor.KtorProps
@@ -24,14 +25,23 @@ data class AppProps(
 )
 
 @OptIn(ExperimentalHoplite::class)
-fun loadConfig(profiles: List<String>): AppProps {
-    val source = ConfigLoaderBuilder.default()
+fun loadConfig(profiles: List<String>, includeSystemProperties: Boolean = true): AppProps {
+    val source = ConfigLoaderBuilder.empty()
+        .addDefaultDecoders()
+        .addDefaultParsers()
+        .addDefaultPreprocessors()
+        .addDefaultNodeTransformers()
+        .addDefaultParamMappers()
         .addSource(
             EnvironmentVariablesPropertySource(
                 useUnderscoresAsSeparator = true,
                 allowUppercaseNames = true
             )
         )
+
+    if (includeSystemProperties) {
+        source.addSource(SystemPropertiesPropertySource())
+    }
 
     for (profile in profiles.reversed()) {
         source.addFileSource("application-$profile.yaml", optional = true)
