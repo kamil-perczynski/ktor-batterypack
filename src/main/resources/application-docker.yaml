@@ -1,2 +1,2 @@
 database:
-  url: jdbc:postgresql://postgres:5432/ktordb
+  url: ${TEST_DATABASE_URL}
