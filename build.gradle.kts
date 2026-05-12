@@ -13,7 +13,7 @@ group = "io.github.kperczynski"
 version = "1.0.0-SNAPSHOT"
 
 application {
-    mainClass = "io.ktor.server.netty.EngineMain"
+    mainClass = "io.github.kperczynski.MainKt"
 }
 
 kotlin {
@@ -59,4 +59,24 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation(ktorLibs.server.testHost)
     testImplementation(ktorLibs.client.mock)
+}
+
+tasks.register<Sync>("dockerDist") {
+    dependsOn("jar")
+    group = "distribution"
+    description = "Creates Docker-friendly distribution with separated app and dependency layers"
+
+    into(layout.buildDirectory.dir("docker-dist"))
+
+    into("lib") {
+        from(configurations.runtimeClasspath)
+    }
+
+    into("app") {
+        from(tasks.jar)
+    }
+}
+
+tasks.assemble {
+    dependsOn("dockerDist")
 }
