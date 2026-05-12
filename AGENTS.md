@@ -114,7 +114,7 @@ Controllers auto-register: any `@Singleton` implementing `KtorController` is dis
 
 ## Technologies
 
-- **Framework**: Ktor 3.4 + Kotlin 2.3 + JVM 21
+- **Framework**: Ktor 3.4 + Kotlin 2.3 + JVM 25
 - **DI**: Koin 4.2 with annotations (`@KoinApplication`, `@Module`, `@Singleton`)
 - **Database**: PostgreSQL + Exposed 1.2 (new v1 API) + HikariCP
 - **Serialization**: Jackson + kotlinx.serialization
