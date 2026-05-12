@@ -7,6 +7,9 @@ plugins {
 
 tasks.test {
     useJUnitPlatform()
+    testLogging {
+        events("passed", "skipped", "failed")
+    }
 }
 
 group = "io.github.kperczynski"
