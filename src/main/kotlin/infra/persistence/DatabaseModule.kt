@@ -20,7 +20,7 @@ class DatabaseModule {
 
     @Singleton(binds = [DataSource::class])
     fun dataSource(props: DatabaseProps, @Provided meterRegistry: MeterRegistry): HikariDataSource {
-        log.info("Connected to database at ${props.url} with pool size ${props.poolSize}")
+        log.info("Connected to database at {} with pool size: {}", props.url, props.poolSize)
 
         val hikariConfig = HikariConfig().apply {
             jdbcUrl = props.url

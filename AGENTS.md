@@ -12,8 +12,8 @@ libs/          → Shared utilities (lifecycle, health, exceptions, ktor helpers
 ```
 
 **Dependency Rule**: `controllers` → `domain` ← `infra`
-- Controllers depend on domain ports (e.g., `UserRepository` interface)
-- Infra implements domain ports (e.g., `ExposedUserRepository` implements `UserRepository`)
+- Controllers depend on domain ports (e.g., `UserRepo` interface)
+- Infra implements domain ports (e.g., `ExposedUserRepo` implements `UserRepo`)
 - Domain has NO external framework dependencies
 
 ## Development
@@ -56,6 +56,8 @@ Server starts at `http://localhost:8080`.
 ./gradlew test --info
 ```
 
+**Integration test base**: `KtorBatteriesIT` spins up a shared Testcontainers PostgreSQL instance once per JVM (port 5432 inside container, random host port). Tests inject Koin beans via `application.koin().get<...>()`.
+
 ### Build
 
 ```bash
@@ -64,62 +66,78 @@ Server starts at `http://localhost:8080`.
 
 # Clean build
 ./gradlew clean build
+
+# Docker distribution (separated app/dependency layers, used by CI)
+./gradlew dockerDist
 ```
 
 ## Configuration
 
 Configuration uses **Hoplite** with this precedence (highest first):
 1. Environment variables (`UPPER_CASE_WITH_UNDERSCORES`)
-2. `application-local.yaml` (gitignored, for local dev)
-3. `application.yaml` (committed defaults)
+2. System properties (`config.override.*`)
+3. `application-{profile}.yaml` (profile-specific, reversed order for last-wins)
+4. `application.yaml` (committed defaults)
 
+`application-local.yaml` is gitignored and intended for local overrides.
 Example: `DATABASE_URL=jdbc:postgresql://...`
 
 ## DI Wiring
 
-Koin uses **annotation-based** configuration in `infra/KtorFrameApp.kt`:
+Koin uses **annotation-based** configuration. `KtorFrameApp.kt` defines explicit submodules and a component scan:
 
 ```kotlin
-@KoinApplication
+@KoinApplication(
+    modules = [
+        KtorFrameModule::class,
+        FlorinModule::class,
+        DatabaseModule::class,
+        MetricsModule::class
+    ]
+)
 object KtorFrameApp
 
 @Module
 @ComponentScan("io.github.kperczynski")
-class KtorFrameModule {
-    @Singleton(binds = [UserRepository::class])
-    fun userRepository(impl: ExposedUserRepository): UserRepository = impl
-}
+@Configuration
+class KtorFrameModule { ... }
 ```
 
-Controllers auto-register: any `@Singleton` implementing `KtorController` is discovered and registered. Repositories implementing `InitCallback` run schema creation on startup.
+- **Controllers auto-register**: any `@Singleton` implementing `KtorController` is discovered and registered in `KtorFrameApplicationServer.kt`.
+- **Repositories**: annotate the implementation with `@Singleton` (no manual binding needed thanks to `@ComponentScan`).
+- **Schema creation**: repositories implementing `InitCallback` run `onInit()` on startup via `KoinLifecycleListener`.
+- **Cleanup**: any `@Singleton` implementing `AutoCloseable` is closed on shutdown.
 
 ## Adding Features
 
-1. **Domain** (`domain/`): Define entity + repository interface (port)
+1. **Domain** (`domain/`): Define entity + repository interface (port) + service if needed
 2. **Infra** (`infra/persistence/`): Implement repository using Exposed + `@Singleton`
-3. **DI** (`infra/KtorFrameApp.kt`): Add binding for new repository
-4. **Service** (`domain/`): Add domain service if business logic needed
-5. **Controller** (`controllers/`): Add HTTP routes as `@Singleton` implementing `KtorController`
+3. **Controller** (`controllers/`): Add HTTP routes as `@Singleton` implementing `KtorController`
+
+No manual DI binding is required if the implementation is under `io.github.kperczynski` and annotated with `@Singleton`.
 
 ## Key Files
 
 | File | Purpose |
 |------|---------|
 | `KtorFrameApplicationServer.kt` | Ktor app config, Koin init, routing, exception handling |
-| `infra/KtorFrameApp.kt` | Koin DI module with `@ComponentScan` |
+| `infra/KtorFrameApp.kt` | Koin DI module with `@ComponentScan` and explicit submodules |
 | `infra/KtorFrameProps.kt` | Hoplite config loading with env var support |
-| `domain/*/UserRepository.kt` | Repository PORT (interface) |
-| `infra/persistence/*Repository.kt` | Repository implementation with `@Singleton` |
-| `main.kt` | Entry point (delegates to EngineMain) |
+| `domain/*/*Repo.kt` | Repository PORT (interface) |
+| `infra/persistence/*/*Repo.kt` | Repository implementation with `@Singleton` |
+| `main.kt` | Entry point (delegates to `EngineMain`) |
+| `libs/di/InitCallback.kt` | Startup initialization hook |
+| `libs/ktor/KtorController.kt` | Controller interface for auto-registration |
 
 ## Technologies
 
 - **Framework**: Ktor 3.4 + Kotlin 2.3 + JVM 25
 - **DI**: Koin 4.2 with annotations (`@KoinApplication`, `@Module`, `@Singleton`)
 - **Database**: PostgreSQL + Exposed 1.2 (new v1 API) + HikariCP
-- **Serialization**: Jackson + kotlinx.serialization
+- **Serialization**: Jackson 3 + kotlinx.serialization
 - **Config**: Hoplite (YAML + env vars)
-- **Testing**: JUnit 5 + AssertJ
+- **Testing**: JUnit 5 + AssertJ + Mockito-Kotlin + Testcontainers
+- **Metrics**: Micrometer + Prometheus registry
 
 ## Database
 
@@ -127,7 +145,12 @@ Exposed schema auto-creates on startup via `InitCallback`. No manual migrations 
 
 Default connection: `jdbc:postgresql://localhost:5432/ktordb` (user: `ktor` / `ktorpassword`)
 
-**Important**: Exposed uses the new v1 API (`org.jetbrains.exposed.v1` package), not the older v0 API.
+**Important**: Exposed uses the **new v1 API** (`org.jetbrains.exposed.v1` package), not the older v0 API.
+
+## CI / Deploy
+
+GitHub Actions runs `./gradlew build` on every PR/push to `main` with Java 25 (Temurin).
+On `main` branch merges, it also builds and pushes a multi-arch Docker image to `ghcr.io`.
 
 ## Rules
 
