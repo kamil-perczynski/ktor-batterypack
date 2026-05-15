@@ -2,11 +2,13 @@ package io.github.kperczynski.infra.monitoring
 
 import io.github.kperczynski.libs.ktor.KtorController
 import io.github.kperczynski.libs.metrics.MetricsController
+import io.ktor.server.application.Application
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.prometheusmetrics.PrometheusConfig
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.Module
+import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Singleton
 
 @Module
@@ -14,8 +16,17 @@ import org.koin.core.annotation.Singleton
 class MetricsModule {
 
     @Singleton(binds = [MeterRegistry::class])
-    fun prometheusMeterRegistry(): PrometheusMeterRegistry {
-        return PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
+    fun prometheusMeterRegistry(bootstrapper: List<MeterRegistryInit>): PrometheusMeterRegistry {
+        val reg = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
+        // ktor registers metric filters that need to be registered before any metrics
+        // otherwise, a warning is shown
+        bootstrapper.forEach { it.init(reg) }
+        return reg
+    }
+
+    @Singleton(binds = [MeterRegistryInit::class])
+    fun ktorMetricsInit(@Provided application: Application): KtorMetricsInit {
+        return KtorMetricsInit(application)
     }
 
     @Singleton(binds = [KtorController::class])

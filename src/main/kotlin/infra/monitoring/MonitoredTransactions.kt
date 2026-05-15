@@ -3,27 +3,23 @@ package io.github.kperczynski.infra.monitoring
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
 import org.jetbrains.exposed.v1.jdbc.Database
-import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
+import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Singleton
-import java.util.function.Supplier
 
 @Singleton
 class MonitoredTransactions(
     private val database: Database,
-    private val meterRegistry: MeterRegistry
+    @Provided private val meterRegistry: MeterRegistry
 ) {
 
-    fun <T> tx(methodId: String, block: () -> T): T {
+    suspend fun <T> suspendTx(methodId: String, block: suspend () -> T): T {
         val sample = Timer.start(meterRegistry)
 
-        val supplier = Supplier<T> {
-            transaction(database) {
+        try {
+            val result = suspendTransaction(database) {
                 block()
             }
-        }
-
-        try {
-            val result = supplier.get()
             sample.stop(
                 meterRegistry.timer(
                     "repo.operation",

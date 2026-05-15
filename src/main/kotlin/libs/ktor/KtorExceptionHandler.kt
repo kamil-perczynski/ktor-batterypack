@@ -19,6 +19,7 @@ class KtorExceptionHandler {
         registerIllegalArgument(it)
         registerDefaultNotFound(it)
         registerInternalServerError(it)
+        registerMethodNotAllowed(it)
     }
 
     private fun registerDefaultNotFound(it: StatusPagesConfig) {
@@ -34,10 +35,24 @@ class KtorExceptionHandler {
         }
     }
 
+    private fun registerMethodNotAllowed(it: StatusPagesConfig) {
+        it.status(HttpStatusCode.MethodNotAllowed) { call, status ->
+            val problemDetail = ProblemDetail(
+                type = "about:blank",
+                title = "Method Not Allowed",
+                status = status.value,
+                detail = "The HTTP method used is not allowed for this endpoint",
+                instance = call.request.uri
+            )
+            call.respond(status, problemDetail)
+        }
+    }
+
     private fun registerErrorCodeException(it: StatusPagesConfig) {
         it.exception<ErrorCodeException> { call, cause ->
             val problemDetail = ProblemDetail(
-                title = cause.errorCode.code,
+                type = cause.errorCode.code,
+                title = "Unprocessable Entity",
                 status = 422,
                 detail = cause.message,
                 instance = call.request.uri,
@@ -63,7 +78,7 @@ class KtorExceptionHandler {
     private fun registerResourceMissing(it: StatusPagesConfig) {
         it.exception<ResourceMissingException> { call, cause ->
             val problemDetail = ProblemDetail(
-                type = "RESOURCE_NOT_FOUND",
+                type = ResourceMissingException.ERROR_CODE,
                 title = "Not Found",
                 status = 404,
                 detail = cause.message,

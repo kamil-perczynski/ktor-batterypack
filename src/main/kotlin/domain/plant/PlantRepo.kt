@@ -5,16 +5,16 @@ import java.util.UUID
 
 interface PlantRepo {
 
-    fun create(plant: Plant): Plant
+    suspend fun create(plant: Plant): Plant
 
-    fun find(id: UInt): Plant
+    suspend fun find(id: UInt): Plant
 
-    fun findAll(): List<Plant>
+    suspend fun findAll(): List<Plant>
 
-    fun update(plant: Plant)
+    suspend fun update(plant: Plant)
 
-    fun delete(id: UInt)
+    suspend fun delete(id: UInt)
 
-    fun findByTempIdentityId(tempIdentityId: UUID): Plant?
+    suspend fun findByTempIdentityId(tempIdentityId: UUID): Plant?
 
 }

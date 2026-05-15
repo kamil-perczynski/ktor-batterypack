@@ -23,13 +23,13 @@ class PlantService(
         return plantRepo.create(plant)
     }
 
-    fun list(): PlantListing {
+    suspend fun list(): PlantListing {
         log.info("Listing all plants")
         val plants = plantRepo.findAll()
         return PlantListing(items = plants)
     }
 
-    fun read(id: UInt): Plant {
+    suspend fun read(id: UInt): Plant {
         return plantRepo.find(id)
     }
 

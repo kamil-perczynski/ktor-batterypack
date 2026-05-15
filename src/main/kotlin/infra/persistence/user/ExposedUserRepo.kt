@@ -11,6 +11,7 @@ import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.update
 import org.koin.core.annotation.Singleton
@@ -28,8 +29,8 @@ class ExposedUserRepo(private val database: Database) : UserRepo, InitCallback {
         }
     }
 
-    override fun create(user: User): User {
-        return transaction(database) {
+    override suspend fun create(user: User): User {
+        return suspendTransaction(database) {
             val newRecord = ExposedUser.insert {
                 it[name] = user.name
                 it[age] = user.age
@@ -40,8 +41,8 @@ class ExposedUserRepo(private val database: Database) : UserRepo, InitCallback {
         }
     }
 
-    override fun find(id: UInt): User {
-        return transaction(database) {
+    override suspend fun find(id: UInt): User {
+        return suspendTransaction(database) {
             val user = ExposedUser.selectAll()
                 .where { ExposedUser.id eq id }
                 .map { toUser(it) }
@@ -52,8 +53,8 @@ class ExposedUserRepo(private val database: Database) : UserRepo, InitCallback {
         }
     }
 
-    override fun update(user: User) {
-        transaction(database) {
+    override suspend fun update(user: User) {
+        suspendTransaction(database) {
             ExposedUser.update({ ExposedUser.id eq user.id }) {
                 it[name] = user.name
                 it[age] = user.age
@@ -61,8 +62,8 @@ class ExposedUserRepo(private val database: Database) : UserRepo, InitCallback {
         }
     }
 
-    override fun delete(id: UInt) {
-        transaction(database) {
+    override suspend fun delete(id: UInt) {
+        suspendTransaction(database) {
             ExposedUser.deleteWhere { ExposedUser.id.eq(id) }
         }
     }

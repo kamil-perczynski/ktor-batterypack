@@ -12,38 +12,38 @@ class MonitoredPlantRepo(
     private val monitoredTransactions: MonitoredTransactions
 ) : PlantRepo {
 
-    override fun create(plant: Plant): Plant {
-        return monitoredTransactions.tx("PlantRepo.create") {
+    override suspend fun create(plant: Plant): Plant {
+        return monitoredTransactions.suspendTx("PlantRepo.create") {
             delegate.create(plant)
         }
     }
 
-    override fun find(id: UInt): Plant {
-        return monitoredTransactions.tx("PlantRepo.find") {
+    override suspend fun find(id: UInt): Plant {
+        return monitoredTransactions.suspendTx("PlantRepo.find") {
             delegate.find(id)
         }
     }
 
-    override fun findAll(): List<Plant> {
-        return monitoredTransactions.tx("PlantRepo.findAll") {
+    override suspend fun findAll(): List<Plant> {
+        return monitoredTransactions.suspendTx("PlantRepo.findAll") {
             delegate.findAll()
         }
     }
 
-    override fun update(plant: Plant) {
-        monitoredTransactions.tx("PlantRepo.update") {
+    override suspend fun update(plant: Plant) {
+        monitoredTransactions.suspendTx("PlantRepo.update") {
             delegate.update(plant)
         }
     }
 
-    override fun delete(id: UInt) {
-        monitoredTransactions.tx("PlantRepo.delete") {
+    override suspend fun delete(id: UInt) {
+        monitoredTransactions.suspendTx("PlantRepo.delete") {
             delegate.delete(id)
         }
     }
 
-    override fun findByTempIdentityId(tempIdentityId: UUID): Plant? {
-        return monitoredTransactions.tx("PlantRepo.findByTempIdentityId") {
+    override suspend fun findByTempIdentityId(tempIdentityId: UUID): Plant? {
+        return monitoredTransactions.suspendTx("PlantRepo.findByTempIdentityId") {
             delegate.findByTempIdentityId(tempIdentityId)
         }
     }

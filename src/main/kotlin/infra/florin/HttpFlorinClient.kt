@@ -4,6 +4,7 @@ import tools.jackson.databind.JsonNode
 import io.github.kperczynski.domain.plant.model.PlantDto
 import io.github.kperczynski.domain.plant.PlantIdentificationClient
 import io.github.kperczynski.libs.ktor.multipart.MultipartUpload
+import io.github.kperczynski.libs.ktor.pathPattern
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -42,6 +43,7 @@ class HttpFlorinClient(
 
         val response = httpClient.submitFormWithBinaryData("/api/plant-identification", formData) {
             header("X-Temp-Identity-Id", tempIdentityId)
+            pathPattern("/api/plant-identification")
         }
 
         return when (response.status) {

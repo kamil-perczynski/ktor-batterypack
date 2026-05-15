@@ -83,7 +83,7 @@ Koin uses **annotation-based** configuration in `infra/KtorFrameApp.kt`:
 @KoinApplication
 object KtorFrameApp
 
-@Module(createdAtStart = true)
+@Module
 @ComponentScan("io.github.kperczynski")
 class KtorFrameModule {
     @Singleton(binds = [UserRepository::class])

@@ -11,26 +11,26 @@ class MonitoredUserRepo(
     private val monitoredTransactions: MonitoredTransactions
 ) : UserRepo {
 
-    override fun create(user: User): User {
-        return monitoredTransactions.tx("UserRepo.create") {
+    override suspend fun create(user: User): User {
+        return monitoredTransactions.suspendTx("UserRepo.create") {
             delegate.create(user)
         }
     }
 
-    override fun find(id: UInt): User {
-        return monitoredTransactions.tx("UserRepo.find") {
+    override suspend fun find(id: UInt): User {
+        return monitoredTransactions.suspendTx("UserRepo.find") {
             delegate.find(id)
         }
     }
 
-    override fun update(user: User) {
-        monitoredTransactions.tx("UserRepo.update") {
+    override suspend fun update(user: User) {
+        monitoredTransactions.suspendTx("UserRepo.update") {
             delegate.update(user)
         }
     }
 
-    override fun delete(id: UInt) {
-        monitoredTransactions.tx("UserRepo.delete") {
+    override suspend fun delete(id: UInt) {
+        monitoredTransactions.suspendTx("UserRepo.delete") {
             delegate.delete(id)
         }
     }

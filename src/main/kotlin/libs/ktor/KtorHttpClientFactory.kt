@@ -6,6 +6,7 @@ import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
 import io.ktor.serialization.jackson3.*
+import io.micrometer.core.instrument.MeterRegistry
 import org.koin.core.annotation.Singleton
 import tools.jackson.databind.DeserializationFeature
 import tools.jackson.databind.SerializationFeature
@@ -13,7 +14,7 @@ import tools.jackson.databind.cfg.DateTimeFeature
 import tools.jackson.module.kotlin.KotlinModule
 
 @Singleton
-class KtorHttpClientFactory {
+class KtorHttpClientFactory(private val meterRegistry: MeterRegistry) {
 
     fun createHttpClient(
         baseUrl: String,
@@ -32,13 +33,17 @@ class KtorHttpClientFactory {
         }
 
         install(Logging) {
-            logger = Logger.EMPTY
+            logger = Logger.DEFAULT
             level = LogLevel.HEADERS
         }
 
         install(HttpTimeout) {
             connectTimeoutMillis = connectTimeoutMs
             requestTimeoutMillis = readTimeoutMs
+        }
+
+        install(ClientMicrometerMetricsPlugin) {
+            registry = meterRegistry
         }
 
         defaultRequest {
