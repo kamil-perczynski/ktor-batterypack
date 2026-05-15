@@ -2,7 +2,6 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.koin.compiler)
-    application
 }
 
 tasks.test {
@@ -15,8 +14,10 @@ tasks.test {
 group = "io.github.kperczynski"
 version = "1.0.0-SNAPSHOT"
 
-application {
-    mainClass = "io.github.kperczynski.MainKt"
+tasks.jar {
+    manifest {
+        attributes["Main-Class"] = "io.github.kperczynski.MainKt"
+    }
 }
 
 kotlin {
@@ -24,16 +25,16 @@ kotlin {
 }
 
 dependencies {
-    implementation(ktorLibs.serialization.jackson)
+    implementation(ktorLibs.serialization.jackson3)
     implementation(ktorLibs.server.config.yaml)
     implementation(ktorLibs.server.contentNegotiation)
     implementation(ktorLibs.server.core)
     implementation(ktorLibs.server.netty)
-    implementation("io.ktor:ktor-server-metrics-micrometer:3.4.0")
+    implementation(libs.ktor.server.metrics.micrometer)
     implementation(ktorLibs.server.statusPages)
 
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.18.3")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.18.3")
+    implementation(libs.jackson.databind)
+    implementation(libs.jackson.module.kotlin)
 
     implementation(ktorLibs.client.core)
     implementation(ktorLibs.client.cio)

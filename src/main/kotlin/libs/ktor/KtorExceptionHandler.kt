@@ -37,7 +37,6 @@ class KtorExceptionHandler {
     private fun registerErrorCodeException(it: StatusPagesConfig) {
         it.exception<ErrorCodeException> { call, cause ->
             val problemDetail = ProblemDetail(
-                type = "about:blank",
                 title = cause.errorCode.code,
                 status = 422,
                 detail = cause.message,
@@ -51,7 +50,7 @@ class KtorExceptionHandler {
     private fun registerIllegalArgument(it: StatusPagesConfig) {
         it.exception<IllegalArgumentException> { call, cause ->
             val problemDetail = ProblemDetail(
-                type = "about:blank",
+                type = "BAD_REQUEST",
                 title = "Bad Request",
                 status = 400,
                 detail = cause.message ?: "Invalid request",
@@ -64,7 +63,7 @@ class KtorExceptionHandler {
     private fun registerResourceMissing(it: StatusPagesConfig) {
         it.exception<ResourceMissingException> { call, cause ->
             val problemDetail = ProblemDetail(
-                type = "about:blank",
+                type = "RESOURCE_NOT_FOUND",
                 title = "Not Found",
                 status = 404,
                 detail = cause.message,
@@ -82,7 +81,7 @@ class KtorExceptionHandler {
     private fun registerInternalServerError(it: StatusPagesConfig) {
         it.exception<Throwable> { call, cause ->
             val problemDetail = ProblemDetail(
-                type = "about:blank",
+                type = "INTERNAL_SERVER_ERROR",
                 title = "Internal Server Error",
                 status = 500,
                 detail = cause.message ?: "An unexpected error occurred",

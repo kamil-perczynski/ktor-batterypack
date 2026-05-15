@@ -1,6 +1,5 @@
 package io.github.kperczynski
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.github.kperczynski.infra.KtorFrameApp
 import io.github.kperczynski.libs.di.LifecycleListener
 import io.github.kperczynski.libs.ktor.KtorController
@@ -12,13 +11,13 @@ import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.routing.*
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
-import org.koin.dsl.koinConfiguration
 import org.koin.ktor.ext.get
 import org.koin.ktor.plugin.Koin
 import org.koin.ktor.plugin.KoinApplicationStarted
 import org.koin.ktor.plugin.KoinApplicationStopPreparing
 import org.koin.ktor.plugin.koin
 import org.koin.plugin.module.dsl.withConfiguration
+import tools.jackson.databind.json.JsonMapper
 
 fun Application.configureServer() {
     monitor.subscribe(KoinApplicationStarted) {
@@ -45,14 +44,14 @@ fun Application.configureServer() {
 
     val koin = koin()
     val ktorExceptionHandler: KtorExceptionHandler = koin.get()
-    val objectMapper: ObjectMapper = koin.get()
+    val jsonMapper: JsonMapper = koin.get()
 
     install(StatusPages) {
         ktorExceptionHandler.register(this)
     }
 
     install(ContentNegotiation) {
-        jacksonSerialization(objectMapper)
+        jacksonSerialization(jsonMapper)
     }
 
     val meterRegistry: PrometheusMeterRegistry = koin.get()

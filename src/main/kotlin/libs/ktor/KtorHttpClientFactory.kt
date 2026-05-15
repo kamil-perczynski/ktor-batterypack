@@ -1,23 +1,16 @@
 package io.github.kperczynski.libs.ktor
 
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.KotlinModule
-import io.ktor.client.HttpClient
-import io.ktor.client.HttpClientConfig
-import io.ktor.client.engine.cio.CIO
-import io.ktor.client.plugins.HttpTimeout
-import io.ktor.client.plugins.HttpTimeoutConfig
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.defaultRequest
-import io.ktor.client.plugins.logging.EMPTY
-import io.ktor.client.plugins.logging.LogLevel
-import io.ktor.client.plugins.logging.Logger
-import io.ktor.client.plugins.logging.Logging
-import io.ktor.client.plugins.logging.LoggingConfig
-import io.ktor.serialization.jackson.jackson
+import io.ktor.client.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.plugins.logging.*
+import io.ktor.serialization.jackson3.*
 import org.koin.core.annotation.Singleton
+import tools.jackson.databind.DeserializationFeature
+import tools.jackson.databind.SerializationFeature
+import tools.jackson.databind.cfg.DateTimeFeature
+import tools.jackson.module.kotlin.KotlinModule
 
 @Singleton
 class KtorHttpClientFactory {
@@ -31,10 +24,9 @@ class KtorHttpClientFactory {
 
         install(ContentNegotiation) {
             jackson {
-                registerModule(KotlinModule.Builder().build())
-                registerModule(JavaTimeModule())
+                addModule(KotlinModule.Builder().build())
                 enable(SerializationFeature.INDENT_OUTPUT)
-                disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+                disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
                 configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             }
         }

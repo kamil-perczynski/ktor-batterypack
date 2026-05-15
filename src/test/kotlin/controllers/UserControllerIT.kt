@@ -58,7 +58,6 @@ class UserControllerIT : KtorBatteriesIT() {
     fun `should return 404 for missing user`() = runTest {
         val response = httpClient.get("/users/99999")
 
-
         assertThat(response.status).isEqualTo(HttpStatusCode.NotFound)
     }
 

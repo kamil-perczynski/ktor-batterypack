@@ -1,7 +1,7 @@
 package io.github.kperczynski.infra.persistence.plant
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.readValue
 import io.github.kperczynski.domain.plant.model.PlantCareInstructions
 import io.github.kperczynski.domain.plant.model.PlantHealthStatus
 import io.github.kperczynski.domain.plant.model.PlantIdentificationItem
@@ -13,7 +13,7 @@ import org.jetbrains.exposed.v1.javatime.date
 import org.jetbrains.exposed.v1.javatime.timestamp
 import org.jetbrains.exposed.v1.json.jsonb
 
-class ExposedPlant(objectMapper: ObjectMapper) : UIntIdTable(name = "plants") {
+class ExposedPlant(objectMapper: JsonMapper) : UIntIdTable(name = "plants") {
     val externalId = javaUUID("external_id").uniqueIndex()
     val createdAt = timestamp("created_at")
     val status = varchar("status", length = 50)

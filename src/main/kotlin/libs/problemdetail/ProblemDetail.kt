@@ -1,5 +1,6 @@
 package io.github.kperczynski.libs.problemdetail
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 
@@ -46,5 +47,6 @@ data class ProblemDetail(
      * Jackson will serialize this as a flat map alongside other fields.
      */
     @param:JsonProperty("extension_data")
+    @get:JsonAnyGetter
     val extensionData: Map<String, Any>? = null
 )

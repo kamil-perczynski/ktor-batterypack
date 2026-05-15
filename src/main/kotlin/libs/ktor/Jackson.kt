@@ -1,10 +1,10 @@
 package io.github.kperczynski.libs.ktor
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.ktor.http.ContentType
-import io.ktor.serialization.jackson.JacksonConverter
+import io.ktor.serialization.jackson3.JacksonConverter
 import io.ktor.server.plugins.contentnegotiation.*
+import tools.jackson.databind.json.JsonMapper
 
-fun ContentNegotiationConfig.jacksonSerialization(objectMapper: ObjectMapper) {
-    register(ContentType.Application.Json, JacksonConverter(objectMapper))
+fun ContentNegotiationConfig.jacksonSerialization(jsonMapper: JsonMapper) {
+    register(ContentType.Application.Json, JacksonConverter(jsonMapper))
 }

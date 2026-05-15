@@ -1,6 +1,6 @@
 package io.github.kperczynski.infra.persistence.plant
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import tools.jackson.databind.json.JsonMapper
 import io.github.kperczynski.domain.plant.model.Plant
 import io.github.kperczynski.domain.plant.PlantRepo
 import io.github.kperczynski.domain.plant.model.enums.LastWateredOption
@@ -29,7 +29,7 @@ private val log = LoggerFactory.getLogger(ExposedPlantRepo::class.java)
 @Singleton
 class ExposedPlantRepo(
     private val database: Database,
-    objectMapper: ObjectMapper
+    objectMapper: JsonMapper
 ) : PlantRepo, InitCallback {
 
     private val table = ExposedPlant(objectMapper)
