@@ -15,19 +15,19 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-  ktor-frame:
-    image: ktor-frame:latest
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-    container_name: ktor-frame
-    ports:
-      - "18080:8080"
-    environment:
-      APP_PROFILES: docker
-    depends_on:
-      - postgres
+#  ktor-frame:
+#    image: ktor-frame:latest
+#    deploy:
+#      resources:
+#        limits:
+#          memory: 256M
+#    container_name: ktor-frame
+#    ports:
+#      - "18080:8080"
+#    environment:
+#      APP_PROFILES: docker
+#    depends_on:
+#      - postgres
 
 volumes:
   postgres_data:

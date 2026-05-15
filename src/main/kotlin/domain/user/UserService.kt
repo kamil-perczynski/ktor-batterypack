@@ -1,7 +1,7 @@
 package io.github.kperczynski.domain.user
 
-import io.github.kperczynski.libs.exception.ErrorCodeException
 import io.github.kperczynski.domain.user.UserErrorCode.USER_AGE_ILLEGAL
+import io.github.kperczynski.libs.exception.ErrorCodeException
 import org.koin.core.annotation.Singleton
 import org.slf4j.LoggerFactory
 

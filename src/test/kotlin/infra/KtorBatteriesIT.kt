@@ -1,19 +1,19 @@
 package io.github.kperczynski.infra
 
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.KotlinModule
 import io.github.kperczynski.configureServer
 import io.github.kperczynski.libs.PostgresTestContainer
 import io.ktor.client.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
-import io.ktor.serialization.jackson.*
+import io.ktor.serialization.jackson3.*
 import io.ktor.server.application.*
 import io.ktor.server.config.*
 import io.ktor.server.testing.*
 import kotlinx.coroutines.runBlocking
+import tools.jackson.databind.DeserializationFeature
+import tools.jackson.databind.SerializationFeature
+import tools.jackson.databind.cfg.DateTimeFeature
+import tools.jackson.module.kotlin.KotlinModule
 
 open class KtorBatteriesIT {
 
@@ -36,10 +36,9 @@ open class KtorBatteriesIT {
             httpClient = builder.createClient {
                 install(ContentNegotiation) {
                     jackson {
-                        registerModule(KotlinModule.Builder().build())
-                        registerModule(JavaTimeModule())
+                        addModule(KotlinModule.Builder().build())
                         enable(SerializationFeature.INDENT_OUTPUT)
-                        disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+                        disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
                         configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                     }
                 }

@@ -1,6 +1,6 @@
 package io.github.kperczynski.infra.client
 
-import com.fasterxml.jackson.databind.JsonNode
+import tools.jackson.databind.JsonNode
 import io.github.kperczynski.domain.plant.model.PlantDto
 import io.github.kperczynski.domain.plant.PlantIdentificationClient
 import io.github.kperczynski.libs.ktor.multipart.MultipartUpload

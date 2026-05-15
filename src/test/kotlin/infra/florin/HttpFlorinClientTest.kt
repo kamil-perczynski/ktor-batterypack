@@ -1,19 +1,14 @@
 package io.github.kperczynski.infra.client
 
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.KotlinModule
 import io.github.kperczynski.domain.plant.model.PlantDto
-import io.github.kperczynski.domain.plant.model.enums.PlantCondition
-import io.github.kperczynski.domain.plant.model.enums.PlantDifficulty
-import io.github.kperczynski.domain.plant.model.enums.PlantStatus
-import io.github.kperczynski.domain.plant.model.enums.SoilType
-import io.github.kperczynski.domain.plant.model.enums.ToxicityLevel
+import io.github.kperczynski.domain.plant.model.enums.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import java.util.UUID
+import tools.jackson.databind.DeserializationFeature
+import tools.jackson.databind.cfg.DateTimeFeature
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.KotlinModule
+import java.util.*
 
 class HttpFlorinClientTest {
 
@@ -82,13 +77,13 @@ class HttpFlorinClientTest {
 
     @Test
     fun `should parse successful plant identification response`() {
-        val objectMapper = ObjectMapper()
-            .registerModule(KotlinModule.Builder().build())
-            .registerModule(JavaTimeModule())
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+        val jsonMapper = JsonMapper.builder()
+            .addModule(KotlinModule.Builder().build())
+            .disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .build()
 
-        val plant = objectMapper.readValue(mockJsonResponse, PlantDto::class.java)
+        val plant = jsonMapper.readValue(mockJsonResponse, PlantDto::class.java)
 
         assertThat(plant.id).isEqualTo(UUID.fromString("550e8400-e29b-41d4-a716-446655440000"))
         assertThat(plant.status).isEqualTo(PlantStatus.IDENTIFICATION)
