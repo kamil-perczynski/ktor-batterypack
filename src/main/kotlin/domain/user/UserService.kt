@@ -10,7 +10,7 @@ private val log = LoggerFactory.getLogger(UserService::class.java)
 @Singleton
 class UserService(private val userRepo: UserRepo) {
 
-    fun create(userCreate: UserCreate): User {
+    suspend fun create(userCreate: UserCreate): User {
         checkAge(userCreate.age)
 
         log.info("Creating user: {}", userCreate)
@@ -24,12 +24,12 @@ class UserService(private val userRepo: UserRepo) {
         return userRepo.create(user)
     }
 
-    fun read(id: UInt): User {
+    suspend fun read(id: UInt): User {
         log.info("Reading user with id: {}", id)
         return userRepo.find(id)
     }
 
-    fun update(id: UInt, userUpdate: UserUpdate) {
+    suspend fun update(id: UInt, userUpdate: UserUpdate) {
         log.info("Updating user with id: {} to new values: {}", id, userUpdate)
         checkAge(userUpdate.age)
 
@@ -43,7 +43,7 @@ class UserService(private val userRepo: UserRepo) {
         )
     }
 
-    fun delete(id: UInt) {
+    suspend fun delete(id: UInt) {
         log.info("Deleting user with id: {}", id)
         userRepo.delete(id)
     }

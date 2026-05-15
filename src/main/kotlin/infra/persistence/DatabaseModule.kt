@@ -3,9 +3,11 @@ package io.github.kperczynski.infra.persistence
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.github.kperczynski.libs.db.DatabaseProps
+import io.micrometer.core.instrument.MeterRegistry
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.Module
+import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Singleton
 import org.slf4j.LoggerFactory
 import javax.sql.DataSource
@@ -16,8 +18,8 @@ private val log = LoggerFactory.getLogger(DatabaseModule::class.java)
 @Configuration
 class DatabaseModule {
 
-    @Singleton(createdAtStart = true, binds = [DataSource::class])
-    fun dataSource(props: DatabaseProps): HikariDataSource {
+    @Singleton(binds = [DataSource::class])
+    fun dataSource(props: DatabaseProps, @Provided meterRegistry: MeterRegistry): HikariDataSource {
         log.info("Connected to database at ${props.url} with pool size ${props.poolSize}")
 
         val hikariConfig = HikariConfig().apply {
@@ -28,13 +30,14 @@ class DatabaseModule {
             maximumPoolSize = props.poolSize
             isAutoCommit = false
             transactionIsolation = "TRANSACTION_REPEATABLE_READ"
+            metricRegistry = meterRegistry
             validate()
         }
 
         return HikariDataSource(hikariConfig)
     }
 
-    @Singleton(createdAtStart = true)
+    @Singleton
     fun database(dataSource: DataSource): Database {
         return Database.connect(dataSource)
     }

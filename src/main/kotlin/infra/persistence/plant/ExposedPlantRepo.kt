@@ -18,6 +18,7 @@ import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.update
 import org.koin.core.annotation.Singleton
@@ -41,8 +42,8 @@ class ExposedPlantRepo(
         }
     }
 
-    override fun create(plant: Plant): Plant {
-        return transaction(database) {
+    override suspend fun create(plant: Plant): Plant {
+        return suspendTransaction(database) {
             val createdRecord = table.insert {
                 it[externalId] = plant.externalId
                 it[createdAt] = plant.createdAt
@@ -71,8 +72,8 @@ class ExposedPlantRepo(
         }
     }
 
-    override fun find(id: UInt): Plant {
-        return transaction(database) {
+    override suspend fun find(id: UInt): Plant {
+        return suspendTransaction(database) {
             val plant = table.selectAll()
                 .where { table.id eq id }
                 .map { toPlant(it) }
@@ -83,15 +84,15 @@ class ExposedPlantRepo(
         }
     }
 
-    override fun findAll(): List<Plant> {
-        return transaction(database) {
+    override suspend fun findAll(): List<Plant> {
+        return suspendTransaction(database) {
             table.selectAll()
                 .map { toPlant(it) }
         }
     }
 
-    override fun update(plant: Plant) {
-        transaction(database) {
+    override suspend fun update(plant: Plant) {
+        suspendTransaction(database) {
             table.update({ table.id eq plant.id }) {
                 it[status] = plant.status.name
                 it[identifications] = plant.identifications
@@ -117,14 +118,14 @@ class ExposedPlantRepo(
         }
     }
 
-    override fun delete(id: UInt) {
-        transaction(database) {
+    override suspend fun delete(id: UInt) {
+        suspendTransaction(database) {
             table.deleteWhere { table.id.eq(id) }
         }
     }
 
-    override fun    findByTempIdentityId(tempIdentityId: UUID): Plant? {
-        return transaction(database) {
+    override suspend fun findByTempIdentityId(tempIdentityId: UUID): Plant? {
+        return suspendTransaction(database) {
             table.selectAll()
                 .where { table.tempIdentityId eq tempIdentityId }
                 .map { toPlant(it) }

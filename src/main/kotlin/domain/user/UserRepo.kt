@@ -2,12 +2,12 @@ package io.github.kperczynski.domain.user
 
 interface UserRepo {
 
-    fun create(user: User): User
+    suspend fun create(user: User): User
 
-    fun find(id: UInt): User
+    suspend fun find(id: UInt): User
 
-    fun update(user: User)
+    suspend fun update(user: User)
 
-    fun delete(id: UInt)
+    suspend fun delete(id: UInt)
 
 }
