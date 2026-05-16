@@ -54,6 +54,7 @@ dependencies {
     implementation(libs.koin.core)
     implementation(libs.koin.ktor)
     implementation(libs.logback.classic)
+    implementation(libs.lettuce.core)
     implementation(libs.postgresql)
 
     testImplementation(platform(libs.junit.bom))
