@@ -1,4 +1,4 @@
-package io.github.kperczynski.libs.ktor
+package io.github.kperczynski.libs.ktor.client
 
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*

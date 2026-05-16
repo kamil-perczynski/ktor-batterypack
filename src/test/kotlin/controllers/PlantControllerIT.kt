@@ -13,7 +13,7 @@ import java.util.UUID
 
 class PlantControllerIT : KtorBatteriesIT() {
 
-    private var plantRepo: PlantRepo = application.koin().get<PlantRepo>()
+    private val plantRepo: PlantRepo = application.koin().get<PlantRepo>()
 
     @Test
     fun `should list plants`() = runTest {

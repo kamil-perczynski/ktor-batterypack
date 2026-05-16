@@ -2,7 +2,7 @@ package io.github.kperczynski.infra.florin
 
 import io.github.kperczynski.infra.AppProps
 import io.github.kperczynski.infra.client.FlorinClientProps
-import io.github.kperczynski.libs.ktor.KtorHttpClientFactory
+import io.github.kperczynski.libs.ktor.client.KtorHttpClientFactory
 import io.ktor.client.HttpClient
 import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.Module

@@ -10,6 +10,7 @@ import io.github.kperczynski.infra.client.FlorinClientProps
 import io.github.kperczynski.libs.db.DatabaseProps
 import io.github.kperczynski.libs.ktor.KtorProps
 import io.github.kperczynski.libs.ktor.multipart.MultipartProps
+import io.github.kperczynski.libs.redis.RedisProps
 
 /**
  * Application configuration data class.
@@ -20,7 +21,8 @@ data class AppProps(
     val banner: String? = null,
     val database: DatabaseProps = DatabaseProps(),
     val florin: FlorinClientProps = FlorinClientProps(),
-    val multipart: MultipartProps = MultipartProps()
+    val multipart: MultipartProps = MultipartProps(),
+    val redis: RedisProps = RedisProps()
 )
 
 @OptIn(ExperimentalHoplite::class)
