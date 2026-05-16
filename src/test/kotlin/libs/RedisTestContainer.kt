@@ -2,7 +2,7 @@ package io.github.kperczynski.libs
 
 import org.testcontainers.containers.GenericContainer
 
-class RedisTestContainer(image: String = "redis:7-alpine") :
+class RedisTestContainer(image: String = "redis:8-alpine") :
     GenericContainer<Nothing>(image) {
 
     init {

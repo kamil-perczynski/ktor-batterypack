@@ -1,5 +1,7 @@
 package io.github.kperczynski.infra
 
+import io.github.kperczynski.domain.plant.PLANT_EVENTS_TOPIC
+import io.github.kperczynski.domain.plant.PlantEventsListener
 import tools.jackson.databind.SerializationFeature
 import tools.jackson.databind.json.JsonMapper
 import tools.jackson.module.kotlin.KotlinModule
@@ -14,9 +16,15 @@ import io.github.kperczynski.libs.di.LifecycleListener
 import io.github.kperczynski.libs.ktor.KtorExceptionHandler
 import io.github.kperczynski.libs.ktor.multipart.MultipartParser
 import io.github.kperczynski.libs.ktor.multipart.MultipartProps
+import io.github.kperczynski.libs.redis.RedisModule
+import io.github.kperczynski.libs.redis.RedisProps
+import io.github.kperczynski.libs.redis.RedisStreamFetcher
+import io.lettuce.core.RedisClient
+import kotlinx.coroutines.asCoroutineDispatcher
 import org.koin.core.annotation.*
 import org.slf4j.LoggerFactory
 import tools.jackson.databind.cfg.DateTimeFeature
+import java.util.concurrent.ThreadPoolExecutor
 
 private val log = LoggerFactory.getLogger(KtorFrameModule::class.java)
 
@@ -25,7 +33,8 @@ private val log = LoggerFactory.getLogger(KtorFrameModule::class.java)
         KtorFrameModule::class,
         FlorinModule::class,
         DatabaseModule::class,
-        MetricsModule::class
+        MetricsModule::class,
+        RedisModule::class
     ]
 )
 object KtorFrameApp
@@ -35,7 +44,7 @@ object KtorFrameApp
 @Configuration
 class KtorFrameModule {
 
-    @Singleton()
+    @Singleton
     fun appConfig(@Property("app.profiles") profiles: String): AppProps {
         val profileList = profiles.split(",").map { it.trim() }.filter { it.isNotEmpty() }
         log.info("Loading application configuration with profiles: $profileList")
@@ -54,6 +63,11 @@ class KtorFrameModule {
     @Singleton
     fun databaseProps(appProps: AppProps): DatabaseProps {
         return appProps.database
+    }
+
+    @Singleton
+    fun redisProps(appProps: AppProps): RedisProps {
+        return appProps.redis
     }
 
     @Singleton

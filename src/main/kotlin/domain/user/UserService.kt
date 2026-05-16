@@ -1,6 +1,6 @@
 package io.github.kperczynski.domain.user
 
-import io.github.kperczynski.domain.user.UserErrorCode.USER_AGE_ILLEGAL
+import io.github.kperczynski.domain.user.UserErrorCode.INVALID_USER_AGE
 import io.github.kperczynski.libs.exception.ErrorCodeException
 import org.koin.core.annotation.Singleton
 import org.slf4j.LoggerFactory
@@ -8,7 +8,10 @@ import org.slf4j.LoggerFactory
 private val log = LoggerFactory.getLogger(UserService::class.java)
 
 @Singleton
-class UserService(private val userRepo: UserRepo) {
+class UserService(
+    private val userRepo: UserRepo,
+    private val userEventPublisher: UserEventPublisher
+) {
 
     suspend fun create(userCreate: UserCreate): User {
         checkAge(userCreate.age)
@@ -21,12 +24,28 @@ class UserService(private val userRepo: UserRepo) {
             age = userCreate.age
         )
 
-        return userRepo.create(user)
+        val createdUser = userRepo.create(user)
+        userEventPublisher.publish(
+            UserEvent(
+                userId = createdUser.id.toString(),
+                type = UserEventType.USER_CREATED,
+                meta = mapOf("age" to createdUser.age.toString())
+            )
+        )
+        return createdUser
     }
 
     suspend fun read(id: UInt): User {
         log.info("Reading user with id: {}", id)
-        return userRepo.find(id)
+        val foundUser = userRepo.find(id)
+        userEventPublisher.publish(
+            UserEvent(
+                userId = foundUser.id.toString(),
+                type = UserEventType.USER_READ,
+                meta = mapOf("age" to foundUser.age.toString())
+            )
+        )
+        return foundUser
     }
 
     suspend fun update(id: UInt, userUpdate: UserUpdate) {
@@ -52,6 +71,6 @@ class UserService(private val userRepo: UserRepo) {
 
 private fun checkAge(age: Int) {
     if (age !in 1..<100) {
-        throw ErrorCodeException(USER_AGE_ILLEGAL, age)
+        throw ErrorCodeException(INVALID_USER_AGE, age)
     }
 }

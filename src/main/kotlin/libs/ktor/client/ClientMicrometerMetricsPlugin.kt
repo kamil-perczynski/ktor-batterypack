@@ -1,4 +1,4 @@
-package io.github.kperczynski.libs.ktor
+package io.github.kperczynski.libs.ktor.client
 
 import io.ktor.client.call.HttpClientCall
 import io.ktor.client.network.sockets.ConnectTimeoutException

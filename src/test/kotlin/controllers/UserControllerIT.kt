@@ -12,7 +12,7 @@ import org.koin.ktor.plugin.koin
 
 class UserControllerIT : KtorBatteriesIT() {
 
-    private var userRepo: UserRepo = application.koin().get<UserRepo>()
+    private val userRepo: UserRepo = application.koin().get<UserRepo>()
 
     @Test
     fun `should create a user`() = runTest {

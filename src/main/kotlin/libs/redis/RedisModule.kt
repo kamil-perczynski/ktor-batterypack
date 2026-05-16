@@ -1,0 +1,80 @@
+package io.github.kperczynski.libs.redis
+
+import io.github.kperczynski.libs.di.InitCallback
+import io.github.kperczynski.libs.health.ReadinessCheck
+import io.lettuce.core.RedisClient
+import io.lettuce.core.api.StatefulRedisConnection
+import io.lettuce.core.metrics.MicrometerCommandLatencyRecorder
+import io.lettuce.core.metrics.MicrometerOptions
+import io.lettuce.core.resource.ClientResources
+import io.micrometer.core.instrument.MeterRegistry
+import kotlinx.coroutines.asCoroutineDispatcher
+import org.koin.core.annotation.Configuration
+import org.koin.core.annotation.Module
+import org.koin.core.annotation.Named
+import org.koin.core.annotation.Singleton
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
+
+@Module
+@Configuration
+class RedisModule {
+
+    @Singleton(binds = [ReadinessCheck::class])
+    fun redisCheck(redisClient: RedisClient): RedisReadinessCheck {
+        return RedisReadinessCheck(redisClient)
+    }
+
+    @Singleton(binds = [InitCallback::class, AutoCloseable::class])
+    @Named("redisFetcher")
+    fun redisFetcher(
+        redisClient: RedisClient,
+        listeners: List<RedisStreamListener>,
+        @Named("redisStreamsThreadPool") threadPool: ThreadPoolExecutor
+    ): RedisStreamFetcher {
+        val filteredListeners = listeners.filter { it.group() == RedisStreamListenerGroups.MAIN_GROUP }
+        val streams = filteredListeners.map { it.stream() }.distinct()
+
+        return RedisStreamFetcher(
+            fetcherId = "Main-1",
+            redisClient = redisClient,
+            listeners = filteredListeners,
+            streams = streams,
+            consumerGroup = "florin",
+            dispatcher = threadPool.asCoroutineDispatcher()
+        )
+    }
+
+    @Singleton
+    fun redisProps(redisProps: RedisProps, meterRegistry: MeterRegistry): RedisClient {
+        val options = MicrometerOptions.builder()
+            .targetPercentiles(doubleArrayOf(0.5, 0.95, 0.99))
+            .localDistinction(false)
+            .build()
+
+        val resources = ClientResources.builder()
+            .commandLatencyRecorder(MicrometerCommandLatencyRecorder(meterRegistry, options))
+            .build()
+
+        return RedisClient.create(resources, redisProps.url)
+    }
+
+    @Singleton
+    fun statefulRedisConnection(redisClient: RedisClient): StatefulRedisConnection<String, String> {
+        return redisClient.connect()
+    }
+
+    @Singleton
+    @Named("redisStreamsThreadPool")
+    fun redisThreadPool(): ThreadPoolExecutor {
+        return ThreadPoolExecutor(
+            Runtime.getRuntime().availableProcessors(),
+            Runtime.getRuntime().availableProcessors(),
+            60,
+            TimeUnit.SECONDS,
+            LinkedBlockingQueue(128)
+        )
+    }
+
+}

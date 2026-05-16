@@ -9,6 +9,7 @@ import io.ktor.server.application.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.routing.*
+import org.koin.core.KoinApplication
 import org.koin.dsl.module
 import org.koin.ktor.ext.get
 import org.koin.ktor.plugin.Koin
@@ -18,53 +19,58 @@ import org.koin.ktor.plugin.koin
 import org.koin.plugin.module.dsl.withConfiguration
 import tools.jackson.databind.json.JsonMapper
 
-fun Application.configureServer() {
-    monitor.subscribe(KoinApplicationStarted) {
-        log.debug("Application has started. Notifying lifecycle listener")
-        val lifecycleListener: LifecycleListener = get()
+internal fun configureKtorServer(app: Application, koinFn: KoinApplication.(profiles: String) -> Unit) {
+    app.monitor.subscribe(KoinApplicationStarted) {
+        app.log.debug("Application has started. Notifying lifecycle listener")
+        val lifecycleListener: LifecycleListener = app.get()
         lifecycleListener.onStart()
     }
 
-    monitor.subscribe(KoinApplicationStopPreparing) {
-        log.debug("Application is stopping. Notifying lifecycle listener")
-        val lifecycleListener: LifecycleListener = get()
+    app.monitor.subscribe(KoinApplicationStopPreparing) {
+        app.log.debug("Application is stopping. Notifying lifecycle listener")
+        val lifecycleListener: LifecycleListener = app.get()
         lifecycleListener.onStop()
     }
 
-    val profiles = environment.config.propertyOrNull("app.profiles")?.getString()
+    val profiles = app.environment.config.propertyOrNull("app.profiles")?.getString()
         ?: System.getenv("APP_PROFILES")
         ?: "local"
 
-
-    val app = this
-
-    install(Koin) {
-        modules(
-            module {
-                single { app }
-            }
-        )
-        withConfiguration<KtorFrameApp>()
-        properties(mapOf("app.profiles" to profiles))
+    app.install(Koin) {
+        koinFn(profiles)
     }
 
-    val koin = koin()
+    val koin = app.koin()
     val ktorExceptionHandler: KtorExceptionHandler = koin.get()
     val jsonMapper: JsonMapper = koin.get()
 
-    install(StatusPages) {
+    app.install(StatusPages) {
         ktorExceptionHandler.register(this)
     }
 
-    install(ContentNegotiation) {
+    app.install(ContentNegotiation) {
         jacksonSerialization(jsonMapper)
     }
 
     val controllers = koin.getAll<KtorController>()
-    routing {
+    app.routing {
         for (controller in controllers) {
-            log.info("Registering routes for controller: {}", controller::class.simpleName)
+            app.log.info("Registering routes for controller: {}", controller::class.simpleName)
             controller.register(this)
         }
+    }
+}
+
+fun Application.configureServer() {
+    val ktorApp = this
+
+    configureKtorServer(ktorApp) { profiles ->
+        modules(
+            module {
+                single { ktorApp }
+            }
+        )
+        withConfiguration<KtorFrameApp>()
+        properties(mapOf("app.profiles" to profiles))
     }
 }

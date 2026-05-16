@@ -12,7 +12,8 @@ private val log = LoggerFactory.getLogger(PlantService::class.java)
 @Singleton
 class PlantService(
     private val plantIdentificationClient: PlantIdentificationClient,
-    private val plantRepo: PlantRepo
+    private val plantRepo: PlantRepo,
+    private val plantEventPublisher: PlantEventPublisher
 ) {
 
     suspend fun identify(uploads: List<MultipartUpload>, tempIdentityId: String): Plant {
@@ -20,7 +21,15 @@ class PlantService(
         val identifiedPlant = plantIdentificationClient.identify(uploads, tempIdentityId)
 
         val plant = toPlant(identifiedPlant)
-        return plantRepo.create(plant)
+        val savedPlant = plantRepo.create(plant)
+        plantEventPublisher.publish(
+            PlantEvent(
+                plantId = savedPlant.id.toString(),
+                type = PlantEventType.PLANT_CREATED,
+                meta = mapOf("externalId" to savedPlant.externalId.toString())
+            )
+        )
+        return savedPlant
     }
 
     suspend fun list(): PlantListing {
@@ -30,7 +39,15 @@ class PlantService(
     }
 
     suspend fun read(id: UInt): Plant {
-        return plantRepo.find(id)
+        val plant = plantRepo.find(id)
+        plantEventPublisher.publish(
+            PlantEvent(
+                plantId = plant.id.toString(),
+                type = PlantEventType.PLANT_READ,
+                meta = mapOf("externalId" to plant.externalId.toString())
+            )
+        )
+        return plant
     }
 
 }

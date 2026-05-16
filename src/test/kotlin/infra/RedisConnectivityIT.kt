@@ -1,66 +1,26 @@
-@file:OptIn(ExperimentalLettuceCoroutinesApi::class)
-
 package io.github.kperczynski.infra
 
-import io.github.kperczynski.domain.plant.model.Plant
-import io.github.kperczynski.domain.somePlant
-import io.github.kperczynski.libs.RedisTestContainer
+import io.github.kperczynski.domain.plant.PLANT_EVENTS_TOPIC
+import io.github.kperczynski.domain.plant.PlantEvent
+import io.github.kperczynski.domain.plant.PlantEventType
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import io.lettuce.core.RedisClient
-import io.lettuce.core.XReadArgs
+import io.lettuce.core.XAddArgs
 import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.api.coroutines
-import io.lettuce.core.pubsub.RedisPubSubListener
-import io.lettuce.core.pubsub.StatefulRedisPubSubConnection
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.withTimeoutOrNull
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import org.slf4j.LoggerFactory
+import org.koin.ktor.plugin.koin
 import tools.jackson.databind.json.JsonMapper
-import tools.jackson.databind.node.JsonNodeFactory
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
 
+@ExperimentalLettuceCoroutinesApi
+class RedisConnectivityIT : KtorBatteriesIT() {
 
-private val log = LoggerFactory.getLogger(RedisConnectivityIT::class.java)
-
-class RedisConnectivityIT {
-
-    companion object {
-        private lateinit var jsonMapper: JsonMapper
-        private val container = RedisTestContainer()
-        private lateinit var redisClient: RedisClient
-        private lateinit var connection: StatefulRedisConnection<String, String>
-        private lateinit var pubSubConnection: StatefulRedisPubSubConnection<String, String>
-
-        @JvmStatic
-        @BeforeAll
-        fun setup() {
-            container.start()
-            redisClient = RedisClient.create(container.redisUri)
-            connection = redisClient.connect()
-            pubSubConnection = redisClient.connectPubSub()
-
-            jsonMapper = JsonMapper.builder()
-                .findAndAddModules()
-                .build()
-        }
-
-        @JvmStatic
-        @AfterAll
-        fun teardown() {
-            pubSubConnection.close()
-            connection.close()
-            redisClient.close()
-        }
-    }
+    private val jsonMapper: JsonMapper = application.koin().get()
+    private val connection: StatefulRedisConnection<String, String> = application.koin().get()
+    private val messageCollector: PlantEventsMessageCollector = application.koin().get()
 
     @Test
     fun `should connect to redis and perform basic operations`() = runTest {
@@ -75,121 +35,44 @@ class RedisConnectivityIT {
     }
 
     @Test
-    fun `should subscribe and receive pubsub messages`() = runTest {
-        val messageDeferred = CompletableDeferred<String>()
+    fun `should add and read stream messages`() = runBlocking {
+        messageCollector.expectResult()
 
-        val listener = object : RedisPubSubListener<String, String> {
-            override fun message(channel: String, message: String) {
-                if (!messageDeferred.isCompleted) {
-                    messageDeferred.complete(message)
-                    val readValue = jsonMapper.readValue(message, Plant::class.java)
-                    log.info("Received message on channel '{}': {}", channel, readValue)
-                }
-            }
+        val event1 = PlantEvent(
+            plantId = "Monstera",
+            type = PlantEventType.PLANT_CREATED,
+            meta = mapOf(
+                "X-Correlation-Id" to "12345",
+            )
+        )
+        val event2 = PlantEvent(plantId = "Philodendron", type = PlantEventType.PLANT_UPDATED)
+        val event3 = PlantEvent(plantId = "Calathea", type = PlantEventType.PLANT_DELETED)
 
-            override fun message(pattern: String, channel: String, message: String) {}
-            override fun subscribed(channel: String, count: Long) {
-                log.info("Subscribed to channel '$channel', total subscriptions: $count")
-            }
-
-            override fun psubscribed(pattern: String, count: Long) {}
-            override fun unsubscribed(channel: String, count: Long) {
-                log.info("Unsubscribed from channel '$channel', total subscriptions: $count")
-            }
-
-            override fun punsubscribed(pattern: String, count: Long) {}
+        connection.coroutines().also {
+            it.xadd(
+                PLANT_EVENTS_TOPIC,
+                XAddArgs.Builder.maxlen(128),
+                mapOf("_p" to jsonMapper.writeValueAsString(event1))
+            )
+            it.xadd(
+                PLANT_EVENTS_TOPIC,
+                XAddArgs.Builder.maxlen(128),
+                mapOf("_p" to jsonMapper.writeValueAsString(event2))
+            )
+            it.xadd(
+                PLANT_EVENTS_TOPIC,
+                XAddArgs.Builder.maxlen(128),
+                mapOf("_p" to jsonMapper.writeValueAsString(event3))
+            )
         }
 
-        pubSubConnection.addListener(listener)
+        val receivedMessage = messageCollector.lastMessage()
 
-        pubSubConnection.async().subscribe("test:channel").await()
-        delay(100.milliseconds)
+        assertThat(receivedMessage).isEqualTo(
+            jsonMapper.writeValueAsString(event1)
+        )
 
-
-        val plantJson = jsonMapper.writeValueAsString(somePlant())
-
-        connection.coroutines().publish("test:channel", plantJson)
-
-        try {
-            val receivedMessage = withTimeoutOrNull(5000.milliseconds) { messageDeferred.await() }
-            assertThat(receivedMessage).isEqualTo(plantJson)
-        } finally {
-            pubSubConnection.async().unsubscribe("test:channel").await()
-        }
-    }
-
-    @Test
-    fun `should add and read stream messages`() = runTest {
-        val streamKey = "test:stream"
-        val messageDeferred = CompletableDeferred<String>()
-
-        val readJob = launch {
-            var lastSeenId = "$"
-            redisClient.connect().use { consumerConnection ->
-                while (true) {
-                    val messages = consumerConnection
-                        .async()
-                        .xread(
-                            XReadArgs.Builder.block(5000).count(10),
-                            XReadArgs.StreamOffset.from(streamKey, lastSeenId)
-                        )
-                        .await()
-
-                    for (message in messages) {
-                        log.info("Received message from stream '{}': {}", streamKey, message)
-                        lastSeenId = message.id
-                    }
-
-                    if (messages.isNotEmpty()) {
-                        val payload = messages.first().body["payload"] ?: ""
-                        if (payload.contains("foo4")) {
-                            messageDeferred.complete(payload)
-                        }
-                    }
-                }
-            }
-        }
-
-        delay(4.seconds)
-        val plantJson = jsonMapper.writeValueAsString(somePlant())
-        try {
-            connection.coroutines().also {
-                it.xadd(
-                    streamKey,
-                    mapOf(
-                        "payload" to JsonNodeFactory.instance.objectNode().put("boo", "foo1")
-                            .toString()
-                    )
-                )
-                it.xadd(
-                    streamKey,
-                    mapOf(
-                        "payload" to plantJson
-                    )
-                )
-                it.xadd(
-                    streamKey,
-                    mapOf(
-                        "payload" to JsonNodeFactory.instance.objectNode().put("boo", "foo3")
-                            .toString()
-                    )
-                )
-                delay(4.seconds)
-                it.xadd(
-                    streamKey,
-                    mapOf(
-                        "payload" to JsonNodeFactory.instance.objectNode().put("boo", "foo4")
-                            .toString()
-                    )
-                )
-            }
-
-            val receivedMessage = withTimeoutOrNull(5.seconds) { messageDeferred.await() }
-            assertThat(receivedMessage).isEqualTo("{\"boo\":\"foo4\"}")
-        } finally {
-            readJob.cancel()
-            connection.coroutines().del(streamKey)
-        }
+        Unit
     }
 
 }
