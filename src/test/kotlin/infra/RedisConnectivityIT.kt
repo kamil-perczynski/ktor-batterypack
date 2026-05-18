@@ -14,6 +14,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.koin.ktor.plugin.koin
 import tools.jackson.databind.json.JsonMapper
+import java.util.Map
+import java.util.UUID
 
 @ExperimentalLettuceCoroutinesApi
 class RedisConnectivityIT : KtorBatteriesIT() {
@@ -41,18 +43,29 @@ class RedisConnectivityIT : KtorBatteriesIT() {
         val event1 = PlantEvent(
             plantId = "Monstera",
             type = PlantEventType.PLANT_CREATED,
-            meta = mapOf(
-                "X-Correlation-Id" to "12345",
-            )
+            externalId = UUID.randomUUID().toString()
         )
-        val event2 = PlantEvent(plantId = "Philodendron", type = PlantEventType.PLANT_UPDATED)
-        val event3 = PlantEvent(plantId = "Calathea", type = PlantEventType.PLANT_DELETED)
+        val event2 = PlantEvent(
+            plantId = "Philodendron",
+            type = PlantEventType.PLANT_UPDATED,
+            externalId = UUID.randomUUID().toString()
+        )
+        val event3 = PlantEvent(
+            plantId = "Calathea",
+            type = PlantEventType.PLANT_DELETED,
+            externalId = UUID.randomUUID().toString()
+        )
+
+        val correlationId = UUID.randomUUID().toString()
 
         connection.coroutines().also {
             it.xadd(
                 PLANT_EVENTS_TOPIC,
                 XAddArgs.Builder.maxlen(128),
-                mapOf("_p" to jsonMapper.writeValueAsString(event1))
+                mapOf(
+                    "_p" to jsonMapper.writeValueAsString(event1),
+                    "X-Correlation-Id" to correlationId
+                )
             )
             it.xadd(
                 PLANT_EVENTS_TOPIC,
@@ -68,8 +81,11 @@ class RedisConnectivityIT : KtorBatteriesIT() {
 
         val receivedMessage = messageCollector.lastMessage()
 
-        assertThat(receivedMessage).isEqualTo(
+        assertThat(receivedMessage?.payload).isEqualTo(
             jsonMapper.writeValueAsString(event1)
+        )
+        assertThat(receivedMessage?.headers).containsExactly(
+            Map.entry("X-Correlation-Id", correlationId)
         )
 
         Unit

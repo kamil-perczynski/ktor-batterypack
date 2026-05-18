@@ -13,16 +13,16 @@ const val PLANT_EVENTS_TOPIC = "plant_events"
 class PlantEventsListener(private val jsonMapper: JsonMapper) : RedisStreamListener {
     override fun stream(): String = PLANT_EVENTS_TOPIC
 
-    override suspend fun onMessage(message: String) {
-        val event = jsonMapper.readValue(message, PlantEvent::class.java)
-        log.info("Received plant event: {}", event)
+    override suspend fun onMessage(payload: String, headers: Map<String, String>) {
+        val event = jsonMapper.readValue(payload, PlantEvent::class.java)
+        log.info("Received plant event: {}, headers: {}", event, headers)
     }
 }
 
 data class PlantEvent(
     val plantId: String,
     val type: PlantEventType,
-    val meta: Map<String, String> = emptyMap()
+    val externalId: String,
 )
 
 enum class PlantEventType {

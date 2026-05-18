@@ -18,52 +18,31 @@ class RedisStreamFetcher(
     private val fetcherId: String,
     private val redisClient: RedisClient,
     private val listeners: List<RedisStreamListener>,
-    private val streams: List<String>,
     private val consumerGroup: String,
     private val dispatcher: CoroutineDispatcher,
 ) : InitCallback, AutoCloseable {
 
+    private val scope = CoroutineScope(dispatcher + SupervisorJob())
+
     private lateinit var consumerConnection: StatefulRedisConnection<String, String>
-    private var job: Job? = null
 
     override fun onInit() {
         this.consumerConnection = redisClient.connect()
 
-        runBlocking {
-            log.info(
-                "Registering {} redis stream listener(s) in group: {}, streams: {}",
-                listeners.size,
-                consumerGroup,
-                streams
-            )
-            for (streamKey in streams) {
-                try {
-                    consumerConnection.async()
-                        .xgroupCreate(
-                            XReadArgs.StreamOffset.from(streamKey, "0"),
-                            consumerGroup,
-                            XGroupCreateArgs().mkstream(true)
-                        )
-                        .await()
-                } catch (e: RedisBusyException) {
-                    log.warn(
-                        "Consumer group {} already exists for stream {}, skipping group creation",
-                        consumerGroup,
-                        streamKey
-                    )
-                    log.trace("Existing consumer group error details", e)
-                }
-            }
-        }
-        val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+        val streams = listeners.map { it.stream() }.distinct()
 
-        job = scope.launch(dispatcher + CoroutineName("RedisStreamFetcher-$fetcherId")) {
+        createConsumerGroups(streams)
+        createFetchingLoopJob(scope, streams)
+    }
+
+    private fun createFetchingLoopJob(scope: CoroutineScope, streams: List<String>): Job {
+        return scope.launch(CoroutineName("RedisStreamFetcher-$fetcherId")) {
             val consumer = Consumer.from(consumerGroup, fetcherId)
             val offsets = streams.map { XReadArgs.StreamOffset.from(it, ">") }.toTypedArray()
 
             val listenersIdx = listeners.associateBy { it.stream() }
 
-            while (true) {
+            while (isActive) {
                 val messages = consumerConnection
                     .async()
                     .xreadgroup(
@@ -76,8 +55,12 @@ class RedisStreamFetcher(
                 for (message in messages) {
                     log.debug("Received redis stream message: {}", message)
                     val payload = message.body["_p"] ?: ""
+                    val headers = message.body.filterKeys { it != "_p" }
+
                     try {
-                        listenersIdx[message.stream]?.onMessage(payload)
+                        listenersIdx[message.stream]?.onMessage(payload, headers)
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (e: Exception) {
                         log.error(
                             "Error processing message from stream {} with id {}: {}",
@@ -98,10 +81,40 @@ class RedisStreamFetcher(
         }
     }
 
+    private fun createConsumerGroups(streams: List<String>) {
+        runBlocking {
+            log.info(
+                "Registering {} redis stream listener(s) in group: {}, streams: {}",
+                listeners.size,
+                consumerGroup,
+                streams
+            )
+
+            for (streamKey in streams) {
+                try {
+                    consumerConnection.async()
+                        .xgroupCreate(
+                            XReadArgs.StreamOffset.from(streamKey, "0"),
+                            consumerGroup,
+                            XGroupCreateArgs().mkstream(true)
+                        )
+                        .await()
+                } catch (e: RedisBusyException) {
+                    log.warn(
+                        "Consumer group {} already exists for stream {}, skipping group creation",
+                        consumerGroup,
+                        streamKey
+                    )
+                    log.trace("Existing consumer group error details", e)
+                }
+            }
+        }
+    }
+
     override fun close() {
         log.info("Closing RedisStreamFetcher: {}", fetcherId)
         runBlocking {
-            job?.cancelAndJoin()
+            scope.cancel()
             consumerConnection.close()
         }
     }

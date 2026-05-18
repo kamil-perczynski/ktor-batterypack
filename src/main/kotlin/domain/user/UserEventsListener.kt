@@ -13,8 +13,8 @@ const val USER_EVENTS_TOPIC = "user_events"
 class UserEventsListener(private val jsonMapper: JsonMapper) : RedisStreamListener {
     override fun stream(): String = USER_EVENTS_TOPIC
 
-    override suspend fun onMessage(message: String) {
-        val event = jsonMapper.readValue(message, UserEvent::class.java)
-        log.info("Received user event: {}", event)
+    override suspend fun onMessage(payload: String, headers: Map<String, String>) {
+        val event = jsonMapper.readValue(payload, UserEvent::class.java)
+        log.info("Received user event: {}, headers: {}", event, headers)
     }
 }

@@ -4,7 +4,7 @@ interface RedisStreamListener {
 
     fun stream(): String
 
-    suspend fun onMessage(message: String)
+    suspend fun onMessage(payload: String, headers: Map<String, String> = emptyMap())
 
     fun group() = RedisStreamListenerGroups.MAIN_GROUP
 
