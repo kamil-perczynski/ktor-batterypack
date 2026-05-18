@@ -24,14 +24,10 @@ class TestRedisModule {
         listeners: List<RedisStreamListener>,
         @Named("redisStreamsThreadPool") threadPool: ThreadPoolExecutor
     ): RedisStreamFetcher {
-        val filteredListeners = listeners.filter { it.group() == TEST_GROUP }
-        val streams = filteredListeners.map { it.stream() }.distinct()
-
         return RedisStreamFetcher(
             fetcherId = "Test-1",
             redisClient = redisClient,
-            listeners = filteredListeners,
-            streams = streams,
+            listeners = listeners.filter { it.group() == TEST_GROUP },
             consumerGroup = "test",
             dispatcher = threadPool.asCoroutineDispatcher(),
         )

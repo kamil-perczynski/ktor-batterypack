@@ -26,7 +26,7 @@ class PlantService(
             PlantEvent(
                 plantId = savedPlant.id.toString(),
                 type = PlantEventType.PLANT_CREATED,
-                meta = mapOf("externalId" to savedPlant.externalId.toString())
+                externalId = savedPlant.externalId.toString(),
             )
         )
         return savedPlant
@@ -44,7 +44,7 @@ class PlantService(
             PlantEvent(
                 plantId = plant.id.toString(),
                 type = PlantEventType.PLANT_READ,
-                meta = mapOf("externalId" to plant.externalId.toString())
+                externalId = plant.externalId.toString(),
             )
         )
         return plant

@@ -22,7 +22,7 @@ class UserEventPublisher(
         publisher.xadd(
             USER_EVENTS_TOPIC,
             XAddArgs.Builder.maxlen(128),
-            mapOf("_p" to eventJson)
+            mapOf("_p" to eventJson, "X-Correlation-Id" to event.userId)
         )
     }
 

@@ -22,11 +22,11 @@ import tools.jackson.module.kotlin.KotlinModule
 open class KtorBatteriesIT {
 
     companion object {
-        internal var httpClient: HttpClient
-        internal var container: PostgresTestContainer = PostgresTestContainer()
-        internal var redisContainer = RedisTestContainer()
+        private val container: PostgresTestContainer = PostgresTestContainer()
+        private val redisContainer = RedisTestContainer()
 
         internal var application: Application
+        internal var httpClient: HttpClient
 
         init {
             container.start()

@@ -2,6 +2,7 @@ package io.github.kperczynski.libs.redis
 
 import io.github.kperczynski.libs.di.InitCallback
 import io.github.kperczynski.libs.health.ReadinessCheck
+import io.github.kperczynski.libs.redis.RedisStreamListenerGroups.Companion.MAIN_GROUP
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.metrics.MicrometerCommandLatencyRecorder
@@ -33,21 +34,17 @@ class RedisModule {
         listeners: List<RedisStreamListener>,
         @Named("redisStreamsThreadPool") threadPool: ThreadPoolExecutor
     ): RedisStreamFetcher {
-        val filteredListeners = listeners.filter { it.group() == RedisStreamListenerGroups.MAIN_GROUP }
-        val streams = filteredListeners.map { it.stream() }.distinct()
-
         return RedisStreamFetcher(
             fetcherId = "Main-1",
             redisClient = redisClient,
-            listeners = filteredListeners,
-            streams = streams,
+            listeners = listeners.filter { it.group() == MAIN_GROUP },
             consumerGroup = "florin",
             dispatcher = threadPool.asCoroutineDispatcher()
         )
     }
 
-    @Singleton
-    fun redisProps(redisProps: RedisProps, meterRegistry: MeterRegistry): RedisClient {
+    @Singleton(binds = [AutoCloseable::class])
+    fun redisClient(redisProps: RedisProps, meterRegistry: MeterRegistry): RedisClient {
         val options = MicrometerOptions.builder()
             .targetPercentiles(doubleArrayOf(0.5, 0.95, 0.99))
             .localDistinction(false)
