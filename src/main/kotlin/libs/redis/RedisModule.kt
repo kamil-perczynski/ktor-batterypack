@@ -31,14 +31,20 @@ class RedisModule {
     @Named("redisFetcher")
     fun redisFetcher(
         redisClient: RedisClient,
+        redisProps: RedisProps,
         listeners: List<RedisStreamListener>,
         @Named("redisStreamsThreadPool") threadPool: ThreadPoolExecutor
     ): RedisStreamFetcher {
         return RedisStreamFetcher(
-            fetcherId = "Main-1",
+            fetcherId = redisProps.fetcher.consumerPrefix + System.currentTimeMillis().toHexString(),
             redisClient = redisClient,
             listeners = listeners.filter { it.group() == MAIN_GROUP },
-            consumerGroup = "florin",
+            consumerGroup = redisProps.fetcher.consumerGroup,
+            fetchingTimeout = redisProps.fetcher.fetchingTimeout,
+            fetchingCount = redisProps.fetcher.fetchingCount,
+            autoclaimIntervalMs = redisProps.fetcher.autoclaimIntervalMs,
+            autoclaimMinIdleMs = redisProps.fetcher.autoclaimMinIdleMs,
+            autoclaimCount = redisProps.fetcher.autoclaimCount,
             dispatcher = threadPool.asCoroutineDispatcher()
         )
     }

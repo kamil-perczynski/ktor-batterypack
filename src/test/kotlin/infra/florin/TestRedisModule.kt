@@ -2,6 +2,7 @@ package io.github.kperczynski.infra.florin
 
 import io.github.kperczynski.libs.di.InitCallback
 import io.github.kperczynski.libs.redis.RedisModule
+import io.github.kperczynski.libs.redis.RedisProps
 import io.github.kperczynski.libs.redis.RedisStreamFetcher
 import io.github.kperczynski.libs.redis.RedisStreamListener
 import io.github.kperczynski.libs.redis.RedisStreamListenerGroups.Companion.TEST_GROUP
@@ -21,6 +22,7 @@ class TestRedisModule {
     @Named("testRedisFetcher")
     fun testRedisFetcher(
         redisClient: RedisClient,
+        redisProps: RedisProps,
         listeners: List<RedisStreamListener>,
         @Named("redisStreamsThreadPool") threadPool: ThreadPoolExecutor
     ): RedisStreamFetcher {
@@ -29,6 +31,11 @@ class TestRedisModule {
             redisClient = redisClient,
             listeners = listeners.filter { it.group() == TEST_GROUP },
             consumerGroup = "test",
+            fetchingTimeout = redisProps.fetcher.fetchingTimeout,
+            fetchingCount = redisProps.fetcher.fetchingCount,
+            autoclaimIntervalMs = redisProps.fetcher.autoclaimIntervalMs,
+            autoclaimMinIdleMs = redisProps.fetcher.autoclaimMinIdleMs,
+            autoclaimCount = redisProps.fetcher.autoclaimCount,
             dispatcher = threadPool.asCoroutineDispatcher(),
         )
     }
