@@ -49,6 +49,7 @@ dependencies {
     implementation(libs.hikari)
     implementation(libs.hoplite.core)
     implementation(libs.hoplite.yaml)
+    implementation(libs.conform)
     implementation(libs.koin.annotations)
     implementation(libs.micrometer.registry.prometheus)
     implementation(libs.koin.core)

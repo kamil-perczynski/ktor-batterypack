@@ -103,6 +103,28 @@ class UserControllerIT : KtorBatteriesIT() {
         assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
     }
 
+    @Test
+    fun `should return 400 for invalid create request`() = runTest {
+        val response = httpClient.post("/users") {
+            contentType(ContentType.Application.Json)
+            setBody("""{"name":"","age":25}""")
+        }
+
+        assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
+    }
+
+    @Test
+    fun `should return 400 for invalid update request`() = runTest {
+        val createdUser = userRepo.create(User(id = 0u, name = "Frank", age = 35))
+
+        val response = httpClient.put("/users/${createdUser.id}") {
+            contentType(ContentType.Application.Json)
+            setBody("""{"name":"A","age":35}""")
+        }
+
+        assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
+    }
+
     private fun parseUserEvent(captured: CapturedMsg): UserEvent {
         return jsonMapper.readValue(captured.payload, UserEvent::class.java)
     }

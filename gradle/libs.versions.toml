@@ -1,5 +1,6 @@
 [versions]
 assertj = "3.27.7"
+conform = "0.11.1"
 exposed = "1.2.0"
 hikari = "7.0.2"
 kreds = "0.9.1"
@@ -18,6 +19,7 @@ testcontainers = "2.0.5"
 
 [libraries]
 assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
+conform = { module = "io.konform:konform", version.ref = "conform" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 
 exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
