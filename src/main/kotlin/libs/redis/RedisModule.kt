@@ -9,14 +9,10 @@ import io.lettuce.core.metrics.MicrometerCommandLatencyRecorder
 import io.lettuce.core.metrics.MicrometerOptions
 import io.lettuce.core.resource.ClientResources
 import io.micrometer.core.instrument.MeterRegistry
-import kotlinx.coroutines.asCoroutineDispatcher
 import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.Module
 import org.koin.core.annotation.Named
 import org.koin.core.annotation.Singleton
-import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.ThreadPoolExecutor
-import java.util.concurrent.TimeUnit
 
 @Module
 @Configuration
@@ -32,8 +28,7 @@ class RedisModule {
     fun redisFetcher(
         redisClient: RedisClient,
         redisProps: RedisProps,
-        listeners: List<RedisStreamListener>,
-        @Named("redisStreamsThreadPool") threadPool: ThreadPoolExecutor
+        listeners: List<RedisStreamListener>
     ): RedisStreamFetcher {
         return RedisStreamFetcher(
             fetcherId = redisProps.fetcher.consumerPrefix + System.currentTimeMillis().toHexString(),
@@ -44,8 +39,7 @@ class RedisModule {
             fetchingCount = redisProps.fetcher.fetchingCount,
             autoclaimIntervalMs = redisProps.fetcher.autoclaimIntervalMs,
             autoclaimMinIdleMs = redisProps.fetcher.autoclaimMinIdleMs,
-            autoclaimCount = redisProps.fetcher.autoclaimCount,
-            dispatcher = threadPool.asCoroutineDispatcher()
+            autoclaimCount = redisProps.fetcher.autoclaimCount
         )
     }
 
@@ -66,18 +60,6 @@ class RedisModule {
     @Singleton
     fun statefulRedisConnection(redisClient: RedisClient): StatefulRedisConnection<String, String> {
         return redisClient.connect()
-    }
-
-    @Singleton
-    @Named("redisStreamsThreadPool")
-    fun redisThreadPool(): ThreadPoolExecutor {
-        return ThreadPoolExecutor(
-            Runtime.getRuntime().availableProcessors(),
-            Runtime.getRuntime().availableProcessors(),
-            60,
-            TimeUnit.SECONDS,
-            LinkedBlockingQueue(128)
-        )
     }
 
 }
