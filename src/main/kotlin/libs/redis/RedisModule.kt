@@ -3,6 +3,8 @@ package io.github.kperczynski.libs.redis
 import io.github.kperczynski.libs.di.InitCallback
 import io.github.kperczynski.libs.health.ReadinessCheck
 import io.github.kperczynski.libs.redis.RedisStreamListenerGroups.Companion.MAIN_GROUP
+import io.github.kperczynski.libs.redis.monitoring.RedisReadinessCheck
+import io.github.kperczynski.libs.redis.monitoring.RedisStreamMetrics
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.metrics.MicrometerCommandLatencyRecorder
@@ -34,27 +36,21 @@ class RedisModule {
         redisClient: RedisClient,
         redisProps: RedisProps,
         listeners: List<RedisStreamListener>,
-        metrics: RedisStreamMetrics
+        loops: List<RedisStreamsBackgroundLoop>,
     ): RedisStreamFetcher {
         return RedisStreamFetcher(
-            fetcherId = redisProps.fetcher.consumerPrefix + System.currentTimeMillis().toHexString(),
+            consumerId = redisProps.fetcher.consumerPrefix + System.currentTimeMillis().toHexString(),
             redisClient = redisClient,
             listeners = listeners.filter { it.group() == MAIN_GROUP },
             consumerGroup = redisProps.fetcher.consumerGroup,
-            fetchingTimeout = redisProps.fetcher.fetchingTimeout,
-            fetchingCount = redisProps.fetcher.fetchingCount,
-            autoclaimIntervalMs = redisProps.fetcher.autoclaimIntervalMs,
             autoclaimMinIdleMs = redisProps.fetcher.autoclaimMinIdleMs,
-            autoclaimCount = redisProps.fetcher.autoclaimCount,
-            lagCheckIntervalMs = redisProps.fetcher.lagCheckIntervalMs,
-            metrics = metrics
+            loops = loops,
         )
     }
 
     @Singleton(binds = [AutoCloseable::class])
     fun redisClient(redisProps: RedisProps, meterRegistry: MeterRegistry): RedisClient {
         val options = MicrometerOptions.builder()
-            .targetPercentiles(doubleArrayOf(0.5, 0.95, 0.99))
             .localDistinction(false)
             .build()
 

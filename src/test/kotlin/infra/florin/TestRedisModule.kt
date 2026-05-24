@@ -1,12 +1,10 @@
 package io.github.kperczynski.infra.florin
 
 import io.github.kperczynski.libs.di.InitCallback
-import io.github.kperczynski.libs.redis.RedisModule
-import io.github.kperczynski.libs.redis.RedisProps
-import io.github.kperczynski.libs.redis.RedisStreamFetcher
-import io.github.kperczynski.libs.redis.RedisStreamListener
+import io.github.kperczynski.libs.redis.*
 import io.github.kperczynski.libs.redis.RedisStreamListenerGroups.Companion.TEST_GROUP
-import io.github.kperczynski.libs.redis.RedisStreamMetrics
+import io.github.kperczynski.libs.redis.RedisStreamsBackgroundLoop
+import io.github.kperczynski.libs.redis.monitoring.RedisStreamMetrics
 import io.lettuce.core.RedisClient
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.koin.core.annotation.Configuration
@@ -29,20 +27,15 @@ class TestRedisModule {
         redisClient: RedisClient,
         redisProps: RedisProps,
         listeners: List<RedisStreamListener>,
-        metrics: RedisStreamMetrics
+        loops: List<RedisStreamsBackgroundLoop>,
     ): RedisStreamFetcher {
         return RedisStreamFetcher(
-            fetcherId = "Test-1",
+            consumerId = "Test",
             redisClient = redisClient,
             listeners = listeners.filter { it.group() == TEST_GROUP },
             consumerGroup = "test",
-            fetchingTimeout = redisProps.fetcher.fetchingTimeout,
-            fetchingCount = redisProps.fetcher.fetchingCount,
-            autoclaimIntervalMs = redisProps.fetcher.autoclaimIntervalMs,
             autoclaimMinIdleMs = redisProps.fetcher.autoclaimMinIdleMs,
-            autoclaimCount = redisProps.fetcher.autoclaimCount,
-            lagCheckIntervalMs = redisProps.fetcher.lagCheckIntervalMs,
-            metrics = metrics
+            loops = loops,
         )
     }
 

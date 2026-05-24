@@ -1,4 +1,4 @@
-package io.github.kperczynski.libs.redis
+package io.github.kperczynski.libs.redis.monitoring
 
 import io.github.kperczynski.libs.health.HealthCheckResult
 import io.github.kperczynski.libs.health.HealthStatus
