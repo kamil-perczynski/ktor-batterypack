@@ -2,21 +2,27 @@ package io.github.kperczynski.libs.ktor
 
 import io.github.kperczynski.libs.exception.ErrorCodeException
 import io.github.kperczynski.libs.exception.ResourceMissingException
+import io.github.kperczynski.libs.exception.ValidationException
 import io.github.kperczynski.libs.problemdetail.ProblemDetail
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.plugins.statuspages.StatusPagesConfig
 import io.ktor.server.request.uri
 import io.ktor.server.response.respond
+import org.koin.core.annotation.Singleton
 import org.slf4j.LoggerFactory
+import tools.jackson.databind.JsonNode
+import tools.jackson.databind.json.JsonMapper
 
 private val log = LoggerFactory.getLogger(KtorExceptionHandler::class.java)
 
-class KtorExceptionHandler {
+@Singleton
+class KtorExceptionHandler(private val jsonMapper: JsonMapper) {
 
     fun register(it: StatusPagesConfig) {
         registerResourceMissing(it)
         registerErrorCodeException(it)
         registerIllegalArgument(it)
+        registerValidationException(it)
         registerDefaultNotFound(it)
         registerInternalServerError(it)
         registerMethodNotAllowed(it)
@@ -70,6 +76,22 @@ class KtorExceptionHandler {
                 status = 400,
                 detail = cause.message ?: "Invalid request",
                 instance = call.request.uri
+            )
+            call.respond(HttpStatusCode.BadRequest, problemDetail)
+        }
+    }
+
+    private fun registerValidationException(it: StatusPagesConfig) {
+        it.exception<ValidationException> { call, cause ->
+            val errors = jsonMapper.convertValue(cause.errors, List::class.java)
+
+            val problemDetail = ProblemDetail(
+                type = "VALIDATION_ERROR",
+                title = "Validation Failed",
+                status = 400,
+                detail = "Request validation failed",
+                instance = call.request.uri,
+                extensionData = mapOf("errors" to errors)
             )
             call.respond(HttpStatusCode.BadRequest, problemDetail)
         }

@@ -74,11 +74,6 @@ class KtorFrameModule {
         return MultipartParser(props)
     }
 
-    @Singleton
-    fun ktorExceptionHandler(): KtorExceptionHandler {
-        return KtorExceptionHandler()
-    }
-
     @Singleton(binds = [InitCallback::class])
     fun bannerPrinter(appProps: AppProps): BannerPrinter {
         return BannerPrinter(appProps.banner)

@@ -11,11 +11,15 @@ import io.ktor.server.routing.*
 import org.koin.core.annotation.Singleton
 
 @Singleton
-class UserController(private val userService: UserService) : KtorController {
+class UserController(
+    private val userService: UserService,
+    private val userDtoValidator: UserDtoValidator
+) : KtorController {
 
     override fun register(routing: Routing) {
         routing.post("/users") {
             val userCreate = call.receive<UserCreate>()
+            userDtoValidator.validateCreate(userCreate)
             val createdUser = userService.create(userCreate)
             call.respond(HttpStatusCode.Created, createdUser)
         }
@@ -29,6 +33,7 @@ class UserController(private val userService: UserService) : KtorController {
         routing.put("/users/{id}") {
             val id = call.parameters["id"]?.toUInt() ?: throw IllegalArgumentException("Invalid ID")
             val userUpdate = call.receive<UserUpdate>()
+            userDtoValidator.validateUpdate(userUpdate)
             userService.update(id, userUpdate)
             call.respond(HttpStatusCode.NoContent)
         }

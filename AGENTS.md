@@ -116,6 +116,39 @@ class KtorFrameModule { ... }
 
 No manual DI binding is required if the implementation is under `io.github.kperczynski` and annotated with `@Singleton`.
 
+## Request Validation
+
+Validation uses **Konform** library and happens in controllers before service calls.
+
+- **Validator class**: One per controller, as `@Singleton` bean in `controllers/` (e.g. `UserDtoValidator`)
+- **ValidationException**: Thrown by validators, caught globally by `KtorExceptionHandler`
+- **Error response**: RFC 7807 `ProblemDetail` with HTTP 400, field errors in `extensionData`
+
+Example validator:
+```kotlin
+@Singleton
+class UserDtoValidator {
+    fun validateCreate(value: UserCreate) {
+        val result = createValidator(value)
+        if (!result.isValid) {
+            throw ValidationException(result.errors.map {
+                FieldError(it.dataPath, it.message)
+            })
+        }
+    }
+}
+```
+
+Usage in controller:
+```kotlin
+post("/users") {
+    val userCreate = call.receive<UserCreate>()
+    userDtoValidator.validateCreate(userCreate)
+    val createdUser = userService.create(userCreate)
+    call.respond(HttpStatusCode.Created, createdUser)
+}
+```
+
 ## Key Files
 
 | File | Purpose |
