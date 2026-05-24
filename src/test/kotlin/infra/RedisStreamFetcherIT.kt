@@ -1,9 +1,15 @@
 package io.github.kperczynski.infra
 
 import io.github.kperczynski.libs.Closer
+import io.github.kperczynski.libs.redis.FetcherProps
+import io.github.kperczynski.libs.redis.RedisProps
 import io.github.kperczynski.libs.redis.RedisStreamFetcher
 import io.github.kperczynski.libs.redis.RedisStreamListener
-import io.github.kperczynski.libs.redis.RedisStreamMetrics
+import io.github.kperczynski.libs.redis.monitoring.RedisStreamMetrics
+import io.github.kperczynski.libs.redis.bgloops.RedisStreamAutoclaimLoop
+import io.github.kperczynski.libs.redis.bgloops.RedisStreamFetchingLoop
+import io.github.kperczynski.libs.redis.monitoring.RedisStreamConsumerLagMonitorLoop
+import io.github.kperczynski.libs.redis.bgloops.StreamMessageProcessor
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.lettuce.core.Consumer
 import io.lettuce.core.RedisClient
@@ -29,9 +35,29 @@ class RedisStreamFetcherIT : KtorBatteriesIT() {
     private val async get() = connection.async()
     private val closer = Closer()
 
+    private val metrics = RedisStreamMetrics(SimpleMeterRegistry())
+    private val redisProps = RedisProps(
+        fetcher = FetcherProps(
+            fetchingTimeout = 100,
+            fetchingCount = 10,
+            autoclaimIntervalMs = 100,
+            autoclaimMinIdleMs = 200,
+            autoclaimCount = 10,
+            lagCheckIntervalMs = 1000,
+        )
+    )
+    private val messageProcessor = StreamMessageProcessor(metrics)
+    private val redisStreamFetchingLoop = RedisStreamFetchingLoop(redisClient, messageProcessor, redisProps)
+    private val redisStreamAutoclaimLoop =
+        RedisStreamAutoclaimLoop(redisClient, messageProcessor, metrics, redisProps)
+    private val redisStreamConsumerLagMonitorLoop = RedisStreamConsumerLagMonitorLoop(redisClient, metrics, redisProps)
+
     @BeforeEach
     fun setUp() {
         closer.add { connection.close() }
+        closer.add { redisStreamFetchingLoop.close() }
+        closer.add { redisStreamAutoclaimLoop.close() }
+        closer.add { redisStreamConsumerLagMonitorLoop.close() }
     }
 
     @AfterEach
@@ -68,18 +94,14 @@ class RedisStreamFetcherIT : KtorBatteriesIT() {
 
         // when: a new fetcher starts with autoclaim enabled
         val listener = TestListener(stream)
+
         val fetcher = RedisStreamFetcher(
-            fetcherId = "reclaimer",
+            consumerId = "reclaimer",
             redisClient = redisClient,
             listeners = listOf(listener),
             consumerGroup = group,
-            fetchingTimeout = 100,
-            fetchingCount = 10,
-            autoclaimIntervalMs = 100,
             autoclaimMinIdleMs = 200,
-            autoclaimCount = 10,
-            lagCheckIntervalMs = 1000,
-            metrics = RedisStreamMetrics(SimpleMeterRegistry())
+            loops = listOf(redisStreamFetchingLoop, redisStreamAutoclaimLoop, redisStreamConsumerLagMonitorLoop),
         )
         closer.add { fetcher.close() }
 
@@ -108,17 +130,12 @@ class RedisStreamFetcherIT : KtorBatteriesIT() {
 
         // when: a new fetcher starts up
         val fetcher = RedisStreamFetcher(
-            fetcherId = "new-consumer",
+            consumerId = "new-consumer",
             redisClient = redisClient,
             listeners = listOf(TestListener(stream)),
             consumerGroup = group,
-            fetchingTimeout = 100,
-            fetchingCount = 10,
-            autoclaimIntervalMs = 100,
             autoclaimMinIdleMs = 200,
-            autoclaimCount = 10,
-            lagCheckIntervalMs = 1000,
-            metrics = RedisStreamMetrics(SimpleMeterRegistry())
+            loops = listOf(redisStreamFetchingLoop, redisStreamAutoclaimLoop, redisStreamConsumerLagMonitorLoop),
         )
         closer.add { fetcher.close() }
         fetcher.onInit()
