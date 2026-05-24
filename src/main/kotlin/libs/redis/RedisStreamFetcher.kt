@@ -28,10 +28,9 @@ class RedisStreamFetcher(
     private val autoclaimIntervalMs: Long,
     private val autoclaimMinIdleMs: Long,
     private val autoclaimCount: Long,
-    dispatcher: CoroutineDispatcher,
 ) : InitCallback, AutoCloseable {
 
-    private val scope = CoroutineScope(dispatcher + SupervisorJob())
+    private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob() + CoroutineName("Redis"))
 
     private lateinit var consumerConnection: StatefulRedisConnection<String, String>
     private lateinit var autoclaimConnection: StatefulRedisConnection<String, String>
@@ -44,57 +43,70 @@ class RedisStreamFetcher(
 
         val streams = listeners.map { it.stream() }.distinct()
 
+        cleanupInactiveConsumers(streams)
         createConsumerGroups(streams)
-        createFetchingLoopJob(scope, streams)
-        createAutoclaimJob(scope, streams)
+
+        createFetchingLoopJob(streams)
+        createAutoclaimJob(streams)
     }
 
-    private fun createFetchingLoopJob(scope: CoroutineScope, streams: List<String>): Job {
-        return scope.launch(CoroutineName("RedisStreamFetcher-$fetcherId")) {
+    private fun createFetchingLoopJob(streams: List<String>): Job {
+        return ioScope.launch {
             val consumer = Consumer.from(consumerGroup, fetcherId)
             val offsets = streams.map { XReadArgs.StreamOffset.from(it, ">") }.toTypedArray()
 
             while (isActive) {
-                val messages = consumerConnection
-                    .async()
-                    .xreadgroup(
-                        consumer,
-                        XReadArgs.Builder.block(fetchingTimeout).count(fetchingCount),
-                        *offsets
-                    )
-                    .await()
+                try {
+                    val messages = consumerConnection
+                        .async()
+                        .xreadgroup(
+                            consumer,
+                            XReadArgs.Builder.block(fetchingTimeout).count(fetchingCount),
+                            *offsets
+                        )
+                        .await()
 
-                for (message in messages) {
-                    processMessage(message, consumerConnection)
+                    processMessages(consumerConnection, messages)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    log.error(
+                        "Redis xreadgroup failed, retrying after {}ms: {}",
+                        fetchingTimeout,
+                        e.message,
+                        e
+                    )
+                    delay(fetchingTimeout.milliseconds)
                 }
             }
         }
     }
 
-    private fun createAutoclaimJob(scope: CoroutineScope, streams: List<String>): Job {
-        return scope.launch(CoroutineName("RedisStreamAutoclaim-$fetcherId")) {
+    private fun createAutoclaimJob(streams: List<String>): Job {
+        return ioScope.launch(CoroutineName("Autoclaim")) {
             val consumer = Consumer.from(consumerGroup, fetcherId)
 
             while (isActive) {
                 delay(autoclaimIntervalMs.milliseconds)
 
                 for (stream in streams) {
-                    if (!isActive) {
-                        break
+                    try {
+                        autoclaimStream(stream, consumer)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        log.error("Redis autoclaim failed for stream {}: {}", stream, e.message, e)
                     }
-                    autoclaimStream(stream, consumer)
                 }
             }
         }
     }
 
     private suspend fun autoclaimStream(stream: String, consumer: Consumer<String>) {
-        var startId = "0-0"
-
         val args = XAutoClaimArgs<String>()
             .consumer(consumer)
             .minIdleTime(autoclaimMinIdleMs)
-            .startId(startId)
+            .startId("0-0")
             .count(autoclaimCount)
 
         val result: ClaimedMessages<String, String> = autoclaimConnection
@@ -109,11 +121,28 @@ class RedisStreamFetcher(
 
         log.info("Reclaiming {} pending message(s) from stream {}", messages.size, stream)
 
-        for (message in messages) {
-            processMessage(message, autoclaimConnection)
-        }
+        processMessages(autoclaimConnection, messages)
+    }
 
-        startId = result.id
+    /**
+     * Processes a list of Redis stream messages by grouping them by stream and launching a
+     * separate coroutine for each group.
+     */
+    private suspend fun processMessages(
+        connection: StatefulRedisConnection<String, String>,
+        messages: List<StreamMessage<String, String>>
+    ) {
+        val grouped = messages.groupBy { it.stream }
+        coroutineScope {
+            for ((_, msgs) in grouped) {
+                launch(CoroutineName("Listener")) {
+                    for (message in msgs) {
+                        processMessage(message, connection)
+                    }
+                }
+
+            }
+        }
     }
 
     private suspend fun processMessage(
@@ -137,7 +166,7 @@ class RedisStreamFetcher(
                 e
             )
         } finally {
-            if (Math.random() > .5) {
+            withContext(Dispatchers.IO + NonCancellable) {
                 connection
                     .async()
                     .xack(message.stream, consumerGroup, message.id)
@@ -146,32 +175,57 @@ class RedisStreamFetcher(
         }
     }
 
-    private fun createConsumerGroups(streams: List<String>) {
-        runBlocking {
-            log.info(
-                "Registering {} redis stream listener(s) in group: {}, streams: {}",
-                listeners.size,
-                consumerGroup,
-                streams
-            )
+    private fun cleanupInactiveConsumers(streams: List<String>) {
+        for (stream in streams) {
+            try {
+                val raw = consumerConnection
+                    .sync()
+                    .xinfoConsumers(stream, consumerGroup)
 
-            for (streamKey in streams) {
-                try {
-                    consumerConnection.async()
-                        .xgroupCreate(
-                            XReadArgs.StreamOffset.from(streamKey, "0"),
-                            consumerGroup,
-                            XGroupCreateArgs().mkstream(true)
-                        )
-                        .await()
-                } catch (e: RedisBusyException) {
-                    log.warn(
-                        "Consumer group {} already exists for stream {}, skipping group creation",
-                        consumerGroup,
-                        streamKey
-                    )
-                    log.trace("Existing consumer group error details", e)
+                val consumers = toXInfoResultDto(raw)
+
+                for (info in consumers) {
+                    if (info.name != fetcherId && info.pending == 0L && info.idle > autoclaimMinIdleMs) {
+                        consumerConnection
+                            .sync()
+                            .xgroupDelconsumer(stream, Consumer.from(consumerGroup, info.name))
+                        log.info("Removed inactive consumer {} from stream {}", info.name, stream)
+                    }
                 }
+            } catch (e: Exception) {
+                log.warn(
+                    "Failed to cleanup inactive consumers for stream {}: {}",
+                    stream,
+                    e.message,
+                    e
+                )
+            }
+        }
+    }
+
+    private fun createConsumerGroups(streams: List<String>) {
+        log.info(
+            "Registering {} redis stream listener(s) in group: {}, streams: {}",
+            listeners.size,
+            consumerGroup,
+            streams
+        )
+
+        for (streamKey in streams) {
+            try {
+                consumerConnection.sync()
+                    .xgroupCreate(
+                        XReadArgs.StreamOffset.from(streamKey, "0"),
+                        consumerGroup,
+                        XGroupCreateArgs().mkstream(true)
+                    )
+            } catch (e: RedisBusyException) {
+                log.warn(
+                    "Consumer group {} already exists for stream {}, skipping group creation",
+                    consumerGroup,
+                    streamKey
+                )
+                log.trace("Existing consumer group error details", e)
             }
         }
     }
@@ -179,7 +233,8 @@ class RedisStreamFetcher(
     override fun close() {
         log.info("Closing RedisStreamFetcher: {}", fetcherId)
         runBlocking {
-            scope.cancel()
+            ioScope.cancel()
+            ioScope.coroutineContext.job.join()
             consumerConnection.close()
             autoclaimConnection.close()
         }
