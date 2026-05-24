@@ -23,12 +23,18 @@ class RedisModule {
         return RedisReadinessCheck(redisClient)
     }
 
+    @Singleton
+    fun redisStreamMetrics(meterRegistry: MeterRegistry): RedisStreamMetrics {
+        return RedisStreamMetrics(meterRegistry)
+    }
+
     @Singleton(binds = [InitCallback::class, AutoCloseable::class])
     @Named("redisFetcher")
     fun redisFetcher(
         redisClient: RedisClient,
         redisProps: RedisProps,
-        listeners: List<RedisStreamListener>
+        listeners: List<RedisStreamListener>,
+        metrics: RedisStreamMetrics
     ): RedisStreamFetcher {
         return RedisStreamFetcher(
             fetcherId = redisProps.fetcher.consumerPrefix + System.currentTimeMillis().toHexString(),
@@ -39,7 +45,9 @@ class RedisModule {
             fetchingCount = redisProps.fetcher.fetchingCount,
             autoclaimIntervalMs = redisProps.fetcher.autoclaimIntervalMs,
             autoclaimMinIdleMs = redisProps.fetcher.autoclaimMinIdleMs,
-            autoclaimCount = redisProps.fetcher.autoclaimCount
+            autoclaimCount = redisProps.fetcher.autoclaimCount,
+            lagCheckIntervalMs = redisProps.fetcher.lagCheckIntervalMs,
+            metrics = metrics
         )
     }
 

@@ -28,18 +28,22 @@ class RedisStreamFetcher(
     private val autoclaimIntervalMs: Long,
     private val autoclaimMinIdleMs: Long,
     private val autoclaimCount: Long,
+    private val lagCheckIntervalMs: Long,
+    private val metrics: RedisStreamMetrics,
 ) : InitCallback, AutoCloseable {
 
     private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob() + CoroutineName("Redis"))
 
     private lateinit var consumerConnection: StatefulRedisConnection<String, String>
     private lateinit var autoclaimConnection: StatefulRedisConnection<String, String>
+    private lateinit var lagConnection: StatefulRedisConnection<String, String>
 
     private val listenersIdx by lazy { listeners.associateBy { it.stream() } }
 
     override fun onInit() {
         this.consumerConnection = redisClient.connect()
         this.autoclaimConnection = redisClient.connect()
+        this.lagConnection = redisClient.connect()
 
         val streams = listeners.map { it.stream() }.distinct()
 
@@ -48,6 +52,7 @@ class RedisStreamFetcher(
 
         createFetchingLoopJob(streams)
         createAutoclaimJob(streams)
+        createLagMonitorJob(streams)
     }
 
     private fun createFetchingLoopJob(streams: List<String>): Job {
@@ -102,6 +107,39 @@ class RedisStreamFetcher(
         }
     }
 
+    private fun createLagMonitorJob(streams: List<String>): Job {
+        return ioScope.launch(CoroutineName("LagMonitor")) {
+            while (isActive) {
+                delay(lagCheckIntervalMs.milliseconds)
+                for (stream in streams) {
+                    try {
+                        checkLag(stream)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        log.debug("Failed to check lag for stream {}: {}", stream, e.message)
+                    }
+                }
+            }
+        }
+    }
+
+    private suspend fun checkLag(stream: String) {
+        val streamRaw = lagConnection.async().xinfoStream(stream).await() as List<*>
+        val lastGeneratedId = parseXInfoStreamLastGeneratedId(streamRaw) ?: return
+
+        val groupsRaw = lagConnection.async().xinfoGroups(stream).await() as List<*>
+        val groups = toXInfoGroupResultDto(groupsRaw)
+        val group = groups.find { it.name == consumerGroup } ?: return
+
+        val lagMs = idToTimestamp(lastGeneratedId) - idToTimestamp(group.lastDeliveredId)
+        metrics.recordLag(stream, consumerGroup, lagMs.coerceAtLeast(0), group.pending)
+    }
+
+    private fun idToTimestamp(id: String): Long {
+        return id.substringBefore("-").toLongOrNull() ?: 0L
+    }
+
     private suspend fun autoclaimStream(stream: String, consumer: Consumer<String>) {
         val args = XAutoClaimArgs<String>()
             .consumer(consumer)
@@ -120,14 +158,11 @@ class RedisStreamFetcher(
         }
 
         log.info("Reclaiming {} pending message(s) from stream {}", messages.size, stream)
+        metrics.recordAutoclaimReclaimed(stream, messages.size)
 
         processMessages(autoclaimConnection, messages)
     }
 
-    /**
-     * Processes a list of Redis stream messages by grouping them by stream and launching a
-     * separate coroutine for each group.
-     */
     private suspend fun processMessages(
         connection: StatefulRedisConnection<String, String>,
         messages: List<StreamMessage<String, String>>
@@ -140,7 +175,6 @@ class RedisStreamFetcher(
                         processMessage(message, connection)
                     }
                 }
-
             }
         }
     }
@@ -153,11 +187,16 @@ class RedisStreamFetcher(
         val payload = message.body["_p"] ?: ""
         val headers = message.body.filterKeys { it != "_p" }
 
+        val startNanos = System.nanoTime()
         try {
             listenersIdx[message.stream]?.onMessage(payload, headers)
+            val durationNanos = System.nanoTime() - startNanos
+            metrics.recordListenerDuration(message.stream, consumerGroup, "success", durationNanos)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            val durationNanos = System.nanoTime() - startNanos
+            metrics.recordListenerDuration(message.stream, consumerGroup, e::class.java.simpleName, durationNanos)
             log.error(
                 "Error processing message from stream {} with id {}: {}",
                 message.stream,
@@ -237,7 +276,7 @@ class RedisStreamFetcher(
             ioScope.coroutineContext.job.join()
             consumerConnection.close()
             autoclaimConnection.close()
+            lagConnection.close()
         }
     }
-
 }

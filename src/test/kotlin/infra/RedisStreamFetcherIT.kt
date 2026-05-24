@@ -3,6 +3,8 @@ package io.github.kperczynski.infra
 import io.github.kperczynski.libs.Closer
 import io.github.kperczynski.libs.redis.RedisStreamFetcher
 import io.github.kperczynski.libs.redis.RedisStreamListener
+import io.github.kperczynski.libs.redis.RedisStreamMetrics
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.lettuce.core.Consumer
 import io.lettuce.core.RedisClient
 import io.lettuce.core.XGroupCreateArgs
@@ -75,7 +77,9 @@ class RedisStreamFetcherIT : KtorBatteriesIT() {
             fetchingCount = 10,
             autoclaimIntervalMs = 100,
             autoclaimMinIdleMs = 200,
-            autoclaimCount = 10
+            autoclaimCount = 10,
+            lagCheckIntervalMs = 1000,
+            metrics = RedisStreamMetrics(SimpleMeterRegistry())
         )
         closer.add { fetcher.close() }
 
@@ -112,7 +116,9 @@ class RedisStreamFetcherIT : KtorBatteriesIT() {
             fetchingCount = 10,
             autoclaimIntervalMs = 100,
             autoclaimMinIdleMs = 200,
-            autoclaimCount = 10
+            autoclaimCount = 10,
+            lagCheckIntervalMs = 1000,
+            metrics = RedisStreamMetrics(SimpleMeterRegistry())
         )
         closer.add { fetcher.close() }
         fetcher.onInit()

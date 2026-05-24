@@ -13,4 +13,5 @@ data class FetcherProps(
     val autoclaimIntervalMs: Long = 30000L,
     val autoclaimMinIdleMs: Long = 60000L,
     val autoclaimCount: Long = 10L,
+    val lagCheckIntervalMs: Long = 30000L,
 )
