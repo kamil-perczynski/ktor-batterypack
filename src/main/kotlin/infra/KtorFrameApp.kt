@@ -1,8 +1,5 @@
 package io.github.kperczynski.infra
 
-import tools.jackson.databind.SerializationFeature
-import tools.jackson.databind.json.JsonMapper
-import tools.jackson.module.kotlin.KotlinModule
 import io.github.kperczynski.infra.florin.FlorinModule
 import io.github.kperczynski.infra.monitoring.MetricsModule
 import io.github.kperczynski.infra.persistence.DatabaseModule
@@ -11,7 +8,6 @@ import io.github.kperczynski.libs.di.BannerPrinter
 import io.github.kperczynski.libs.di.InitCallback
 import io.github.kperczynski.libs.di.KoinLifecycleListener
 import io.github.kperczynski.libs.di.LifecycleListener
-import io.github.kperczynski.libs.ktor.KtorExceptionHandler
 import io.github.kperczynski.libs.ktor.multipart.MultipartParser
 import io.github.kperczynski.libs.ktor.multipart.MultipartProps
 import io.github.kperczynski.libs.redis.RedisModule
@@ -19,6 +15,8 @@ import io.github.kperczynski.libs.redis.RedisProps
 import org.koin.core.annotation.*
 import org.slf4j.LoggerFactory
 import tools.jackson.databind.cfg.DateTimeFeature
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.KotlinModule
 
 private val log = LoggerFactory.getLogger(KtorFrameModule::class.java)
 
@@ -49,7 +47,6 @@ class KtorFrameModule {
     fun jsonMapper(): JsonMapper {
         return JsonMapper.builder()
             .addModule(KotlinModule.Builder().build())
-            .enable(SerializationFeature.INDENT_OUTPUT)
             .disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
             .build()
     }

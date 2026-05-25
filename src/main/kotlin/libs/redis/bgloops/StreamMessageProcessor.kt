@@ -54,7 +54,7 @@ class StreamMessageProcessor(private val metrics: RedisStreamMetrics) {
         try {
             listeners[message.stream]?.onMessage(payload, headers)
             val durationNanos = System.nanoTime() - startNanos
-            metrics.recordListenerDuration(message.stream, consumerGroup, "success", durationNanos)
+            metrics.recordListenerDuration(message.stream, consumerGroup, "n/a", durationNanos)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

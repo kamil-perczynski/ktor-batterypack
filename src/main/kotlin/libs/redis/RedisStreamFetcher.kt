@@ -53,9 +53,22 @@ class RedisStreamFetcher(
     ) {
         for (stream in streams) {
             try {
-                val raw = connection
-                    .sync()
-                    .xinfoConsumers(stream, consumerGroup)
+                val raw = try {
+                    connection
+                        .sync()
+                        .xinfoConsumers(stream, consumerGroup)
+                } catch (e: Exception) {
+                    log.debug(
+                        "Failed to fetch consumer info for stream {}: {}, skipping cleanup",
+                        stream,
+                        e.message
+                    )
+                    null
+                }
+
+                if (raw == null) {
+                    continue
+                }
 
                 val consumers = toXInfoResultDto(raw)
 
