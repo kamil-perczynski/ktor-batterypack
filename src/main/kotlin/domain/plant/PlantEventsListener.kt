@@ -7,8 +7,6 @@ import tools.jackson.databind.json.JsonMapper
 
 private val log = LoggerFactory.getLogger(PlantEventsListener::class.java)
 
-const val PLANT_EVENTS_TOPIC = "plant_events"
-
 @Singleton
 class PlantEventsListener(private val jsonMapper: JsonMapper) : RedisStreamListener {
     override fun stream(): String = PLANT_EVENTS_TOPIC

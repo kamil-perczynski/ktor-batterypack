@@ -1,32 +1,20 @@
 package io.github.kperczynski.domain.plant
 
-import io.lettuce.core.XAddArgs
-import io.lettuce.core.api.StatefulRedisConnection
+import io.github.kperczynski.libs.redis.RedisStreamPublisher
 import org.koin.core.annotation.Singleton
-import org.slf4j.LoggerFactory
-import tools.jackson.databind.json.JsonMapper
 
-private val log = LoggerFactory.getLogger(PlantEventPublisher::class.java)
+const val PLANT_EVENTS_TOPIC = "plant_events"
 
 @Singleton
 class PlantEventPublisher(
-    private val connection: StatefulRedisConnection<String, String>,
-    private val jsonMapper: JsonMapper
+    private val redisStreamPublisher: RedisStreamPublisher,
 ) {
 
     fun publish(event: PlantEvent) {
-        log.info("Publishing plant event: {}", event)
-
-        val publisher = connection.async()
-        val eventJson = jsonMapper.writeValueAsString(event)
-        publisher.xadd(
-            PLANT_EVENTS_TOPIC,
-            XAddArgs.Builder.maxlen(128),
-            mapOf(
-                "_p" to eventJson,
-                "X-Correlation-Id" to event.plantId
-            )
+        redisStreamPublisher.publish(
+            stream = PLANT_EVENTS_TOPIC,
+            payload = event,
+            headers = mapOf("X-Correlation-Id" to event.plantId),
         )
     }
-
 }

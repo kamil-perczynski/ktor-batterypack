@@ -25,13 +25,14 @@ class RedisStreamMetrics(private val meterRegistry: MeterRegistry) {
     fun recordListenerDuration(
         stream: String,
         consumerGroup: String,
-        outcome: String,
+        throwableClass: String,
         durationNanos: Long
     ) {
         Timer.builder("redis.stream.listener.duration")
             .tag("stream", stream)
             .tag("consumerGroup", consumerGroup)
-            .tag("outcome", outcome)
+            .tag("throwable", throwableClass)
+            .publishPercentiles(0.5, 0.95, 0.99)
             .register(meterRegistry)
             .record(durationNanos, TimeUnit.NANOSECONDS)
     }

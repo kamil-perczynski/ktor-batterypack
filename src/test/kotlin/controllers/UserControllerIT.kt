@@ -9,6 +9,7 @@ import io.github.kperczynski.infra.KtorBatteriesIT
 import io.github.kperczynski.infra.UserEventsMessageCollector
 import io.ktor.client.request.*
 import io.ktor.http.*
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -41,7 +42,7 @@ class UserControllerIT : KtorBatteriesIT() {
     }
 
     @Test
-    fun `should get a user`() = runTest {
+    fun `should get a user`() = runBlocking {
         val createdUser = userRepo.create(User(id = 0u, name = "Bob", age = 25))
         messageCollector.expectResult()
 
@@ -56,6 +57,7 @@ class UserControllerIT : KtorBatteriesIT() {
         assertThat(event.type).isEqualTo(UserEventType.USER_READ)
         assertThat(event.userId).isEqualTo(createdUser.id.toString())
         assertThat(event.meta).containsEntry("age", "25")
+        Unit
     }
 
     @Test
