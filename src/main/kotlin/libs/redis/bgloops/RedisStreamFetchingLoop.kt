@@ -7,26 +7,15 @@ import io.lettuce.core.Consumer
 import io.lettuce.core.RedisClient
 import io.lettuce.core.XReadArgs
 import io.lettuce.core.api.StatefulRedisConnection
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.job
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import kotlinx.coroutines.future.await
-import org.koin.core.annotation.Singleton
+import org.koin.core.annotation.Factory
 import org.slf4j.LoggerFactory
 import kotlin.time.Duration.Companion.milliseconds
 
 private val log = LoggerFactory.getLogger(RedisStreamFetchingLoop::class.java)
 
-@Singleton
+@Factory
 class RedisStreamFetchingLoop(
     private val redisClient: RedisClient,
     private val messageProcessor: StreamMessageProcessor,
@@ -48,7 +37,10 @@ class RedisStreamFetchingLoop(
             scope.cancel()
             scope.coroutineContext.job.join()
         }
-        connection.close()
+        if (connection.isOpen) {
+            log.debug("Closing Redis connection for stream fetching loop")
+            connection.close()
+        }
     }
 
     override fun start(

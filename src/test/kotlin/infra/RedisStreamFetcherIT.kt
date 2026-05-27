@@ -98,10 +98,10 @@ class RedisStreamFetcherIT : KtorBatteriesIT() {
         val fetcher = RedisStreamFetcher(
             consumerId = "reclaimer",
             redisClient = redisClient,
-            listeners = listOf(listener),
             consumerGroup = group,
             autoclaimMinIdleMs = 200,
             loops = listOf(redisStreamFetchingLoop, redisStreamAutoclaimLoop, redisStreamConsumerLagMonitorLoop),
+            listeners = listOf(listener),
         )
         closer.add { fetcher.close() }
 
@@ -132,10 +132,10 @@ class RedisStreamFetcherIT : KtorBatteriesIT() {
         val fetcher = RedisStreamFetcher(
             consumerId = "new-consumer",
             redisClient = redisClient,
-            listeners = listOf(TestListener(stream)),
             consumerGroup = group,
             autoclaimMinIdleMs = 200,
             loops = listOf(redisStreamFetchingLoop, redisStreamAutoclaimLoop, redisStreamConsumerLagMonitorLoop),
+            listeners = listOf(TestListener(stream)),
         )
         closer.add { fetcher.close() }
         fetcher.onInit()

@@ -16,20 +16,19 @@ private val log = LoggerFactory.getLogger(RedisStreamFetcher::class.java)
 class RedisStreamFetcher(
     private val consumerId: String,
     private val redisClient: RedisClient,
-    private val listeners: List<RedisStreamListener>,
     private val consumerGroup: String,
     private val autoclaimMinIdleMs: Long,
     private val loops: List<RedisStreamsBackgroundLoop>,
+    listeners: List<RedisStreamListener>,
 ) : InitCallback, AutoCloseable {
 
-    private lateinit var listenersIdx: Map<String, RedisStreamListener>
+    private val listenersIdx: Map<String, RedisStreamListener> =
+        listeners.associateBy { it.stream() }
+
+    private val streams = listeners.map { it.stream() }.distinct()
 
     override fun onInit() {
-        val streams = listeners.map { it.stream() }.distinct()
-        this.listenersIdx = listeners.associateBy { it.stream() }
-
-        val setupConnection = redisClient.connect()
-        setupConnection.use { setupConnection ->
+        redisClient.connect().use { setupConnection ->
             cleanupInactiveConsumers(setupConnection, streams)
             createConsumerGroups(setupConnection, streams)
         }
@@ -77,7 +76,7 @@ class RedisStreamFetcher(
                         connection
                             .sync()
                             .xgroupDelconsumer(stream, Consumer.from(consumerGroup, info.name))
-                        log.info("Removed inactive consumer {} from stream {}", info.name, stream)
+                        log.debug("Cleaned up inactive consumer: {} from stream: {}", info.name, stream)
                     }
                 }
             } catch (e: Exception) {
@@ -97,7 +96,7 @@ class RedisStreamFetcher(
     ) {
         log.info(
             "Registering {} redis stream listener(s) in group: {}, streams: {}",
-            listeners.size,
+            listenersIdx.size,
             consumerGroup,
             streams
         )
@@ -111,7 +110,7 @@ class RedisStreamFetcher(
                         XGroupCreateArgs().mkstream(true)
                     )
             } catch (e: RedisBusyException) {
-                log.warn(
+                log.debug(
                     "Consumer group {} already exists for stream {}, skipping group creation",
                     consumerGroup,
                     streamKey
@@ -122,7 +121,7 @@ class RedisStreamFetcher(
     }
 
     override fun close() {
-        log.info("Closing RedisStreamFetcher: {}", consumerId)
+        log.debug("Closing RedisStreamFetcher: {}", consumerId)
         for (loop in loops) {
             loop.close()
         }
