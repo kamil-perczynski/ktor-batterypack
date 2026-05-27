@@ -55,9 +55,6 @@ class RedisStreamFetcherIT : KtorBatteriesIT() {
     @BeforeEach
     fun setUp() {
         closer.add { connection.close() }
-        closer.add { redisStreamFetchingLoop.close() }
-        closer.add { redisStreamAutoclaimLoop.close() }
-        closer.add { redisStreamConsumerLagMonitorLoop.close() }
     }
 
     @AfterEach

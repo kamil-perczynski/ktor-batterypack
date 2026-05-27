@@ -1,55 +1,38 @@
 package io.github.kperczynski.libs.redis.monitoring
 
+import io.github.kperczynski.libs.redis.LoopHandle
 import io.github.kperczynski.libs.redis.RedisProps
 import io.github.kperczynski.libs.redis.RedisStreamListener
 import io.github.kperczynski.libs.redis.RedisStreamsBackgroundLoop
 import io.github.kperczynski.libs.redis.bgloops.toXInfoResultDto
 import io.lettuce.core.RedisClient
-import io.lettuce.core.api.StatefulRedisConnection
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.await
-import org.koin.core.annotation.Factory
+import org.koin.core.annotation.Singleton
 import org.slf4j.LoggerFactory
 import kotlin.time.Duration.Companion.milliseconds
 
 private val log = LoggerFactory.getLogger(RedisStreamConsumerLagMonitorLoop::class.java)
 
-@Factory
+@Singleton
 class RedisStreamConsumerLagMonitorLoop(
     private val redisClient: RedisClient,
     private val metrics: RedisStreamMetrics,
     private val redisProps: RedisProps,
 ) : RedisStreamsBackgroundLoop {
 
-    private lateinit var connection: StatefulRedisConnection<String, String>
-    private lateinit var scope: CoroutineScope
-    private lateinit var job: Job
-
-    override fun init() {
-        connection = redisClient.connect()
-        scope = CoroutineScope(Dispatchers.IO + SupervisorJob() + CoroutineName("LagMonitor"))
-    }
-
-    override fun close() {
-        runBlocking {
-            scope.cancel()
-            scope.coroutineContext.job.join()
-        }
-        if (connection.isOpen) {
-            log.debug("Closing Redis connection for consumer lag monitor loop")
-            connection.close()
-        }
-    }
-
     override fun start(
         fetcherId: String,
         listeners: Map<String, RedisStreamListener>,
         consumerGroup: String,
-    ) {
+    ): LoopHandle {
+        val connection = redisClient.connect()
+        val scope = CoroutineScope(Dispatchers.IO + SupervisorJob() + CoroutineName("LagMonitor"))
+
         val lagCheckIntervalMs = redisProps.fetcher.lagCheckIntervalMs
         val streams = listeners.keys.toList()
 
-        job = scope.launch {
+        val job = scope.launch {
             while (isActive) {
                 val allConsumers = mutableListOf<StreamConsumerMetrics>()
                 for (stream in streams) {
@@ -80,6 +63,19 @@ class RedisStreamConsumerLagMonitorLoop(
                 }
                 metrics.recordStreamInfo(allConsumers)
                 delay(lagCheckIntervalMs.milliseconds)
+            }
+        }
+
+        return object : LoopHandle {
+            override fun close() {
+                runBlocking {
+                    scope.cancel()
+                    scope.coroutineContext.job.join()
+                }
+                if (connection.isOpen) {
+                    log.debug("Closing Redis connection for consumer lag monitor loop")
+                    connection.close()
+                }
             }
         }
     }

@@ -1,5 +1,6 @@
 package io.github.kperczynski.libs.redis.bgloops
 
+import io.github.kperczynski.libs.redis.LoopHandle
 import io.github.kperczynski.libs.redis.RedisProps
 import io.github.kperczynski.libs.redis.RedisStreamListener
 import io.github.kperczynski.libs.redis.RedisStreamsBackgroundLoop
@@ -7,17 +8,16 @@ import io.github.kperczynski.libs.redis.monitoring.RedisStreamMetrics
 import io.lettuce.core.Consumer
 import io.lettuce.core.RedisClient
 import io.lettuce.core.XAutoClaimArgs
-import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.models.stream.ClaimedMessages
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.await
-import org.koin.core.annotation.Factory
+import org.koin.core.annotation.Singleton
 import org.slf4j.LoggerFactory
 import kotlin.time.Duration.Companion.milliseconds
 
 private val log = LoggerFactory.getLogger(RedisStreamAutoclaimLoop::class.java)
 
-@Factory
+@Singleton
 class RedisStreamAutoclaimLoop(
     private val redisClient: RedisClient,
     private val messageProcessor: StreamMessageProcessor,
@@ -25,38 +25,21 @@ class RedisStreamAutoclaimLoop(
     private val redisProps: RedisProps,
 ) : RedisStreamsBackgroundLoop {
 
-    private lateinit var connection: StatefulRedisConnection<String, String>
-    private lateinit var scope: CoroutineScope
-    private lateinit var job: Job
-
-    override fun init() {
-        connection = redisClient.connect()
-        scope = CoroutineScope(Dispatchers.IO + SupervisorJob() + CoroutineName("Autoclaim"))
-    }
-
-    override fun close() {
-        runBlocking {
-            scope.cancel()
-            scope.coroutineContext.job.join()
-        }
-        if (connection.isOpen) {
-            log.debug("Closing Redis connection for autoclaim loop")
-            connection.close()
-        }
-    }
-
     override fun start(
         fetcherId: String,
         listeners: Map<String, RedisStreamListener>,
         consumerGroup: String,
-    ) {
+    ): LoopHandle {
+        val connection = redisClient.connect()
+        val scope = CoroutineScope(Dispatchers.IO + SupervisorJob() + CoroutineName("Autoclaim"))
+
         val autoclaimIntervalMs = redisProps.fetcher.autoclaimIntervalMs
         val autoclaimMinIdleMs = redisProps.fetcher.autoclaimMinIdleMs
         val autoclaimCount = redisProps.fetcher.autoclaimCount
         val streams = listeners.keys.toList()
         val consumer = Consumer.from(consumerGroup, fetcherId)
 
-        job = scope.launch {
+        val job = scope.launch {
             while (isActive) {
                 delay(autoclaimIntervalMs.milliseconds)
 
@@ -79,6 +62,19 @@ class RedisStreamAutoclaimLoop(
                 }
             }
         }
+
+        return object : LoopHandle {
+            override fun close() {
+                runBlocking {
+                    scope.cancel()
+                    scope.coroutineContext.job.join()
+                }
+                if (connection.isOpen) {
+                    log.debug("Closing Redis connection for autoclaim loop")
+                    connection.close()
+                }
+            }
+        }
     }
 
     private suspend fun autoclaimStream(
@@ -88,7 +84,7 @@ class RedisStreamAutoclaimLoop(
         autoclaimMinIdleMs: Long,
         autoclaimCount: Long,
         listeners: Map<String, RedisStreamListener>,
-        connection: StatefulRedisConnection<String, String>,
+        connection: io.lettuce.core.api.StatefulRedisConnection<String, String>,
     ) {
         val args = XAutoClaimArgs<String>()
             .consumer(consumer)

@@ -27,6 +27,8 @@ class RedisStreamFetcher(
 
     private val streams = listeners.map { it.stream() }.distinct()
 
+    private val handles = mutableListOf<LoopHandle>()
+
     override fun onInit() {
         redisClient.connect().use { setupConnection ->
             cleanupInactiveConsumers(setupConnection, streams)
@@ -34,11 +36,7 @@ class RedisStreamFetcher(
         }
 
         for (loop in loops) {
-            loop.init()
-        }
-
-        for (loop in loops) {
-            loop.start(
+            handles += loop.start(
                 fetcherId = consumerId,
                 listeners = listenersIdx,
                 consumerGroup = consumerGroup,
@@ -122,8 +120,8 @@ class RedisStreamFetcher(
 
     override fun close() {
         log.debug("Closing RedisStreamFetcher: {}", consumerId)
-        for (loop in loops) {
-            loop.close()
+        for (handle in handles) {
+            handle.close()
         }
         log.info("RedisStreamFetcher: {} closed", consumerId)
     }
