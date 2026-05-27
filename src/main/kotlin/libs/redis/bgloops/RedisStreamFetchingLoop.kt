@@ -1,59 +1,41 @@
 package io.github.kperczynski.libs.redis.bgloops
 
+import io.github.kperczynski.libs.redis.LoopHandle
 import io.github.kperczynski.libs.redis.RedisProps
 import io.github.kperczynski.libs.redis.RedisStreamListener
 import io.github.kperczynski.libs.redis.RedisStreamsBackgroundLoop
 import io.lettuce.core.Consumer
 import io.lettuce.core.RedisClient
 import io.lettuce.core.XReadArgs
-import io.lettuce.core.api.StatefulRedisConnection
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.await
-import org.koin.core.annotation.Factory
+import org.koin.core.annotation.Singleton
 import org.slf4j.LoggerFactory
 import kotlin.time.Duration.Companion.milliseconds
 
 private val log = LoggerFactory.getLogger(RedisStreamFetchingLoop::class.java)
 
-@Factory
+@Singleton
 class RedisStreamFetchingLoop(
     private val redisClient: RedisClient,
     private val messageProcessor: StreamMessageProcessor,
     private val redisProps: RedisProps,
 ) : RedisStreamsBackgroundLoop {
 
-    private lateinit var connection: StatefulRedisConnection<String, String>
-    private lateinit var job: Job
-
-    private val scope: CoroutineScope =
-        CoroutineScope(Dispatchers.IO + SupervisorJob() + CoroutineName("StreamFetching"))
-
-    override fun init() {
-        connection = redisClient.connect()
-    }
-
-    override fun close() {
-        runBlocking {
-            scope.cancel()
-            scope.coroutineContext.job.join()
-        }
-        if (connection.isOpen) {
-            log.debug("Closing Redis connection for stream fetching loop")
-            connection.close()
-        }
-    }
-
     override fun start(
         fetcherId: String,
         listeners: Map<String, RedisStreamListener>,
         consumerGroup: String,
-    ) {
+    ): LoopHandle {
+        val connection = redisClient.connect()
+        val scope = CoroutineScope(Dispatchers.IO + SupervisorJob() + CoroutineName("StreamFetching"))
+
         val fetchingTimeout = redisProps.fetcher.fetchingTimeout
         val fetchingCount = redisProps.fetcher.fetchingCount
         val streams = listeners.keys.toList()
         val consumer = Consumer.from(consumerGroup, fetcherId)
 
-        job = scope.launch {
+        val job = scope.launch {
             val offsets = streams.map { XReadArgs.StreamOffset.from(it, ">") }.toTypedArray()
 
             while (isActive) {
@@ -83,6 +65,19 @@ class RedisStreamFetchingLoop(
                         e
                     )
                     delay(fetchingTimeout.milliseconds)
+                }
+            }
+        }
+
+        return object : LoopHandle {
+            override fun close() {
+                runBlocking {
+                    scope.cancel()
+                    scope.coroutineContext.job.join()
+                }
+                if (connection.isOpen) {
+                    log.debug("Closing Redis connection for stream fetching loop")
+                    connection.close()
                 }
             }
         }
