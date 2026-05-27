@@ -32,10 +32,10 @@ class TestRedisModule {
         return RedisStreamFetcher(
             consumerId = "Test",
             redisClient = redisClient,
-            listeners = listeners.filter { it.group() == TEST_GROUP },
             consumerGroup = "test",
             autoclaimMinIdleMs = redisProps.fetcher.autoclaimMinIdleMs,
             loops = loops,
+            listeners = listeners.filter { it.group() == TEST_GROUP },
         )
     }
 

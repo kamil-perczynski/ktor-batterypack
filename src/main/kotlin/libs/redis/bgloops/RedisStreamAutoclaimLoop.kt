@@ -2,33 +2,22 @@ package io.github.kperczynski.libs.redis.bgloops
 
 import io.github.kperczynski.libs.redis.RedisProps
 import io.github.kperczynski.libs.redis.RedisStreamListener
-import io.github.kperczynski.libs.redis.monitoring.RedisStreamMetrics
 import io.github.kperczynski.libs.redis.RedisStreamsBackgroundLoop
+import io.github.kperczynski.libs.redis.monitoring.RedisStreamMetrics
 import io.lettuce.core.Consumer
 import io.lettuce.core.RedisClient
 import io.lettuce.core.XAutoClaimArgs
 import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.models.stream.ClaimedMessages
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.job
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import kotlinx.coroutines.future.await
-import org.koin.core.annotation.Singleton
+import org.koin.core.annotation.Factory
 import org.slf4j.LoggerFactory
 import kotlin.time.Duration.Companion.milliseconds
 
 private val log = LoggerFactory.getLogger(RedisStreamAutoclaimLoop::class.java)
 
-@Singleton
+@Factory
 class RedisStreamAutoclaimLoop(
     private val redisClient: RedisClient,
     private val messageProcessor: StreamMessageProcessor,
@@ -50,7 +39,10 @@ class RedisStreamAutoclaimLoop(
             scope.cancel()
             scope.coroutineContext.job.join()
         }
-        connection.close()
+        if (connection.isOpen) {
+            log.debug("Closing Redis connection for autoclaim loop")
+            connection.close()
+        }
     }
 
     override fun start(

@@ -41,10 +41,10 @@ class RedisModule {
         return RedisStreamFetcher(
             consumerId = redisProps.fetcher.consumerPrefix + System.currentTimeMillis().toHexString(),
             redisClient = redisClient,
-            listeners = listeners.filter { it.group() == MAIN_GROUP },
             consumerGroup = redisProps.fetcher.consumerGroup,
             autoclaimMinIdleMs = redisProps.fetcher.autoclaimMinIdleMs,
             loops = loops,
+            listeners = listeners.filter { it.group() == MAIN_GROUP },
         )
     }
 
