@@ -1,4 +1,4 @@
-package io.github.kperczynski.libs.db
+package io.github.ktor_batterypack.database
 
 data class DatabaseProps(
     val url: String = "",

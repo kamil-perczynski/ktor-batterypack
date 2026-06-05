@@ -2,7 +2,7 @@ package io.github.kperczynski.infra.persistence.wallet
 
 import io.github.kperczynski.domain.wallet.Wallet
 import io.github.kperczynski.domain.wallet.WalletRepo
-import io.github.kperczynski.infra.monitoring.MonitoredTransactions
+import io.github.ktor_batterypack.database.MonitoredTransactions
 import org.koin.core.annotation.Singleton
 import java.math.BigDecimal
 

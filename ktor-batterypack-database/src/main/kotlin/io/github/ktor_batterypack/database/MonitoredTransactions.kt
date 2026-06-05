@@ -1,16 +1,13 @@
-package io.github.kperczynski.infra.monitoring
+package io.github.ktor_batterypack.database
 
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
-import org.koin.core.annotation.Provided
-import org.koin.core.annotation.Singleton
 
-@Singleton
 class MonitoredTransactions(
     private val database: Database,
-    @Provided private val meterRegistry: MeterRegistry
+    private val meterRegistry: MeterRegistry
 ) {
 
     suspend fun <T> suspendTx(methodId: String, block: suspend () -> T): T {

@@ -21,6 +21,7 @@ plugins {
 }
 
 include("ktor-batterypack-core")
+include("ktor-batterypack-database")
 include("ktor-batterypack-metrics")
 include("ktor-batterypack-redis")
 include("ktor-batterypack-redis-testing")

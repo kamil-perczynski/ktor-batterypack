@@ -69,6 +69,7 @@ class UserDtoValidator {
     }
 }
 
+@Suppress("UNCHECKED_CAST")
 private fun checkValid(result: ValidationResult<*>) {
     if (!result.isValid) {
         val errors = result.errors.map {

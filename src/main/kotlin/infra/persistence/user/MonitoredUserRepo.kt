@@ -2,7 +2,7 @@ package io.github.kperczynski.infra.persistence.user
 
 import io.github.kperczynski.domain.user.User
 import io.github.kperczynski.domain.user.UserRepo
-import io.github.kperczynski.infra.monitoring.MonitoredTransactions
+import io.github.ktor_batterypack.database.MonitoredTransactions
 import org.koin.core.annotation.Singleton
 
 @Singleton(binds = [UserRepo::class])
