@@ -1,98 +1,100 @@
 # AGENTS.md
 
-## Architecture
+## Monorepo Boundaries
 
-This project follows **Ports & Adapters (Hexagonal) Architecture**:
+Root `ktor-frame` is the Ktor application. It includes `ktor-batterypack-*` subprojects as shared libraries (all published to GitHub Packages):
 
-```
-controllers/   → HTTP routes (driving adapters)
-domain/        → Business logic, entities, ports (interfaces)
-infra/         → Infrastructure implementations (driven adapters)
-libs/          → Shared utilities (lifecycle, health, exceptions, ktor helpers)
-```
+| Project | Purpose |
+|---------|---------|
+| `ktor-batterypack-core` | Config loader, health, exceptions, DI lifecycle, multipart, Jackson, controller auto-registration |
+| `ktor-batterypack-database` | Exposed + Hikari + monitored transactions |
+| `ktor-batterypack-metrics` | Micrometer + Prometheus |
+| `ktor-batterypack-redis` | Lettuce client |
+| `ktor-batterypack-database-testing` | Testcontainers PostgreSQL helper |
+| `ktor-batterypack-redis-testing` | Testcontainers Redis helper |
+| `ktor-batterypack-gradle-plugin` | Included build; provides `ktor-batterypack` plugin (`dockerDist`, `bootstrapDockerfile`, `bootstrapDockerignore`) |
+
+`assemble` depends on `dockerDist`, so `./gradlew build` always produces the Docker distribution.
+
+## Architecture (root app)
+
+**Ports & Adapters**:
+- `controllers/` → HTTP routes (driving adapters), `@Singleton` implementing `KtorController` (interface from `ktor-batterypack-core`)
+- `domain/` → Business logic, entities, repository ports (interfaces). NO external framework dependencies.
+- `infra/` → Infrastructure implementations (driven adapters), e.g. `infra/persistence/*`
+- `libs/` → Minimal local helpers; most shared code lives in `ktor-batterypack-core`
 
 **Dependency Rule**: `controllers` → `domain` ← `infra`
-- Controllers depend on domain ports (e.g., `UserRepo` interface)
-- Infra implements domain ports (e.g., `ExposedUserRepo` implements `UserRepo`)
-- Domain has NO external framework dependencies
 
 ## Development
 
 ### Prerequisites
 
 ```bash
-# Start PostgreSQL (required for app and integration tests)
+# Start PostgreSQL and Redis (both required for app and integration tests)
 docker-compose up -d
-
-# Verify database is ready
-docker-compose exec postgres pg_isready -U ktor -d ktordb
 ```
 
 ### Running
 
 ```bash
-# Run with live reload (Ktor plugin)
+# Dev server with live reload
 ./gradlew run
 
-# Run fat JAR
-./gradlew runFatJar
+# Full build (compile + test + dockerDist)
+./gradlew build
 
-# Build production JAR
-./gradlew buildFatJar
+# Docker distribution (separated app/dependency layers)
+./gradlew dockerDist
+
+# Bootstrap Dockerfile / .dockerignore
+./gradlew bootstrapDockerfile bootstrapDockerignore
 ```
 
 Server starts at `http://localhost:8080`.
 
+### Toolchain Quirks
+
+- **Java 25** toolchain in all modules; CI uses Temurin.
+- **JEP 472 workaround**: `--enable-native-access=ALL-UNNAMED` is required for `JavaExec` and test JVMs because Netty loads native libraries from an unnamed module. Already present in every `build.gradle.kts`.
+
 ### Testing
 
 ```bash
-# Run all tests
+# All tests
 ./gradlew test
 
-# Run single test class
+# Single test class
 ./gradlew test --tests "io.github.kperczynski.infra.config.LoadConfigTest"
-
-# Run with info
-./gradlew test --info
 ```
 
-**Integration test base**: `KtorBatteriesIT` spins up a shared Testcontainers PostgreSQL instance once per JVM (port 5432 inside container, random host port). Tests inject Koin beans via `application.koin().get<...>()`.
-
-### Build
-
-```bash
-# Full build (compile + test)
-./gradlew build
-
-# Clean build
-./gradlew clean build
-
-# Docker distribution (separated app/dependency layers, used by CI)
-./gradlew dockerDist
-```
+**Integration test base**: `KtorBatteriesIT` spins up shared Testcontainers **PostgreSQL + Redis** once per JVM. Tests inject Koin beans via `application.koin().get<...>()`.
 
 ## Configuration
 
-Configuration uses **Hoplite** with this precedence (highest first):
+Uses **Hoplite** with this precedence (highest first):
 1. Environment variables (`UPPER_CASE_WITH_UNDERSCORES`)
 2. System properties (`config.override.*`)
 3. `application-{profile}.yaml` (profile-specific, reversed order for last-wins)
 4. `application.yaml` (committed defaults)
 
-`application-local.yaml` is gitignored and intended for local overrides.
-Example: `DATABASE_URL=jdbc:postgresql://...`
+`application-local.yaml` is gitignored. Example: `DATABASE_URL=jdbc:postgresql://...`
+
+`APP_PROFILES` env var selects active profiles.
 
 ## DI Wiring
 
-Koin uses **annotation-based** configuration. `KtorFrameApp.kt` defines explicit submodules and a component scan:
+Koin uses **annotation-based** configuration. `KtorFrameApp.kt` wires explicit batterypack modules + `KtorFrameModule`:
 
 ```kotlin
 @KoinApplication(
     modules = [
+        KtorBatterypackCoreModule::class,
         KtorFrameModule::class,
         FlorinModule::class,
-        DatabaseModule::class,
-        MetricsModule::class
+        KtorBatterypackDatabaseModule::class,
+        KtorBatterypackMetricsModule::class,
+        KtorBatterypackRedisModule::class
     ]
 )
 object KtorFrameApp
@@ -103,7 +105,7 @@ object KtorFrameApp
 class KtorFrameModule { ... }
 ```
 
-- **Controllers auto-register**: any `@Singleton` implementing `KtorController` is discovered and registered in `KtorFrameApplicationServer.kt`.
+- **Controllers auto-register**: `configureKtorServer` (from `ktor-batterypack-core`) discovers all `KtorController` beans and registers their routes.
 - **Repositories**: annotate the implementation with `@Singleton` (no manual binding needed thanks to `@ComponentScan`).
 - **Schema creation**: repositories implementing `InitCallback` run `onInit()` on startup via `KoinLifecycleListener`.
 - **Cleanup**: any `@Singleton` implementing `AutoCloseable` is closed on shutdown.
@@ -111,80 +113,44 @@ class KtorFrameModule { ... }
 ## Adding Features
 
 1. **Domain** (`domain/`): Define entity + repository interface (port) + service if needed
-2. **Infra** (`infra/persistence/`): Implement repository using Exposed + `@Singleton`
+2. **Infra** (`infra/persistence/`): Implement repository using Exposed + `@Singleton` + `InitCallback` for schema creation
 3. **Controller** (`controllers/`): Add HTTP routes as `@Singleton` implementing `KtorController`
 
 No manual DI binding is required if the implementation is under `io.github.kperczynski` and annotated with `@Singleton`.
 
 ## Request Validation
 
-Validation uses **Konform** library and happens in controllers before service calls.
+Validation uses **Konform** and happens in controllers before service calls.
 
 - **Validator class**: One per controller, as `@Singleton` bean in `controllers/` (e.g. `UserDtoValidator`)
-- **ValidationException**: Thrown by validators, caught globally by `KtorExceptionHandler`
+- **ValidationException**: Thrown by validators, caught globally by `KtorExceptionHandler` (from `ktor-batterypack-core`)
 - **Error response**: RFC 7807 `ProblemDetail` with HTTP 400, field errors in `extensionData`
 
-Example validator:
-```kotlin
-@Singleton
-class UserDtoValidator {
-    fun validateCreate(value: UserCreate) {
-        val result = createValidator(value)
-        if (!result.isValid) {
-            throw ValidationException(result.errors.map {
-                FieldError(it.dataPath, it.message)
-            })
-        }
-    }
-}
-```
+## Framework Quirks
 
-Usage in controller:
-```kotlin
-post("/users") {
-    val userCreate = call.receive<UserCreate>()
-    userDtoValidator.validateCreate(userCreate)
-    val createdUser = userService.create(userCreate)
-    call.respond(HttpStatusCode.Created, createdUser)
-}
-```
+- **Exposed v1 API**: imports are `org.jetbrains.exposed.v1.*`, NOT the older `org.jetbrains.exposed.sql`.
+- **Jackson 3**: imports are `tools.jackson.*`, NOT `com.fasterxml.jackson.*`.
+- **Schema creation**: Repos implement `InitCallback` to auto-create tables on startup. No Flyway/manual migrations in dev.
 
 ## Key Files
 
 | File | Purpose |
 |------|---------|
-| `KtorFrameApplicationServer.kt` | Ktor app config, Koin init, routing, exception handling |
-| `infra/KtorFrameApp.kt` | Koin DI module with `@ComponentScan` and explicit submodules |
+| `KtorFrameApplicationServer.kt` | Root app wiring (`configureKtorServer`) |
+| `infra/KtorFrameApp.kt` | Root Koin app + `KtorFrameModule` |
 | `infra/KtorFrameProps.kt` | Application config aggregate (`AppProps`) |
-| `core/config/ConfigLoader.kt` | Generic Hoplite config loader with env var support |
+| `main.kt` | Entry point (`EngineMain`) |
+| `ktor-batterypack-core/.../KtorServerConfiguration.kt` | Auto-registers controllers, installs Koin/StatusPages/ContentNegotiation |
+| `ktor-batterypack-core/.../KtorBatterypackCoreModule.kt` | Shared beans (Jackson, lifecycle, health) |
+| `ktor-batterypack-core/.../config/ConfigLoader.kt` | Generic Hoplite config loader |
 | `domain/*/*Repo.kt` | Repository PORT (interface) |
-| `infra/persistence/*/*Repo.kt` | Repository implementation with `@Singleton` |
-| `main.kt` | Entry point (delegates to `EngineMain`) |
-| `libs/di/InitCallback.kt` | Startup initialization hook |
-| `libs/ktor/KtorController.kt` | Controller interface for auto-registration |
-
-## Technologies
-
-- **Framework**: Ktor 3.4 + Kotlin 2.3 + JVM 25
-- **DI**: Koin 4.2 with annotations (`@KoinApplication`, `@Module`, `@Singleton`)
-- **Database**: PostgreSQL + Exposed 1.2 (new v1 API) + HikariCP
-- **Serialization**: Jackson 3 + kotlinx.serialization
-- **Config**: Hoplite (YAML + env vars)
-- **Testing**: JUnit 5 + AssertJ + Mockito-Kotlin + Testcontainers
-- **Metrics**: Micrometer + Prometheus registry
-
-## Database
-
-Exposed schema auto-creates on startup via `InitCallback`. No manual migrations needed for dev.
-
-Default connection: `jdbc:postgresql://localhost:5432/ktordb` (user: `ktor` / `ktorpassword`)
-
-**Important**: Exposed uses the **new v1 API** (`org.jetbrains.exposed.v1` package), not the older v0 API.
+| `infra/persistence/*/*Repo.kt` | Repository implementation with `@Singleton` + `InitCallback` |
 
 ## CI / Deploy
 
-GitHub Actions runs `./gradlew build` on every PR/push to `main` with Java 25 (Temurin).
-On `main` branch merges, it also builds and pushes a multi-arch Docker image to `ghcr.io`.
+- GitHub Actions runs `./gradlew build` on every PR/push to `main` with Java 25 (Temurin).
+- On `main` merges, builds and pushes a multi-arch Docker image to `ghcr.io`.
+- On tags, `./gradlew publish` pushes Maven packages to GitHub Packages (`ktor-batterypack-*`).
 
 ## Rules
 
