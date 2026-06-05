@@ -1,35 +1,135 @@
 # ktor-frame
 
-This project was created using the [Ktor Project Generator](https://start.ktor.io).
+A **Ktor** backend application built with **Kotlin**, **Koin**, **Exposed**, and **PostgreSQL**. It ships with a modular `ktor-batterypack-*` monorepo of shared libraries that handle cross-cutting concerns—config, health, metrics, database transactions, Redis, and testcontainers helpers—so the root app stays focused on domain logic.
 
-Here are some useful links to get you started:
+## What it does
 
-* [Ktor Documentation](https://ktor.io/docs/home.html)
-* [Ktor GitHub page](https://github.com/ktorio/ktor)
-* [Ktor Slack chat](https://app.slack.com/client/T09229ZC6/C0A974TJ9). [Request an invite](https://surveys.jetbrains.com/s3/kotlin-slack-sign-up).
+The application exposes three domain areas over HTTP:
 
-## Features
+| Domain | Endpoints | Description |
+|--------|-----------|-------------|
+| **Users** | `POST /users`, `GET /users/{id}`, `PUT /users/{id}`, `DELETE /users/{id}` | CRUD with request validation and event publishing |
+| **Plant Identification** | `GET /api/plants`, `GET /api/plants/{id}`, `POST /api/plant-identification` | Identify plants from uploaded images via an external Florin service |
+| **Wallets** | `GET /api/wallets/{id}`, `GET /api/wallets/topup` | Wallet lookups and top-up requests with event-driven balance changes |
 
-Here's a list of features included in this project:
+Every write operation publishes domain events (through Redis-backed event publishers) for downstream consumers.
 
-| Name                                                                                  | Description                                                                        |
-|---------------------------------------------------------------------------------------|------------------------------------------------------------------------------------|
-| [Content Negotiation](https://start.ktor.io/p/io.ktor/server-content-negotiation)     | Provides automatic content conversion according to Content-Type and Accept headers |
-| [kotlinx.serialization](https://start.ktor.io/p/io.ktor/server-kotlinx-serialization) | Handles JSON serialization using kotlinx.serialization library                     |
-| [PostgreSQL](https://start.ktor.io/p/org.jetbrains/server-postgres)                   | Adds Postgres database support                                                     |
-| [Exposed](https://start.ktor.io/p/org.jetbrains/server-exposed)                       | Adds Exposed database to your application                                          |
-| [Status Pages](https://start.ktor.io/p/io.ktor/server-status-pages)                   | Provides exception handling for routes                                             |
+## Architecture
 
-## Building & Running
-
-To build or run the project, use one of the following tasks:
-
-| Task | Description |
-|------|-------------|
-
-If the server starts successfully, you'll see the following output:
+**Ports & Adapters (Hexagonal)** in the root app:
 
 ```
-2024-12-04 14:32:45.584 [main] INFO  Application - Application started in 0.303 seconds.
-2024-12-04 14:32:45.682 [main] INFO  Application - Responding at http://0.0.0.0:8080
+controllers/   → HTTP routes (driving adapters), @Singleton implementing KtorController
+domain/        → Business logic, entities, repository ports (interfaces). NO framework deps.
+infra/         → Infrastructure implementations (driven adapters), e.g. infra/persistence/*
+libs/          → Minimal local helpers; most shared code lives in ktor-batterypack-*
 ```
+
+**Dependency rule**: `controllers` → `domain` ← `infra`
+
+## Monorepo
+
+Root `ktor-frame` embeds reusable `ktor-batterypack-*` libraries:
+
+| Library | Purpose |
+|---------|---------|
+| `ktor-batterypack-core` | Config loader, health, exceptions, DI lifecycle, multipart, Jackson, controller auto-registration |
+| `ktor-batterypack-database` | Exposed + Hikari + monitored transactions |
+| `ktor-batterypack-metrics` | Micrometer + Prometheus |
+| `ktor-batterypack-redis` | Lettuce client |
+| `ktor-batterypack-database-testing` | Testcontainers PostgreSQL helper |
+| `ktor-batterypack-redis-testing` | Testcontainers Redis helper |
+| `ktor-batterypack-gradle-plugin` | Custom Gradle plugin (`dockerDist`, `bootstrapDockerfile`, `bootstrapDockerignore`) |
+
+## Tech Stack
+
+- **Runtime**: Ktor 3.4 + Kotlin 2.3 + JVM 25
+- **DI**: Koin 4.2 with annotations
+- **Database**: PostgreSQL + Exposed 1.2 (v1 API) + HikariCP
+- **Cache/Events**: Redis (Lettuce)
+- **Serialization**: Jackson 3 + kotlinx.serialization
+- **Config**: Hoplite (YAML + env vars)
+- **Testing**: JUnit 5 + AssertJ + Mockito-Kotlin + Testcontainers
+- **Metrics**: Micrometer + Prometheus
+
+## Prerequisites
+
+- **JDK 25** (Temurin recommended)
+- **Docker + Docker Compose** (for PostgreSQL, Redis, and integration tests)
+
+## Quick Start
+
+```bash
+# 1. Start PostgreSQL and Redis
+docker-compose up -d
+
+# 2. Run the dev server
+./gradlew run
+```
+
+Server starts at `http://localhost:8080`.
+
+Default database connection: `jdbc:postgresql://localhost:5432/ktordb` (user: `ktor` / `ktorpassword`).
+
+## Build & Package
+
+```bash
+# Full build (compile, test, dockerDist)
+./gradlew build
+
+# Docker distribution (separated app/dependency layers)
+./gradlew dockerDist
+
+# Bootstrap Dockerfile / .dockerignore
+./gradlew bootstrapDockerfile bootstrapDockerignore
+```
+
+`assemble` depends on `dockerDist`, so `./gradlew build` always produces the Docker distribution.
+
+## Testing
+
+```bash
+# All tests
+./gradlew test
+
+# Single test class
+./gradlew test --tests "io.github.kperczynski.controllers.UserControllerIT"
+```
+
+**Integration tests** extend `KtorBatteriesIT`, which spins up shared Testcontainers **PostgreSQL + Redis** once per JVM. Beans are injected via `application.koin().get<...>()`.
+
+## Configuration
+
+Uses **Hoplite** with precedence (highest first):
+
+1. Environment variables (`UPPER_CASE_WITH_UNDERSCORES`)
+2. System properties (`config.override.*`)
+3. `application-{profile}.yaml` (profile-specific, reversed order for last-wins)
+4. `application.yaml` (committed defaults)
+
+`application-local.yaml` is gitignored. Example: `DATABASE_URL=jdbc:postgresql://...`
+
+Active profiles are selected via the `APP_PROFILES` environment variable.
+
+## Adding a Feature
+
+1. **Domain** (`domain/`): Define entity + repository interface (port) + service if needed
+2. **Infra** (`infra/persistence/`): Implement repository using Exposed + `@Singleton` + `InitCallback` for schema creation
+3. **Controller** (`controllers/`): Add HTTP routes as `@Singleton` implementing `KtorController`
+
+No manual DI binding is required if the implementation is under `io.github.kperczynski` and annotated with `@Singleton`.
+
+## Key Project Files
+
+| File | Purpose |
+|------|---------|
+| `KtorFrameApplicationServer.kt` | Ktor app wiring (`configureKtorServer`) |
+| `infra/KtorFrameApp.kt` | Root Koin application + module scan |
+| `infra/KtorFrameProps.kt` | Aggregated application config (`AppProps`) |
+| `main.kt` | Entry point (`EngineMain`) |
+
+## CI / Deploy
+
+- GitHub Actions runs `./gradlew build` on every PR/push to `main` with Java 25 (Temurin).
+- On `main` merges, a multi-arch Docker image is built and pushed to `ghcr.io`.
+- On tags, `./gradlew publish` pushes Maven packages to GitHub Packages (`ktor-batterypack-*`).
