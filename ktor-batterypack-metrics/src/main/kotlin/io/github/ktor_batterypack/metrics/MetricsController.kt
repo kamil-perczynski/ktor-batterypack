@@ -1,4 +1,4 @@
-package io.github.kperczynski.libs.metrics
+package io.github.ktor_batterypack.metrics
 
 import io.github.ktor_batterypack.core.ktor.KtorController
 import io.ktor.http.ContentType
