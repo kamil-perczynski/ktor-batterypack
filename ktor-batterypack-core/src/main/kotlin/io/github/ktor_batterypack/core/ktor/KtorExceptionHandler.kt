@@ -1,9 +1,9 @@
-package io.github.kperczynski.libs.ktor
+package io.github.ktor_batterypack.core.ktor
 
-import io.github.kperczynski.libs.exception.ErrorCodeException
-import io.github.kperczynski.libs.exception.ResourceMissingException
-import io.github.kperczynski.libs.exception.ValidationException
-import io.github.kperczynski.libs.problemdetail.ProblemDetail
+import io.github.ktor_batterypack.core.exception.ErrorCodeException
+import io.github.ktor_batterypack.core.exception.ResourceMissingException
+import io.github.ktor_batterypack.core.exception.ValidationException
+import io.github.ktor_batterypack.core.problemdetail.ProblemDetail
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.plugins.statuspages.StatusPagesConfig
 import io.ktor.server.request.uri

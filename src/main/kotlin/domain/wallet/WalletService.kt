@@ -1,7 +1,7 @@
 package io.github.kperczynski.domain.wallet
 
-import io.github.kperczynski.libs.exception.ErrorCodeException
-import io.github.kperczynski.libs.exception.ResourceMissingException
+import io.github.ktor_batterypack.core.exception.ErrorCodeException
+import io.github.ktor_batterypack.core.exception.ResourceMissingException
 import org.koin.core.annotation.Singleton
 import org.slf4j.LoggerFactory
 import java.math.BigDecimal

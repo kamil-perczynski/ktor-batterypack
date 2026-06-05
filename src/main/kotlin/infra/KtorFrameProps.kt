@@ -8,9 +8,9 @@ import com.sksamuel.hoplite.sources.EnvironmentVariablesPropertySource
 import com.sksamuel.hoplite.sources.SystemPropertiesPropertySource
 import io.github.kperczynski.infra.client.FlorinClientProps
 import io.github.kperczynski.libs.db.DatabaseProps
-import io.github.kperczynski.libs.ktor.KtorProps
 import io.github.kperczynski.libs.ktor.multipart.MultipartProps
 import io.github.kperczynski.libs.redis.RedisProps
+import io.github.ktor_batterypack.core.ktor.KtorProps
 
 /**
  * Application configuration data class.

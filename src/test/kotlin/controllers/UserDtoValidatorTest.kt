@@ -3,7 +3,7 @@ package controllers
 import io.github.kperczynski.controllers.UserDtoValidator
 import io.github.kperczynski.domain.user.UserCreate
 import io.github.kperczynski.domain.user.UserUpdate
-import io.github.kperczynski.libs.exception.ValidationException
+import io.github.ktor_batterypack.core.exception.ValidationException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test

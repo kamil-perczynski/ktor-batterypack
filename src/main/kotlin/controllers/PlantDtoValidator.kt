@@ -1,7 +1,7 @@
 package io.github.kperczynski.controllers
 
-import io.github.kperczynski.libs.exception.FieldError
-import io.github.kperczynski.libs.exception.ValidationException
+import io.github.ktor_batterypack.core.exception.FieldError
+import io.github.ktor_batterypack.core.exception.ValidationException
 import io.konform.validation.Validation
 import io.konform.validation.jsonschema.minLength
 import org.koin.core.annotation.Singleton

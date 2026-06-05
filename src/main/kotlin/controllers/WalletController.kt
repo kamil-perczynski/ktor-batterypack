@@ -1,7 +1,7 @@
 package io.github.kperczynski.controllers
 
 import io.github.kperczynski.domain.wallet.WalletService
-import io.github.kperczynski.libs.ktor.KtorController
+import io.github.ktor_batterypack.core.ktor.KtorController
 import io.ktor.http.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*

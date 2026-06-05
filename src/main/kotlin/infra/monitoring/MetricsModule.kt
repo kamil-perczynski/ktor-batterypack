@@ -1,6 +1,6 @@
 package io.github.kperczynski.infra.monitoring
 
-import io.github.kperczynski.libs.ktor.KtorController
+import io.github.ktor_batterypack.core.ktor.KtorController
 import io.github.kperczynski.libs.metrics.MetricsController
 import io.ktor.server.application.Application
 import io.micrometer.core.instrument.MeterRegistry

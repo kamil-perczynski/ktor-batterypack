@@ -1,6 +1,6 @@
 package io.github.kperczynski.infra
 
-import io.github.kperczynski.libs.Closer
+import io.github.ktor_batterypack.core.Closer
 import io.github.kperczynski.libs.redis.FetcherProps
 import io.github.kperczynski.libs.redis.RedisProps
 import io.github.kperczynski.libs.redis.RedisStreamFetcher

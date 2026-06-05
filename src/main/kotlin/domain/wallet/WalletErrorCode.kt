@@ -1,6 +1,6 @@
 package io.github.kperczynski.domain.wallet
 
-import io.github.kperczynski.libs.exception.ErrorCode
+import io.github.ktor_batterypack.core.exception.ErrorCode
 
 enum class WalletErrorCode(override val message: String) : ErrorCode {
     MISSING_WALLET_OR_USER("Either walletId or userId must be provided"),
