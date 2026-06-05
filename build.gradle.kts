@@ -28,7 +28,7 @@ tasks.test {
 }
 
 group = "io.github.kperczynski"
-version = "1.0.0-SNAPSHOT"
+version = "0.0.1-alpha"
 
 allprojects {
     group = rootProject.group
