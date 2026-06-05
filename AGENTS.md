@@ -155,7 +155,8 @@ post("/users") {
 |------|---------|
 | `KtorFrameApplicationServer.kt` | Ktor app config, Koin init, routing, exception handling |
 | `infra/KtorFrameApp.kt` | Koin DI module with `@ComponentScan` and explicit submodules |
-| `infra/KtorFrameProps.kt` | Hoplite config loading with env var support |
+| `infra/KtorFrameProps.kt` | Application config aggregate (`AppProps`) |
+| `core/config/ConfigLoader.kt` | Generic Hoplite config loader with env var support |
 | `domain/*/*Repo.kt` | Repository PORT (interface) |
 | `infra/persistence/*/*Repo.kt` | Repository implementation with `@Singleton` |
 | `main.kt` | Entry point (delegates to `EngineMain`) |

@@ -3,7 +3,7 @@ package io.github.kperczynski.infra.client
 import tools.jackson.databind.JsonNode
 import io.github.kperczynski.domain.plant.model.PlantDto
 import io.github.kperczynski.domain.plant.PlantIdentificationClient
-import io.github.kperczynski.libs.ktor.multipart.MultipartUpload
+import io.github.ktor_batterypack.core.multipart.MultipartUpload
 import io.github.ktor_batterypack.metrics.client.pathPattern
 import io.ktor.client.*
 import io.ktor.client.call.*

@@ -1,4 +1,4 @@
-package io.github.kperczynski.libs.ktor.multipart
+package io.github.ktor_batterypack.core.multipart
 
 import io.ktor.http.*
 import io.ktor.http.content.*

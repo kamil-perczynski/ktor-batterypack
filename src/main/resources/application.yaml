@@ -4,6 +4,11 @@ ktor:
   application:
     modules:
       - io.github.kperczynski.KtorFrameApplicationServerKt.configureServer
+  banner: |
+    #
+    #    ▌ ▗       ▐▘
+    #    ▙▘▜▘▛▌▛▘▄▖▜▘▛▘▀▌▛▛▌█▌
+    #    ▛▖▐▖▙▌▌   ▐ ▌ █▌▌▌▌▙▖
 
 database:
   url: jdbc:postgresql://localhost:5432/ktordb
@@ -14,10 +19,3 @@ database:
 florin:
   baseUrl: "https://florin-be.k8s.kperczynski.click"
   timeoutMs: 30000
-
-banner: |
-  #
-  #    ▌ ▗       ▐▘         
-  #    ▙▘▜▘▛▌▛▘▄▖▜▘▛▘▀▌▛▛▌█▌
-  #    ▛▖▐▖▙▌▌   ▐ ▌ █▌▌▌▌▙▖
-  #

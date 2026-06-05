@@ -1,62 +1,13 @@
 package io.github.kperczynski.infra
 
-import com.sksamuel.hoplite.ConfigLoaderBuilder
-import com.sksamuel.hoplite.ExperimentalHoplite
-import com.sksamuel.hoplite.addFileSource
-import com.sksamuel.hoplite.addResourceOrFileSource
-import com.sksamuel.hoplite.sources.EnvironmentVariablesPropertySource
-import com.sksamuel.hoplite.sources.SystemPropertiesPropertySource
 import io.github.kperczynski.infra.client.FlorinClientProps
 import io.github.kperczynski.libs.db.DatabaseProps
-import io.github.kperczynski.libs.ktor.multipart.MultipartProps
 import io.github.kperczynski.libs.redis.RedisProps
 import io.github.ktor_batterypack.core.ktor.KtorProps
 
-/**
- * Application configuration data class.
- * Uses Hoplite for type-safe configuration loading from YAML and environment variables.
- */
 data class AppProps(
     val ktor: KtorProps = KtorProps(),
-    val banner: String? = null,
     val database: DatabaseProps = DatabaseProps(),
     val florin: FlorinClientProps = FlorinClientProps(),
-    val multipart: MultipartProps = MultipartProps(),
     val redis: RedisProps = RedisProps()
 )
-
-@OptIn(ExperimentalHoplite::class)
-fun loadConfig(profiles: List<String>, includeSystemProperties: Boolean = true): AppProps {
-    val source = ConfigLoaderBuilder.empty()
-        .addDefaultDecoders()
-        .addDefaultParsers()
-        .addDefaultPreprocessors()
-        .addDefaultNodeTransformers()
-        .addDefaultParamMappers()
-        .addSource(
-            EnvironmentVariablesPropertySource(
-                useUnderscoresAsSeparator = true,
-                allowUppercaseNames = true
-            )
-        )
-
-    if (includeSystemProperties) {
-        source.addSource(SystemPropertiesPropertySource())
-    }
-
-    for (profile in profiles.reversed()) {
-        source.addFileSource("application-$profile.yaml", optional = true)
-    }
-
-    for (profile in profiles.reversed()) {
-        source.addResourceOrFileSource("/application-$profile.yaml", optional = true)
-    }
-
-    source.addFileSource("application.yaml", optional = true)
-    source.addResourceOrFileSource("/application.yaml", optional = true)
-
-    return source
-        .withExplicitSealedTypes()
-        .build()
-        .loadConfigOrThrow()
-}
