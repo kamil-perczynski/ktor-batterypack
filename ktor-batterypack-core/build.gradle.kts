@@ -3,6 +3,7 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.koin.compiler)
+    `maven-publish`
 }
 
 // Required because Java 24+ (JEP 472) restricts System::load/loadLibrary.
@@ -25,11 +26,31 @@ tasks.test {
     }
 }
 
-group = "io.github.kperczynski"
-version = "1.0.0-SNAPSHOT"
-
 kotlin {
     jvmToolchain(25)
+}
+
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
+        }
+    }
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/kamil-perczynski/ktor-batterypack")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
 }
 
 dependencies {

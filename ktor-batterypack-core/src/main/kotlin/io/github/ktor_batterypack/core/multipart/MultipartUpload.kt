@@ -2,6 +2,13 @@ package io.github.ktor_batterypack.core.multipart
 
 import io.ktor.http.*
 
+/**
+ * Represents a single file extracted from a multipart request.
+ *
+ * @property filename The original name of the uploaded file.
+ * @property contentType The MIME type of the file, or null if unknown.
+ * @property bytes The raw file contents as a byte array.
+ */
 data class MultipartUpload(
     val filename: String,
     val contentType: ContentType?,

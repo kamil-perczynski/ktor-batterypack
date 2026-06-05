@@ -14,9 +14,17 @@ import tools.jackson.databind.json.JsonMapper
 
 private val log = LoggerFactory.getLogger(KtorExceptionHandler::class.java)
 
+/**
+ * Global exception handler that maps common exceptions to RFC 7807 [ProblemDetail] responses.
+ *
+ * @property jsonMapper Jackson mapper used for serializing error details.
+ */
 @Singleton
 class KtorExceptionHandler(private val jsonMapper: JsonMapper) {
 
+    /**
+     * Registers all exception handlers on the given [StatusPagesConfig].
+     */
     fun register(it: StatusPagesConfig) {
         registerResourceMissing(it)
         registerErrorCodeException(it)

@@ -16,6 +16,11 @@ import org.koin.ktor.plugin.KoinApplicationStopPreparing
 import org.koin.ktor.plugin.koin
 import tools.jackson.databind.json.JsonMapper
 
+/**
+ * Configures the Ktor application with Koin, exception handling, content negotiation, and controller routes.
+ *
+ * @param koinFn Callback to initialize the Koin application with resolved profiles.
+ */
 fun Application.configureKtorServer(koinFn: KoinApplication.(profiles: String) -> Unit) {
     monitor.subscribe(KoinApplicationStarted) {
         log.debug("Application has started. Notifying lifecycle listener")

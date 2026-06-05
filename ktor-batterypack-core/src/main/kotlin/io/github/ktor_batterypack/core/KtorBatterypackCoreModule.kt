@@ -17,6 +17,9 @@ import tools.jackson.databind.cfg.DateTimeFeature
 import tools.jackson.databind.json.JsonMapper
 import tools.jackson.module.kotlin.KotlinModule
 
+/**
+ * Core Koin module providing beans for JSON mapping, lifecycle, health, multipart, and banner.
+ */
 @Module
 @ComponentScan("io.github.ktor_batterypack.core")
 @Configuration
