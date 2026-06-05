@@ -1,5 +1,6 @@
 package io.github.ktor_batterypack.core
 
+import io.github.ktor_batterypack.core.di.BannerPrinter
 import io.github.ktor_batterypack.core.di.InitCallback
 import io.github.ktor_batterypack.core.di.KoinLifecycleListener
 import io.github.ktor_batterypack.core.di.LifecycleListener
@@ -8,6 +9,9 @@ import io.github.ktor_batterypack.core.health.HealthController
 import io.github.ktor_batterypack.core.health.ReadinessCheck
 import io.github.ktor_batterypack.core.health.ReadinessEndpoint
 import io.github.ktor_batterypack.core.ktor.KtorController
+import io.github.ktor_batterypack.core.ktor.KtorProps
+import io.github.ktor_batterypack.core.multipart.MultipartParser
+import io.github.ktor_batterypack.core.multipart.MultipartProps
 import org.koin.core.annotation.*
 import tools.jackson.databind.cfg.DateTimeFeature
 import tools.jackson.databind.json.JsonMapper
@@ -47,6 +51,21 @@ class KtorBatterypackCoreModule {
     @Singleton(binds = [KtorController::class])
     fun healthController(readinessEndpoint: ReadinessEndpoint): HealthController {
         return HealthController(readinessEndpoint)
+    }
+
+    @Singleton
+    fun multipartProps(@Provided ktorProps: KtorProps): MultipartProps {
+        return ktorProps.multipart
+    }
+
+    @Singleton
+    fun multipartParser(props: MultipartProps): MultipartParser {
+        return MultipartParser(props)
+    }
+
+    @Singleton(binds = [InitCallback::class])
+    fun bannerPrinter(@Provided ktorProps: KtorProps): BannerPrinter {
+        return BannerPrinter(ktorProps.banner)
     }
 
 }

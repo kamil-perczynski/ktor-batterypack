@@ -41,6 +41,9 @@ dependencies {
     implementation(libs.jackson.databind)
     implementation(libs.jackson.module.kotlin)
 
+    implementation(libs.hoplite.core)
+    implementation(libs.hoplite.yaml)
+
     implementation(libs.koin.annotations)
     implementation(libs.koin.core)
     implementation(libs.koin.ktor)

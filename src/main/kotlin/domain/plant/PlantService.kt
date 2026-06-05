@@ -3,7 +3,7 @@ package io.github.kperczynski.domain.plant
 import io.github.kperczynski.domain.plant.model.Plant
 import io.github.kperczynski.domain.plant.model.PlantDto
 import io.github.kperczynski.domain.plant.model.PlantListing
-import io.github.kperczynski.libs.ktor.multipart.MultipartUpload
+import io.github.ktor_batterypack.core.multipart.MultipartUpload
 import org.koin.core.annotation.Singleton
 import org.slf4j.LoggerFactory
 

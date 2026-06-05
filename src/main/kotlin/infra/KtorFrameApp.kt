@@ -1,16 +1,14 @@
 package io.github.kperczynski.infra
 
 import io.github.kperczynski.infra.florin.FlorinModule
+import io.github.ktor_batterypack.core.KtorBatterypackCoreModule
+import io.github.ktor_batterypack.core.config.loadConfig
+import io.github.ktor_batterypack.core.ktor.KtorProps
 import io.github.ktor_batterypack.metrics.MetricsModule
 import io.github.kperczynski.infra.persistence.DatabaseModule
 import io.github.kperczynski.libs.db.DatabaseProps
-import io.github.kperczynski.libs.ktor.multipart.MultipartParser
-import io.github.kperczynski.libs.ktor.multipart.MultipartProps
 import io.github.kperczynski.libs.redis.RedisModule
 import io.github.kperczynski.libs.redis.RedisProps
-import io.github.ktor_batterypack.core.KtorBatterypackCoreModule
-import io.github.ktor_batterypack.core.di.BannerPrinter
-import io.github.ktor_batterypack.core.di.InitCallback
 import org.koin.core.annotation.*
 import org.slf4j.LoggerFactory
 
@@ -51,18 +49,8 @@ class KtorFrameModule {
     }
 
     @Singleton
-    fun multipartProps(appProps: AppProps): MultipartProps {
-        return appProps.multipart
-    }
-
-    @Singleton
-    fun multipartParser(props: MultipartProps): MultipartParser {
-        return MultipartParser(props)
-    }
-
-    @Singleton(binds = [InitCallback::class])
-    fun bannerPrinter(appProps: AppProps): BannerPrinter {
-        return BannerPrinter(appProps.banner)
+    fun ktorProps(appProps: AppProps): KtorProps {
+        return appProps.ktor
     }
 
 }
