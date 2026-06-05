@@ -1,4 +1,4 @@
-package io.github.kperczynski.libs.redis.monitoring
+package io.github.ktor_batterypack.redis.monitoring
 
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry

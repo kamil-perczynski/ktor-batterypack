@@ -1,4 +1,4 @@
-package io.github.kperczynski.libs
+package io.github.ktor_batterypack.redis.testing
 
 import org.testcontainers.containers.GenericContainer
 

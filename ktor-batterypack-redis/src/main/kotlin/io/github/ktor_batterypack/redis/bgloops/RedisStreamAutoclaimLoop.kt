@@ -1,16 +1,17 @@
-package io.github.kperczynski.libs.redis.bgloops
+package io.github.ktor_batterypack.redis.bgloops
 
-import io.github.kperczynski.libs.redis.LoopHandle
-import io.github.kperczynski.libs.redis.RedisProps
-import io.github.kperczynski.libs.redis.RedisStreamListener
-import io.github.kperczynski.libs.redis.RedisStreamsBackgroundLoop
-import io.github.kperczynski.libs.redis.monitoring.RedisStreamMetrics
+import io.github.ktor_batterypack.redis.LoopHandle
+import io.github.ktor_batterypack.redis.RedisProps
+import io.github.ktor_batterypack.redis.RedisStreamListener
+import io.github.ktor_batterypack.redis.RedisStreamsBackgroundLoop
+import io.github.ktor_batterypack.redis.monitoring.RedisStreamMetrics
 import io.lettuce.core.Consumer
 import io.lettuce.core.RedisClient
 import io.lettuce.core.XAutoClaimArgs
 import io.lettuce.core.models.stream.ClaimedMessages
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.await
+import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Singleton
 import org.slf4j.LoggerFactory
 import kotlin.time.Duration.Companion.milliseconds
@@ -22,7 +23,7 @@ class RedisStreamAutoclaimLoop(
     private val redisClient: RedisClient,
     private val messageProcessor: StreamMessageProcessor,
     private val metrics: RedisStreamMetrics,
-    private val redisProps: RedisProps,
+    @Provided private val redisProps: RedisProps,
 ) : RedisStreamsBackgroundLoop {
 
     override fun start(

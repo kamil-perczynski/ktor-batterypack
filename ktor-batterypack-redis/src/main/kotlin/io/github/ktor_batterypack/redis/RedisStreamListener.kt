@@ -1,4 +1,4 @@
-package io.github.kperczynski.libs.redis
+package io.github.ktor_batterypack.redis
 
 interface RedisStreamListener {
 

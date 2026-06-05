@@ -2,8 +2,8 @@ package io.github.kperczynski.infra
 
 import io.github.kperczynski.domain.wallet.WALLET_EVENTS_TOPIC
 import io.github.kperczynski.domain.wallet.WalletEvent
-import io.github.kperczynski.libs.redis.RedisStreamListener
-import io.github.kperczynski.libs.redis.RedisStreamListenerGroups.Companion.TEST_GROUP
+import io.github.ktor_batterypack.redis.RedisStreamListener
+import io.github.ktor_batterypack.redis.RedisStreamListenerGroups.Companion.TEST_GROUP
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.withTimeoutOrNull
 import org.koin.core.annotation.Singleton

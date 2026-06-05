@@ -1,7 +1,7 @@
-package io.github.kperczynski.libs.redis.bgloops
+package io.github.ktor_batterypack.redis.bgloops
 
-import io.github.kperczynski.libs.redis.RedisStreamListener
-import io.github.kperczynski.libs.redis.monitoring.RedisStreamMetrics
+import io.github.ktor_batterypack.redis.RedisStreamListener
+import io.github.ktor_batterypack.redis.monitoring.RedisStreamMetrics
 import io.lettuce.core.StreamMessage
 import io.lettuce.core.api.StatefulRedisConnection
 import kotlinx.coroutines.CancellationException

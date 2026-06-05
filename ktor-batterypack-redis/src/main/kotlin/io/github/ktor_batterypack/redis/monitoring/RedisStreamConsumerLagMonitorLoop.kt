@@ -1,13 +1,14 @@
-package io.github.kperczynski.libs.redis.monitoring
+package io.github.ktor_batterypack.redis.monitoring
 
-import io.github.kperczynski.libs.redis.LoopHandle
-import io.github.kperczynski.libs.redis.RedisProps
-import io.github.kperczynski.libs.redis.RedisStreamListener
-import io.github.kperczynski.libs.redis.RedisStreamsBackgroundLoop
-import io.github.kperczynski.libs.redis.bgloops.toXInfoResultDto
+import io.github.ktor_batterypack.redis.LoopHandle
+import io.github.ktor_batterypack.redis.RedisProps
+import io.github.ktor_batterypack.redis.RedisStreamListener
+import io.github.ktor_batterypack.redis.RedisStreamsBackgroundLoop
+import io.github.ktor_batterypack.redis.bgloops.toXInfoResultDto
 import io.lettuce.core.RedisClient
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.await
+import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Singleton
 import org.slf4j.LoggerFactory
 import kotlin.time.Duration.Companion.milliseconds
@@ -18,7 +19,7 @@ private val log = LoggerFactory.getLogger(RedisStreamConsumerLagMonitorLoop::cla
 class RedisStreamConsumerLagMonitorLoop(
     private val redisClient: RedisClient,
     private val metrics: RedisStreamMetrics,
-    private val redisProps: RedisProps,
+    @Provided private val redisProps: RedisProps,
 ) : RedisStreamsBackgroundLoop {
 
     override fun start(

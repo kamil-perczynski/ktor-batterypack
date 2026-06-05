@@ -1,6 +1,6 @@
 package io.github.kperczynski.domain.user
 
-import io.github.kperczynski.libs.redis.RedisStreamPublisher
+import io.github.ktor_batterypack.redis.RedisStreamPublisher
 import org.koin.core.annotation.Singleton
 
 const val USER_EVENTS_TOPIC = "user_events"

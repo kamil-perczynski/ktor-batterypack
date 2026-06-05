@@ -42,6 +42,7 @@ kotlin {
 dependencies {
     implementation(project(":ktor-batterypack-core"))
     implementation(project(":ktor-batterypack-metrics"))
+    implementation(project(":ktor-batterypack-redis"))
 
     implementation(ktorLibs.serialization.jackson3)
     implementation(ktorLibs.server.config.yaml)
@@ -71,7 +72,7 @@ dependencies {
     implementation(libs.koin.core)
     implementation(libs.koin.ktor)
     implementation(libs.logback.classic)
-    implementation(libs.lettuce.core)
+
     implementation(libs.postgresql)
 
     testImplementation(platform(libs.junit.bom))
@@ -79,6 +80,7 @@ dependencies {
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.kotlin)
     testImplementation(kotlin("test"))
+    testImplementation(project(":ktor-batterypack-redis-testing"))
     testImplementation(ktorLibs.server.testHost)
     testImplementation(ktorLibs.client.mock)
     testImplementation(libs.testcontainers)

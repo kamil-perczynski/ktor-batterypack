@@ -1,19 +1,23 @@
-package io.github.kperczynski.infra.florin
+package io.github.ktor_batterypack.redis.testing
 
 import io.github.ktor_batterypack.core.di.InitCallback
-import io.github.kperczynski.libs.redis.*
-import io.github.kperczynski.libs.redis.RedisStreamListenerGroups.Companion.TEST_GROUP
-import io.github.kperczynski.libs.redis.RedisStreamsBackgroundLoop
-import io.github.kperczynski.libs.redis.monitoring.RedisStreamMetrics
+import io.github.ktor_batterypack.redis.KtorBatterypackRedisModule
+import io.github.ktor_batterypack.redis.RedisProps
+import io.github.ktor_batterypack.redis.RedisStreamFetcher
+import io.github.ktor_batterypack.redis.RedisStreamListener
+import io.github.ktor_batterypack.redis.RedisStreamListenerGroups.Companion.TEST_GROUP
+import io.github.ktor_batterypack.redis.RedisStreamsBackgroundLoop
+import io.github.ktor_batterypack.redis.monitoring.RedisStreamMetrics
 import io.lettuce.core.RedisClient
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.Module
 import org.koin.core.annotation.Named
+import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Singleton
 
 @Configuration
-@Module(includes = [RedisModule::class])
+@Module(includes = [KtorBatterypackRedisModule::class])
 class TestRedisModule {
 
     @Singleton
@@ -25,7 +29,7 @@ class TestRedisModule {
     @Named("testRedisFetcher")
     fun testRedisFetcher(
         redisClient: RedisClient,
-        redisProps: RedisProps,
+        @Provided redisProps: RedisProps,
         listeners: List<RedisStreamListener>,
         loops: List<RedisStreamsBackgroundLoop>,
     ): RedisStreamFetcher {

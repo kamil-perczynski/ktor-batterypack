@@ -1,15 +1,15 @@
 package io.github.kperczynski.infra
 
 import io.github.ktor_batterypack.core.Closer
-import io.github.kperczynski.libs.redis.FetcherProps
-import io.github.kperczynski.libs.redis.RedisProps
-import io.github.kperczynski.libs.redis.RedisStreamFetcher
-import io.github.kperczynski.libs.redis.RedisStreamListener
-import io.github.kperczynski.libs.redis.monitoring.RedisStreamMetrics
-import io.github.kperczynski.libs.redis.bgloops.RedisStreamAutoclaimLoop
-import io.github.kperczynski.libs.redis.bgloops.RedisStreamFetchingLoop
-import io.github.kperczynski.libs.redis.monitoring.RedisStreamConsumerLagMonitorLoop
-import io.github.kperczynski.libs.redis.bgloops.StreamMessageProcessor
+import io.github.ktor_batterypack.redis.FetcherProps
+import io.github.ktor_batterypack.redis.RedisProps
+import io.github.ktor_batterypack.redis.RedisStreamFetcher
+import io.github.ktor_batterypack.redis.RedisStreamListener
+import io.github.ktor_batterypack.redis.monitoring.RedisStreamMetrics
+import io.github.ktor_batterypack.redis.bgloops.RedisStreamAutoclaimLoop
+import io.github.ktor_batterypack.redis.bgloops.RedisStreamFetchingLoop
+import io.github.ktor_batterypack.redis.monitoring.RedisStreamConsumerLagMonitorLoop
+import io.github.ktor_batterypack.redis.bgloops.StreamMessageProcessor
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.lettuce.core.Consumer
 import io.lettuce.core.RedisClient

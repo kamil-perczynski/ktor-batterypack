@@ -7,8 +7,8 @@ import io.github.ktor_batterypack.core.ktor.KtorProps
 import io.github.ktor_batterypack.metrics.MetricsModule
 import io.github.kperczynski.infra.persistence.DatabaseModule
 import io.github.kperczynski.libs.db.DatabaseProps
-import io.github.kperczynski.libs.redis.RedisModule
-import io.github.kperczynski.libs.redis.RedisProps
+import io.github.ktor_batterypack.redis.KtorBatterypackRedisModule
+import io.github.ktor_batterypack.redis.RedisProps
 import org.koin.core.annotation.*
 import org.slf4j.LoggerFactory
 
@@ -21,7 +21,7 @@ private val log = LoggerFactory.getLogger(KtorFrameModule::class.java)
         FlorinModule::class,
         DatabaseModule::class,
         MetricsModule::class,
-        RedisModule::class
+        KtorBatterypackRedisModule::class
     ]
 )
 object KtorFrameApp

@@ -1,7 +1,8 @@
-package io.github.kperczynski.libs.redis
+package io.github.ktor_batterypack.redis
 
 import io.lettuce.core.XAddArgs
 import io.lettuce.core.api.StatefulRedisConnection
+import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Singleton
 import org.slf4j.LoggerFactory
 import tools.jackson.databind.json.JsonMapper
@@ -13,7 +14,7 @@ private val log = LoggerFactory.getLogger(RedisStreamPublisher::class.java)
 class RedisStreamPublisher(
     private val connection: StatefulRedisConnection<String, String>,
     private val jsonMapper: JsonMapper,
-    private val redisProps: RedisProps,
+    @Provided private val redisProps: RedisProps,
 ) {
 
     fun publish(
