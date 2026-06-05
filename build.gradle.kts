@@ -41,13 +41,13 @@ kotlin {
 
 dependencies {
     implementation(project(":ktor-batterypack-core"))
+    implementation(project(":ktor-batterypack-metrics"))
 
     implementation(ktorLibs.serialization.jackson3)
     implementation(ktorLibs.server.config.yaml)
     implementation(ktorLibs.server.contentNegotiation)
     implementation(ktorLibs.server.core)
     implementation(ktorLibs.server.netty)
-    implementation(libs.ktor.server.metrics.micrometer)
     implementation(ktorLibs.server.statusPages)
 
     implementation(libs.jackson.databind)
@@ -68,7 +68,6 @@ dependencies {
     implementation(libs.hoplite.yaml)
     implementation(libs.conform)
     implementation(libs.koin.annotations)
-    implementation(libs.micrometer.registry.prometheus)
     implementation(libs.koin.core)
     implementation(libs.koin.ktor)
     implementation(libs.logback.classic)

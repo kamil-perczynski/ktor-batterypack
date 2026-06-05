@@ -1,4 +1,4 @@
-package io.github.kperczynski.infra.monitoring
+package io.github.ktor_batterypack.metrics
 
 import io.ktor.server.application.Application
 import io.ktor.server.application.install

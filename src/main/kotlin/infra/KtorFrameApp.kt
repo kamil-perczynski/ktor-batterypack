@@ -1,7 +1,7 @@
 package io.github.kperczynski.infra
 
 import io.github.kperczynski.infra.florin.FlorinModule
-import io.github.kperczynski.infra.monitoring.MetricsModule
+import io.github.ktor_batterypack.metrics.MetricsModule
 import io.github.kperczynski.infra.persistence.DatabaseModule
 import io.github.kperczynski.libs.db.DatabaseProps
 import io.github.kperczynski.libs.ktor.multipart.MultipartParser

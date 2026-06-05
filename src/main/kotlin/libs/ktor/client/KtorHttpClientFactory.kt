@@ -6,6 +6,7 @@ import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
 import io.ktor.serialization.jackson3.*
+import io.github.ktor_batterypack.metrics.client.ClientMicrometerMetricsPlugin
 import io.micrometer.core.instrument.MeterRegistry
 import org.koin.core.annotation.Singleton
 import tools.jackson.databind.DeserializationFeature
