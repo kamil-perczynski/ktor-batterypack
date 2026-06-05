@@ -41,6 +41,7 @@ kotlin {
 
 dependencies {
     implementation(project(":ktor-batterypack-core"))
+    implementation(project(":ktor-batterypack-database"))
     implementation(project(":ktor-batterypack-metrics"))
     implementation(project(":ktor-batterypack-redis"))
 

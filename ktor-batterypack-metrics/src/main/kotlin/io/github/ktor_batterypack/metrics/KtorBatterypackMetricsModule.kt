@@ -12,7 +12,7 @@ import org.koin.core.annotation.Singleton
 
 @Module
 @Configuration
-class MetricsModule {
+class KtorBatterypackMetricsModule {
 
     @Singleton(binds = [MeterRegistry::class])
     fun prometheusMeterRegistry(bootstrapper: List<MeterRegistryInit>): PrometheusMeterRegistry {

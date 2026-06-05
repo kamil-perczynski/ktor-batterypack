@@ -4,13 +4,17 @@ import io.github.kperczynski.infra.florin.FlorinModule
 import io.github.ktor_batterypack.core.KtorBatterypackCoreModule
 import io.github.ktor_batterypack.core.config.loadConfig
 import io.github.ktor_batterypack.core.ktor.KtorProps
-import io.github.ktor_batterypack.metrics.MetricsModule
-import io.github.kperczynski.infra.persistence.DatabaseModule
-import io.github.kperczynski.libs.db.DatabaseProps
+import io.github.ktor_batterypack.database.DatabaseProps
+import io.github.ktor_batterypack.database.KtorBatterypackDatabaseModule
+import io.github.ktor_batterypack.database.MonitoredTransactions
+import io.github.ktor_batterypack.metrics.KtorBatterypackMetricsModule
 import io.github.ktor_batterypack.redis.KtorBatterypackRedisModule
 import io.github.ktor_batterypack.redis.RedisProps
+import io.micrometer.core.instrument.MeterRegistry
+import org.jetbrains.exposed.v1.jdbc.Database
 import org.koin.core.annotation.*
 import org.slf4j.LoggerFactory
+import javax.sql.DataSource
 
 private val log = LoggerFactory.getLogger(KtorFrameModule::class.java)
 
@@ -19,8 +23,8 @@ private val log = LoggerFactory.getLogger(KtorFrameModule::class.java)
         KtorBatterypackCoreModule::class,
         KtorFrameModule::class,
         FlorinModule::class,
-        DatabaseModule::class,
-        MetricsModule::class,
+        KtorBatterypackDatabaseModule::class,
+        KtorBatterypackMetricsModule::class,
         KtorBatterypackRedisModule::class
     ]
 )
@@ -53,4 +57,13 @@ class KtorFrameModule {
         return appProps.ktor
     }
 
+    @Singleton
+    fun database(dataSource: DataSource): Database {
+        return Database.connect(dataSource)
+    }
+
+    @Singleton
+    fun monitoredTransactions(database: Database, meterRegistry: MeterRegistry): MonitoredTransactions {
+        return MonitoredTransactions(database, meterRegistry)
+    }
 }

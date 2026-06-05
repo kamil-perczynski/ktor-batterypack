@@ -1,4 +1,4 @@
-package io.github.kperczynski.infra.persistence
+package io.github.ktor_batterypack.database
 
 import io.github.ktor_batterypack.core.health.HealthCheckResult
 import io.github.ktor_batterypack.core.health.HealthStatus
