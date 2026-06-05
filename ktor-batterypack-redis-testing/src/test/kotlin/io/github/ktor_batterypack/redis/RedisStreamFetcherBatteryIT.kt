@@ -1,20 +1,17 @@
-package io.github.kperczynski.infra
+package io.github.ktor_batterypack.redis
 
 import io.github.ktor_batterypack.core.Closer
-import io.github.ktor_batterypack.redis.FetcherProps
-import io.github.ktor_batterypack.redis.RedisProps
-import io.github.ktor_batterypack.redis.RedisStreamFetcher
-import io.github.ktor_batterypack.redis.RedisStreamListener
-import io.github.ktor_batterypack.redis.monitoring.RedisStreamMetrics
 import io.github.ktor_batterypack.redis.bgloops.RedisStreamAutoclaimLoop
 import io.github.ktor_batterypack.redis.bgloops.RedisStreamFetchingLoop
-import io.github.ktor_batterypack.redis.monitoring.RedisStreamConsumerLagMonitorLoop
 import io.github.ktor_batterypack.redis.bgloops.StreamMessageProcessor
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import io.github.ktor_batterypack.redis.monitoring.RedisStreamConsumerLagMonitorLoop
+import io.github.ktor_batterypack.redis.monitoring.RedisStreamMetrics
+import io.github.ktor_batterypack.redis.testing.RedisBatteryIT
 import io.lettuce.core.Consumer
 import io.lettuce.core.RedisClient
 import io.lettuce.core.XGroupCreateArgs
 import io.lettuce.core.XReadArgs
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
@@ -27,12 +24,13 @@ import java.util.UUID
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.time.Duration.Companion.milliseconds
 
-class RedisStreamFetcherIT : KtorBatteriesIT() {
+class RedisStreamFetcherBatteryIT : RedisBatteryIT() {
 
     private val redisClient: RedisClient = application.koin().get()
 
     private val connection = redisClient.connect()
     private val async get() = connection.async()
+
     private val closer = Closer()
 
     private val metrics = RedisStreamMetrics(SimpleMeterRegistry())

@@ -81,6 +81,7 @@ dependencies {
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.kotlin)
     testImplementation(kotlin("test"))
+    testImplementation(project(":ktor-batterypack-database-testing"))
     testImplementation(project(":ktor-batterypack-redis-testing"))
     testImplementation(ktorLibs.server.testHost)
     testImplementation(ktorLibs.client.mock)

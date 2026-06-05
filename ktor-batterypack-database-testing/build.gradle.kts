@@ -34,7 +34,7 @@ kotlin {
 }
 
 dependencies {
-    api(project(":ktor-batterypack-redis"))
+    api(project(":ktor-batterypack-database"))
 
     api(libs.testcontainers)
 
@@ -44,9 +44,6 @@ dependencies {
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
-    testImplementation(libs.assertj.core)
     testImplementation(kotlin("test"))
     testImplementation(ktorLibs.server.testHost)
-    testImplementation(libs.koin.ktor)
-    testImplementation(libs.logback.classic)
 }
