@@ -1,4 +1,4 @@
-package io.github.kperczynski.libs.health
+package io.github.ktor_batterypack.core.health
 
 data class HealthCheckResult(
     val name: String,

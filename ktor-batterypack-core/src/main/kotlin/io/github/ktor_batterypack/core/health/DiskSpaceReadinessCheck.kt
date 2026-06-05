@@ -1,8 +1,5 @@
-package io.github.kperczynski.libs.health.checks
+package io.github.ktor_batterypack.core.health
 
-import io.github.kperczynski.libs.health.HealthCheckResult
-import io.github.kperczynski.libs.health.HealthStatus
-import io.github.kperczynski.libs.health.ReadinessCheck
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory

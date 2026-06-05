@@ -1,7 +1,7 @@
 package io.github.kperczynski.libs.redis
 
 import io.github.ktor_batterypack.core.di.InitCallback
-import io.github.kperczynski.libs.health.ReadinessCheck
+import io.github.ktor_batterypack.core.health.ReadinessCheck
 import io.github.kperczynski.libs.redis.RedisStreamListenerGroups.Companion.MAIN_GROUP
 import io.github.kperczynski.libs.redis.monitoring.RedisReadinessCheck
 import io.github.kperczynski.libs.redis.monitoring.RedisStreamMetrics

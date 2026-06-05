@@ -1,4 +1,4 @@
-package io.github.kperczynski.libs.health
+package io.github.ktor_batterypack.core.health
 
 class ReadinessEndpoint(private val checks: List<ReadinessCheck>) {
 
