@@ -1,8 +1,8 @@
 package io.github.kperczynski.infra
 
 import io.github.kperczynski.domain.user.USER_EVENTS_TOPIC
-import io.github.kperczynski.libs.redis.RedisStreamListener
-import io.github.kperczynski.libs.redis.RedisStreamListenerGroups.Companion.TEST_GROUP
+import io.github.ktor_batterypack.redis.RedisStreamListener
+import io.github.ktor_batterypack.redis.RedisStreamListenerGroups.Companion.TEST_GROUP
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.withTimeoutOrNull
 import org.koin.core.annotation.Singleton

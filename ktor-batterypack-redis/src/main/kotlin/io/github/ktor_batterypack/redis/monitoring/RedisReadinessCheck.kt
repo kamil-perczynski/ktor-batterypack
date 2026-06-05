@@ -1,4 +1,4 @@
-package io.github.kperczynski.libs.redis.monitoring
+package io.github.ktor_batterypack.redis.monitoring
 
 import io.github.ktor_batterypack.core.health.HealthCheckResult
 import io.github.ktor_batterypack.core.health.HealthStatus

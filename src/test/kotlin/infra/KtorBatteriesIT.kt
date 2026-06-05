@@ -3,7 +3,7 @@ package io.github.kperczynski.infra
 import io.github.kperczynski.TestKtorFrameApp
 import io.github.ktor_batterypack.core.configureKtorServer
 import io.github.kperczynski.libs.PostgresTestContainer
-import io.github.kperczynski.libs.RedisTestContainer
+import io.github.ktor_batterypack.redis.testing.RedisTestContainer
 import io.ktor.client.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*

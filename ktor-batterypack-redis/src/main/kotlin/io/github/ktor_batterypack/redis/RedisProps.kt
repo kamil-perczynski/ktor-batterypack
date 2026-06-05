@@ -1,4 +1,4 @@
-package io.github.kperczynski.libs.redis
+package io.github.ktor_batterypack.redis
 
 data class RedisProps(
     val url: String = "redis://localhost:6379",
