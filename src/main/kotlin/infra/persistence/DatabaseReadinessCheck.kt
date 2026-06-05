@@ -1,8 +1,8 @@
-package io.github.kperczynski.libs.health.checks
+package io.github.kperczynski.infra.persistence
 
-import io.github.kperczynski.libs.health.HealthCheckResult
-import io.github.kperczynski.libs.health.HealthStatus
-import io.github.kperczynski.libs.health.ReadinessCheck
+import io.github.ktor_batterypack.core.health.HealthCheckResult
+import io.github.ktor_batterypack.core.health.HealthStatus
+import io.github.ktor_batterypack.core.health.ReadinessCheck
 import org.slf4j.LoggerFactory
 import javax.sql.DataSource
 

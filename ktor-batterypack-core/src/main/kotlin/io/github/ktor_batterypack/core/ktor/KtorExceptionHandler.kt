@@ -4,13 +4,12 @@ import io.github.ktor_batterypack.core.exception.ErrorCodeException
 import io.github.ktor_batterypack.core.exception.ResourceMissingException
 import io.github.ktor_batterypack.core.exception.ValidationException
 import io.github.ktor_batterypack.core.problemdetail.ProblemDetail
-import io.ktor.http.HttpStatusCode
-import io.ktor.server.plugins.statuspages.StatusPagesConfig
-import io.ktor.server.request.uri
-import io.ktor.server.response.respond
+import io.ktor.http.*
+import io.ktor.server.plugins.statuspages.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
 import org.koin.core.annotation.Singleton
 import org.slf4j.LoggerFactory
-import tools.jackson.databind.JsonNode
 import tools.jackson.databind.json.JsonMapper
 
 private val log = LoggerFactory.getLogger(KtorExceptionHandler::class.java)

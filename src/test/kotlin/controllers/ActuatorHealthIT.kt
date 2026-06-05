@@ -1,9 +1,9 @@
 package io.github.kperczynski.controllers
 
 import io.github.kperczynski.infra.KtorBatteriesIT
-import io.github.kperczynski.libs.health.HealthStatus
-import io.github.kperczynski.libs.health.LivenessResponse
-import io.github.kperczynski.libs.health.ReadinessResponse
+import io.github.ktor_batterypack.core.health.HealthStatus
+import io.github.ktor_batterypack.core.health.LivenessResponse
+import io.github.ktor_batterypack.core.health.ReadinessResponse
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*

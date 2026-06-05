@@ -1,8 +1,8 @@
 package io.github.kperczynski.libs.redis.monitoring
 
-import io.github.kperczynski.libs.health.HealthCheckResult
-import io.github.kperczynski.libs.health.HealthStatus
-import io.github.kperczynski.libs.health.ReadinessCheck
+import io.github.ktor_batterypack.core.health.HealthCheckResult
+import io.github.ktor_batterypack.core.health.HealthStatus
+import io.github.ktor_batterypack.core.health.ReadinessCheck
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.coroutines
