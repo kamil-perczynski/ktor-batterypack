@@ -12,11 +12,13 @@ private val log = LoggerFactory.getLogger(DiskSpaceReadinessCheck::class.java)
 @Suppress("ObjectPropertyName")
 private const val _100MB = 1024 * 1024 * 100L
 
+/** Readiness check that verifies the available disk space at a given path exceeds a threshold. */
 class DiskSpaceReadinessCheck(
     private val path: Path = FileSystems.getDefault().getPath(".").toAbsolutePath().normalize(),
     private val thresholdBytes: Long = _100MB
 ) : ReadinessCheck {
 
+    /** Checks the available disk space at the configured path. */
     override suspend fun check(): HealthCheckResult {
         val status = try {
             val fileStore = withContext(Dispatchers.IO) {

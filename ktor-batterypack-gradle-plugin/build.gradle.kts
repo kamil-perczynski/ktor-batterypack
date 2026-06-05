@@ -4,6 +4,9 @@ plugins {
     `maven-publish`
 }
 
+group = "io.github.kperczynski"
+version = "1.0.0-SNAPSHOT"
+
 repositories {
     mavenCentral()
     gradlePluginPortal()
@@ -11,6 +14,11 @@ repositories {
 
 kotlin {
     jvmToolchain(25)
+}
+
+java {
+    withJavadocJar()
+    withSourcesJar()
 }
 
 gradlePlugin {
@@ -23,7 +31,19 @@ gradlePlugin {
 }
 
 publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
+        }
+    }
     repositories {
-        mavenLocal()
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/kamil-perczynski/ktor-batterypack")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
     }
 }

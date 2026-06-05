@@ -6,8 +6,10 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
 
+/** Ktor controller that exposes liveness and readiness health endpoints. */
 class HealthController(private val readinessEndpoint: ReadinessEndpoint) : KtorController {
 
+    /** Registers the health routes under `/actuator/health`. */
     override fun register(routing: Routing) {
         routing.get("/actuator/health/liveness") {
             call.respond(LivenessResponse())

@@ -30,6 +30,12 @@ tasks.test {
 group = "io.github.kperczynski"
 version = "1.0.0-SNAPSHOT"
 
+allprojects {
+    group = rootProject.group
+    version = rootProject.version
+}
+
+
 tasks.jar {
     manifest {
         attributes["Main-Class"] = "io.github.kperczynski.MainKt"

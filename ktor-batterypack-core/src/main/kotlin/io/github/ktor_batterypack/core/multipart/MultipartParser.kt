@@ -7,12 +7,25 @@ import org.slf4j.LoggerFactory
 
 private val log = LoggerFactory.getLogger(MultipartParser::class.java)
 
+/**
+ * Parses multipart form data into a list of validated file uploads.
+ *
+ * @param props Configuration specifying allowed content types and size limits.
+ */
 class MultipartParser(private val props: MultipartProps) {
 
     private val allowedContentTypes = props.allowedContentTypes
         .map { ContentType.parse(it) }
         .toSet()
 
+    /**
+     * Reads file parts from the given [multipart] data and returns validated uploads.
+     *
+     * @param multipart The incoming multipart form data.
+     * @param maxParts Maximum number of file parts to accept.
+     * @return List of valid file uploads.
+     * @throws IllegalArgumentException if part count, content type, or file size limits are exceeded.
+     */
     suspend fun parseUploads(multipart: MultiPartData, maxParts: Int): List<MultipartUpload> {
         val uploads = mutableListOf<MultipartUpload>()
 

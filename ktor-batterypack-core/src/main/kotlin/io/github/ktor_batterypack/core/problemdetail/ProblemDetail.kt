@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonAnyGetter
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 
+/**
+ * RFC 7807 Problem Detail response model.
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ProblemDetail(
     @param:JsonProperty("type")
