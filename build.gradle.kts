@@ -40,6 +40,8 @@ kotlin {
 }
 
 dependencies {
+    implementation(project(":ktor-batterypack-core"))
+
     implementation(ktorLibs.serialization.jackson3)
     implementation(ktorLibs.server.config.yaml)
     implementation(ktorLibs.server.contentNegotiation)

@@ -1,9 +1,5 @@
-package io.github.kperczynski.libs
+package io.github.ktor_batterypack.core
 
-/**
- * Utility class to manage multiple closeable resources.
- * It allows adding callbacks that will be executed when the `close` method is called.
- */
 class Closer {
 
     private val callbacks = mutableListOf<() -> Unit>()

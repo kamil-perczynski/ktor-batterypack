@@ -9,8 +9,8 @@ import io.github.kperczynski.domain.plant.model.enums.PlantDifficulty
 import io.github.kperczynski.domain.plant.model.enums.PlantStatus
 import io.github.kperczynski.domain.plant.model.enums.SoilMoistureOption
 import io.github.kperczynski.domain.plant.model.enums.YesNoOption
-import io.github.kperczynski.libs.di.InitCallback
-import io.github.kperczynski.libs.exception.ResourceMissingException
+import io.github.ktor_batterypack.core.di.InitCallback
+import io.github.ktor_batterypack.core.exception.ResourceMissingException
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.Database

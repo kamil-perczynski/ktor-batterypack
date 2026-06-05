@@ -1,6 +1,6 @@
 package io.github.kperczynski.libs.health
 
-import io.github.kperczynski.libs.ktor.KtorController
+import io.github.ktor_batterypack.core.ktor.KtorController
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Routing

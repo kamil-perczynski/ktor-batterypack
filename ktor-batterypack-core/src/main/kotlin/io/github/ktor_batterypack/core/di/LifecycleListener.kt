@@ -1,4 +1,4 @@
-package io.github.kperczynski.libs.di
+package io.github.ktor_batterypack.core.di
 
 interface LifecycleListener {
     fun onStart()

@@ -2,7 +2,7 @@ package io.github.kperczynski.infra.persistence.wallet
 
 import io.github.kperczynski.domain.wallet.Wallet
 import io.github.kperczynski.domain.wallet.WalletRepo
-import io.github.kperczynski.libs.di.InitCallback
+import io.github.ktor_batterypack.core.di.InitCallback
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.*

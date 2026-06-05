@@ -1,6 +1,6 @@
 package io.github.kperczynski.libs.redis
 
-import io.github.kperczynski.libs.di.InitCallback
+import io.github.ktor_batterypack.core.di.InitCallback
 import io.github.kperczynski.libs.redis.bgloops.toXInfoResultDto
 import io.lettuce.core.Consumer
 import io.lettuce.core.RedisBusyException

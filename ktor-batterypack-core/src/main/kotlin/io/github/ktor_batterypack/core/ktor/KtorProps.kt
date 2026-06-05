@@ -1,4 +1,4 @@
-package io.github.kperczynski.libs.ktor
+package io.github.ktor_batterypack.core.ktor
 
 data class KtorProps(
     val deployment: DeploymentProps = DeploymentProps(),

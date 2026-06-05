@@ -1,9 +1,9 @@
 package io.github.kperczynski.infra.persistence.user
 
-import io.github.kperczynski.libs.exception.ResourceMissingException
+import io.github.ktor_batterypack.core.di.InitCallback
+import io.github.ktor_batterypack.core.exception.ResourceMissingException
 import io.github.kperczynski.domain.user.User
 import io.github.kperczynski.domain.user.UserRepo
-import io.github.kperczynski.libs.di.InitCallback
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.Database

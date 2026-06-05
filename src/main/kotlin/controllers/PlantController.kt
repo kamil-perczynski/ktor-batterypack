@@ -1,7 +1,7 @@
 package io.github.kperczynski.controllers
 
 import io.github.kperczynski.domain.plant.PlantService
-import io.github.kperczynski.libs.ktor.KtorController
+import io.github.ktor_batterypack.core.ktor.KtorController
 import io.github.kperczynski.libs.ktor.multipart.MultipartParser
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.request.receiveMultipart

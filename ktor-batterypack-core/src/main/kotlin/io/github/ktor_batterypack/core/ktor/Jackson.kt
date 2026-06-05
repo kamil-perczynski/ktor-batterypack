@@ -1,4 +1,4 @@
-package io.github.kperczynski.libs.ktor
+package io.github.ktor_batterypack.core.ktor
 
 import io.ktor.http.ContentType
 import io.ktor.serialization.jackson3.JacksonConverter

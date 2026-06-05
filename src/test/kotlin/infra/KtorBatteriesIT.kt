@@ -1,7 +1,7 @@
 package io.github.kperczynski.infra
 
 import io.github.kperczynski.TestKtorFrameApp
-import io.github.kperczynski.configureKtorServer
+import io.github.ktor_batterypack.core.configureKtorServer
 import io.github.kperczynski.libs.PostgresTestContainer
 import io.github.kperczynski.libs.RedisTestContainer
 import io.ktor.client.*
@@ -41,7 +41,7 @@ open class KtorBatteriesIT {
             builder.environment { config = MapApplicationConfig("app.profiles" to "test") }
             builder.application {
                 val ktorApp = this
-                configureKtorServer(this) { profiles ->
+                configureKtorServer { profiles ->
                     modules(
                         module {
                             single { ktorApp }

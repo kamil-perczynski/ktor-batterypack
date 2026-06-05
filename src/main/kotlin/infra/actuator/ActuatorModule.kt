@@ -5,7 +5,7 @@ import io.github.kperczynski.libs.health.ReadinessCheck
 import io.github.kperczynski.libs.health.ReadinessEndpoint
 import io.github.kperczynski.libs.health.checks.DatabaseReadinessCheck
 import io.github.kperczynski.libs.health.checks.DiskSpaceReadinessCheck
-import io.github.kperczynski.libs.ktor.KtorController
+import io.github.ktor_batterypack.core.ktor.KtorController
 import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.Module
 import org.koin.core.annotation.Singleton

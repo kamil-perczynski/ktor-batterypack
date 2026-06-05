@@ -1,4 +1,4 @@
-package io.github.kperczynski.libs.exception
+package io.github.ktor_batterypack.core.exception
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter
 

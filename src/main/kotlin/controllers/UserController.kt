@@ -3,7 +3,7 @@ package io.github.kperczynski.controllers
 import io.github.kperczynski.domain.user.UserCreate
 import io.github.kperczynski.domain.user.UserService
 import io.github.kperczynski.domain.user.UserUpdate
-import io.github.kperczynski.libs.ktor.KtorController
+import io.github.ktor_batterypack.core.ktor.KtorController
 import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
