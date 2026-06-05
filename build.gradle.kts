@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.koin.compiler)
+    id("ktor-batterypack")
 }
 
 // Required because Java 24+ (JEP 472) restricts System::load/loadLibrary.
@@ -86,24 +87,4 @@ dependencies {
     testImplementation(ktorLibs.server.testHost)
     testImplementation(ktorLibs.client.mock)
     testImplementation(libs.testcontainers)
-}
-
-tasks.register<Sync>("dockerDist") {
-    dependsOn("jar")
-    group = "distribution"
-    description = "Creates Docker-friendly distribution with separated app and dependency layers"
-
-    into(layout.buildDirectory.dir("docker-dist"))
-
-    into("lib") {
-        from(configurations.runtimeClasspath)
-    }
-
-    into("app") {
-        from(tasks.jar)
-    }
-}
-
-tasks.assemble {
-    dependsOn("dockerDist")
 }

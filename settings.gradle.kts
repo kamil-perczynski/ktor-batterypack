@@ -5,6 +5,7 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
     }
+    includeBuild("ktor-batterypack-gradle-plugin")
 }
 
 dependencyResolutionManagement {
