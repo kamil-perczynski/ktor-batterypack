@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "io.github.kperczynski"
-version = "0.0.5-alpha"
+version = "0.0.6-alpha"
 
 repositories {
     mavenCentral()
@@ -31,11 +31,6 @@ gradlePlugin {
 }
 
 publishing {
-    publications {
-        create<MavenPublication>("maven") {
-            from(components["java"])
-        }
-    }
     repositories {
         maven {
             name = "GitHubPackages"
