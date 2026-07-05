@@ -75,7 +75,7 @@ dependencies {
     implementation(libs.hikari)
     implementation(libs.hoplite.core)
     implementation(libs.hoplite.yaml)
-    implementation(libs.conform)
+    implementation(libs.konform)
     implementation(libs.koin.annotations)
     implementation(libs.koin.core)
     implementation(libs.koin.ktor)

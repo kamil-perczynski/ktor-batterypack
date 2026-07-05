@@ -9,6 +9,7 @@ import io.github.ktor_batterypack.database.KtorBatterypackDatabaseModule
 import io.github.ktor_batterypack.database.MonitoredTransactions
 import io.github.ktor_batterypack.metrics.KtorBatterypackMetricsModule
 import io.github.ktor_batterypack.redis.KtorBatterypackRedisModule
+import io.github.ktor_batterypack.redis.KtorBatterypackRedisStreamsModule
 import io.github.ktor_batterypack.redis.RedisProps
 import io.micrometer.core.instrument.MeterRegistry
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -25,12 +26,18 @@ private val log = LoggerFactory.getLogger(KtorFrameModule::class.java)
         FlorinModule::class,
         KtorBatterypackDatabaseModule::class,
         KtorBatterypackMetricsModule::class,
-        KtorBatterypackRedisModule::class
+        KtorBatterypackRedisModule::class,
+        KtorBatterypackRedisStreamsModule::class
     ]
 )
 object KtorFrameApp
 
-@Module
+@Module(
+    includes = [
+        KtorBatterypackDatabaseModule::class,
+        KtorBatterypackMetricsModule::class,
+    ]
+)
 @ComponentScan("io.github.kperczynski")
 @Configuration
 class KtorFrameModule {
