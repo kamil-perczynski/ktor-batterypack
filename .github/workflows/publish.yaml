@@ -25,7 +25,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Publish package
-        run: ./gradlew publish
+        run: ./gradlew :ktor-batterypack-gradle-plugin:publish publish
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
