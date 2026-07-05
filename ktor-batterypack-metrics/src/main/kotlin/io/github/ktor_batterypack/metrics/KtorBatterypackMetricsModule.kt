@@ -1,17 +1,15 @@
 package io.github.ktor_batterypack.metrics
 
 import io.github.ktor_batterypack.core.ktor.KtorController
-import io.ktor.server.application.Application
+import io.ktor.server.application.*
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.prometheusmetrics.PrometheusConfig
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
-import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.Module
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Singleton
 
 @Module
-@Configuration
 class KtorBatterypackMetricsModule {
 
     @Singleton(binds = [MeterRegistry::class])

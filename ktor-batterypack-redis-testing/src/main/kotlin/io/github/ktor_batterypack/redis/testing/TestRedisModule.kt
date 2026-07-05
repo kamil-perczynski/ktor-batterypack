@@ -16,7 +16,6 @@ import org.koin.core.annotation.Named
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Singleton
 
-@Configuration
 @Module(includes = [KtorBatterypackRedisModule::class])
 class TestRedisModule {
 

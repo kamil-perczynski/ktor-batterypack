@@ -5,7 +5,6 @@ import com.zaxxer.hikari.HikariDataSource
 import io.github.ktor_batterypack.core.health.ReadinessCheck
 import io.micrometer.core.instrument.MeterRegistry
 import org.koin.core.annotation.ComponentScan
-import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.Module
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Singleton
@@ -15,7 +14,6 @@ import javax.sql.DataSource
 private val log = LoggerFactory.getLogger(KtorBatterypackDatabaseModule::class.java)
 
 @Module
-@Configuration
 @ComponentScan("io.github.ktor_batterypack.database")
 class KtorBatterypackDatabaseModule {
 
@@ -29,7 +27,7 @@ class KtorBatterypackDatabaseModule {
             password = props.password
             driverClassName = props.driver
             maximumPoolSize = props.poolSize
-            isAutoCommit = false
+            isAutoCommit = true
             transactionIsolation = "TRANSACTION_REPEATABLE_READ"
             metricRegistry = meterRegistry
             validate()

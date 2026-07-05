@@ -54,20 +54,20 @@ publishing {
 }
 
 dependencies {
-    implementation(ktorLibs.server.core)
-    implementation(ktorLibs.server.contentNegotiation)
-    implementation(ktorLibs.server.statusPages)
-    implementation(ktorLibs.serialization.jackson3)
+    api(ktorLibs.server.core)
+    api(ktorLibs.server.contentNegotiation)
+    api(ktorLibs.server.statusPages)
+    api(ktorLibs.serialization.jackson3)
 
-    implementation(libs.jackson.databind)
-    implementation(libs.jackson.module.kotlin)
+    api(libs.jackson.databind)
+    api(libs.jackson.module.kotlin)
 
-    implementation(libs.hoplite.core)
-    implementation(libs.hoplite.yaml)
+    api(libs.hoplite.core)
+    api(libs.hoplite.yaml)
 
-    implementation(libs.koin.annotations)
-    implementation(libs.koin.core)
-    implementation(libs.koin.ktor)
+    api(libs.koin.annotations)
+    api(libs.koin.core)
+    api(libs.koin.ktor)
 
     implementation(libs.logback.classic)
 

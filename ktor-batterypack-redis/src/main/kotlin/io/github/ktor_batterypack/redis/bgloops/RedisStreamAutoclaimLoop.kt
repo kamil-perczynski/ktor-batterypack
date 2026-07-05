@@ -8,6 +8,7 @@ import io.github.ktor_batterypack.redis.monitoring.RedisStreamMetrics
 import io.lettuce.core.Consumer
 import io.lettuce.core.RedisClient
 import io.lettuce.core.XAutoClaimArgs
+import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.models.stream.ClaimedMessages
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.await
@@ -18,6 +19,10 @@ import kotlin.time.Duration.Companion.milliseconds
 
 private val log = LoggerFactory.getLogger(RedisStreamAutoclaimLoop::class.java)
 
+/**
+ * Background loop that periodically runs XAUTOCLAIM to claim pending messages that have been idle for too long.
+ * This helps ensure that messages are not stuck indefinitely if a consumer crashes while processing them.
+ */
 @Singleton
 class RedisStreamAutoclaimLoop(
     private val redisClient: RedisClient,
@@ -85,7 +90,7 @@ class RedisStreamAutoclaimLoop(
         autoclaimMinIdleMs: Long,
         autoclaimCount: Long,
         listeners: Map<String, RedisStreamListener>,
-        connection: io.lettuce.core.api.StatefulRedisConnection<String, String>,
+        connection: StatefulRedisConnection<String, String>,
     ) {
         val args = XAutoClaimArgs<String>()
             .consumer(consumer)
