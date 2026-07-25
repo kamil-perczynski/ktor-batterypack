@@ -37,13 +37,13 @@ services:
       - redisinsight_data:/data
     restart: unless-stopped
 
-  ktor-frame:
-    image: ktor-frame:latest
+  ktor-batterypack:
+    image: ktor-batterypack:latest
     deploy:
       resources:
         limits:
           memory: 256M
-    container_name: ktor-frame
+    container_name: ktor-batterypack
     ports:
       - "18080:8080"
     environment:

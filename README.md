@@ -1,4 +1,4 @@
-# ktor-frame
+# ktor-batterypack
 
 A **Ktor** backend application built with **Kotlin**, **Koin**, **Exposed**, and **PostgreSQL**. It ships with a modular `ktor-batterypack-*` monorepo of shared libraries that handle cross-cutting concerns—config, health, metrics, database transactions, Redis, and testcontainers helpers—so the root app stays focused on domain logic.
 
@@ -29,7 +29,7 @@ libs/          → Minimal local helpers; most shared code lives in ktor-battery
 
 ## Monorepo
 
-Root `ktor-frame` embeds reusable `ktor-batterypack-*` libraries:
+Root `ktor-batterypack` embeds reusable `ktor-batterypack-*` libraries:
 
 | Library | Purpose |
 |---------|---------|

@@ -1,4 +1,4 @@
-rootProject.name = "ktor-frame"
+rootProject.name = "ktor-batterypack"
 
 pluginManagement {
     repositories {

@@ -2,7 +2,7 @@
 
 ## Monorepo Boundaries
 
-Root `ktor-frame` is the Ktor application. It includes `ktor-batterypack-*` subprojects as shared libraries (all published to GitHub Packages):
+Root `ktor-batterypack` is the Ktor application. It includes `ktor-batterypack-*` subprojects as shared libraries (all published to GitHub Packages):
 
 | Project | Purpose |
 |---------|---------|
