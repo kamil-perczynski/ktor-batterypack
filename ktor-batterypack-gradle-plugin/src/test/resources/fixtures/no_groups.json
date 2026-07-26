@@ -1,0 +1,5 @@
+{
+  "properties": [
+    {"name": "host", "type": "java.lang.String", "sourceType": "com.example.FlatProps"}
+  ]
+}

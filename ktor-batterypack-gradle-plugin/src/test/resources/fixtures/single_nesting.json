@@ -1,0 +1,10 @@
+{
+  "properties": [
+    {"name": "server.host", "type": "java.lang.String", "sourceType": "com.example.ServerProps"},
+    {"name": "server.port", "type": "java.lang.Integer", "sourceType": "com.example.ServerProps"},
+    {"name": "name", "type": "java.lang.String", "sourceType": "com.example.AppConfig"}
+  ],
+  "groups": [
+    {"name": "server", "type": "com.example.ServerProps", "sourceType": "com.example.AppConfig"}
+  ]
+}

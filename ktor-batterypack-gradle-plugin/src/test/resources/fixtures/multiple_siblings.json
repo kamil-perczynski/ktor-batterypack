@@ -1,0 +1,11 @@
+{
+  "properties": [
+    {"name": "server.host", "type": "java.lang.String", "sourceType": "com.example.ServerProps"},
+    {"name": "database.url", "type": "java.lang.String", "sourceType": "com.example.DatabaseProps"},
+    {"name": "database.poolSize", "type": "java.lang.Integer", "sourceType": "com.example.DatabaseProps"}
+  ],
+  "groups": [
+    {"name": "server", "type": "com.example.ServerProps", "sourceType": "com.example.AppConfig"},
+    {"name": "database", "type": "com.example.DatabaseProps", "sourceType": "com.example.AppConfig"}
+  ]
+}

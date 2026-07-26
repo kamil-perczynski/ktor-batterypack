@@ -1,0 +1,12 @@
+{
+  "properties": [
+    {"name": "server.host", "type": "java.lang.String", "sourceType": "test.ServerConfig"},
+    {"name": "server.port", "type": "java.lang.Integer", "sourceType": "test.ServerConfig"},
+    {"name": "database.url", "type": "java.lang.String", "sourceType": "test.DatabaseConfig"},
+    {"name": "database.poolSize", "type": "java.lang.Integer", "sourceType": "test.DatabaseConfig"}
+  ],
+  "groups": [
+    {"name": "server", "type": "test.ServerConfig", "sourceType": "test.AppConfig"},
+    {"name": "database", "type": "test.DatabaseConfig", "sourceType": "test.AppConfig"}
+  ]
+}

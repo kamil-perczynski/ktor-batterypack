@@ -1,0 +1,6 @@
+{
+  "properties": [
+    {"name": "host", "type": "java.lang.String", "sourceType": "com.example.ServerProps"},
+    {"name": "port", "type": "java.lang.Integer", "sourceType": "com.example.ServerProps"}
+  ]
+}
