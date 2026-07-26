@@ -5,9 +5,19 @@ import io.github.ktor_batterypack.database.DatabaseProps
 import io.github.ktor_batterypack.redis.RedisProps
 import io.github.ktor_batterypack.core.ktor.KtorProps
 
+/**
+ * Root configuration aggregating all application properties.
+ */
 data class AppProps(
+    /** Ktor server configuration */
     val ktor: KtorProps = KtorProps(),
+    /** Database connection and pool configuration */
     val database: DatabaseProps = DatabaseProps(),
+    /** Florin HTTP client configuration */
     val florin: FlorinClientProps = FlorinClientProps(),
-    val redis: RedisProps = RedisProps()
+    /** Redis connection and stream configuration */
+    val redis: RedisProps = RedisProps(),
+    val boo: String = "foo"
 )
+
+

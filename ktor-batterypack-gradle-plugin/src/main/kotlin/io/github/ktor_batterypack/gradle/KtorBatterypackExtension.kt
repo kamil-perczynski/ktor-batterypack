@@ -24,4 +24,5 @@ open class KtorBatterypackExtension {
      * is used.
      */
     var mainClass: String? = null
+    var configMetadataClass: String? = null
 }

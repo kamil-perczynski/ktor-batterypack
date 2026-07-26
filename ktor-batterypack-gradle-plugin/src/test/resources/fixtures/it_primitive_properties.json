@@ -1,0 +1,10 @@
+{
+  "properties": [
+    {"name": "host", "type": "java.lang.String", "sourceType": "test.SimpleProps", "description": "The hostname to bind to"},
+    {"name": "port", "type": "java.lang.Integer", "sourceType": "test.SimpleProps", "description": "The port to listen on"},
+    {"name": "enabled", "type": "java.lang.Boolean", "sourceType": "test.SimpleProps"},
+    {"name": "timeoutMs", "type": "java.lang.Long", "sourceType": "test.SimpleProps"},
+    {"name": "factor", "type": "java.lang.Double", "sourceType": "test.SimpleProps"},
+    {"name": "ratio", "type": "java.lang.Float", "sourceType": "test.SimpleProps"}
+  ]
+}
