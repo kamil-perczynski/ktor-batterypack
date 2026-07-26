@@ -1,0 +1,17 @@
+"$schema": "https://json-schema.org/draft/2020-12/schema"
+type: "object"
+properties:
+  redis:
+    type: "object"
+    description: "com.example.RedisProps"
+    properties:
+      fetcher:
+        type: "object"
+        description: "com.example.FetcherProps"
+        properties:
+          consumerPrefix:
+            type: "string"
+          fetchingTimeout:
+            type: "integer"
+      url:
+        type: "string"

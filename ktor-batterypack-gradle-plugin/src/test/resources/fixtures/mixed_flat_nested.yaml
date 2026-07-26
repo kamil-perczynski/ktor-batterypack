@@ -1,0 +1,15 @@
+"$schema": "https://json-schema.org/draft/2020-12/schema"
+type: "object"
+properties:
+  boo:
+    type: "string"
+  foo:
+    type: "string"
+  server:
+    type: "object"
+    description: "com.example.ServerProps"
+    properties:
+      host:
+        type: "string"
+      port:
+        type: "integer"

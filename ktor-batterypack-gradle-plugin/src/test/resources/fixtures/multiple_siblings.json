@@ -1,11 +1,27 @@
 {
-  "properties": [
-    {"name": "server.host", "type": "java.lang.String", "sourceType": "com.example.ServerProps"},
-    {"name": "database.url", "type": "java.lang.String", "sourceType": "com.example.DatabaseProps"},
-    {"name": "database.poolSize", "type": "java.lang.Integer", "sourceType": "com.example.DatabaseProps"}
-  ],
-  "groups": [
-    {"name": "server", "type": "com.example.ServerProps", "sourceType": "com.example.AppConfig"},
-    {"name": "database", "type": "com.example.DatabaseProps", "sourceType": "com.example.AppConfig"}
-  ]
+  "groups" : [ {
+    "name" : "server",
+    "sourceType" : "com.example.AppConfig",
+    "type" : "com.example.ServerProps"
+  }, {
+    "name" : "database",
+    "sourceType" : "com.example.AppConfig",
+    "type" : "com.example.DatabaseProps"
+  } ],
+  "properties" : [ {
+    "description" : null,
+    "name" : "server.host",
+    "sourceType" : "com.example.ServerProps",
+    "type" : "java.lang.String"
+  }, {
+    "description" : null,
+    "name" : "database.url",
+    "sourceType" : "com.example.DatabaseProps",
+    "type" : "java.lang.String"
+  }, {
+    "description" : null,
+    "name" : "database.poolSize",
+    "sourceType" : "com.example.DatabaseProps",
+    "type" : "java.lang.Integer"
+  } ]
 }

@@ -1,5 +1,9 @@
 {
-  "properties": [
-    {"name": "host", "type": "java.lang.String", "sourceType": "com.example.FlatProps"}
-  ]
+  "groups" : [ ],
+  "properties" : [ {
+    "description" : null,
+    "name" : "host",
+    "sourceType" : "com.example.FlatProps",
+    "type" : "java.lang.String"
+  } ]
 }

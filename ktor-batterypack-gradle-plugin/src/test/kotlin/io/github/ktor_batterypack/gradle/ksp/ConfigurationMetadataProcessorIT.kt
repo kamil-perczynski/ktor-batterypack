@@ -6,12 +6,13 @@ import com.tschuchort.compiletesting.configureKsp
 import org.assertj.core.api.Assertions.assertThat
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.junit.jupiter.api.Test
-import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.dataformat.yaml.YAMLMapper
 
 @OptIn(ExperimentalCompilerApi::class)
 class ConfigurationMetadataProcessorIT {
 
-    private val mapper = ObjectMapper()
+    private val mapper = JsonMapper.builder().build()
 
     private fun loadFixture(name: String): tools.jackson.databind.JsonNode {
         val stream = javaClass.classLoader.getResourceAsStream("fixtures/$name")
@@ -59,6 +60,14 @@ class ConfigurationMetadataProcessorIT {
         val expected = loadFixture("it_primitive_properties.json")
         val actual = mapper.readTree(metadataFile)
         assertThat(actual).isEqualTo(expected)
+
+        val yamlFile =
+            compilation.workingDir.resolve("ksp/sources/resources/META-INF/config-schema.yaml")
+        assertThat(yamlFile).exists()
+        val yamlMapper = YAMLMapper.builder().build()
+        val expectedYaml = yamlMapper.readTree(javaClass.classLoader.getResourceAsStream("fixtures/it_primitive_properties.yaml"))
+        val actualYaml = yamlMapper.readTree(yamlFile)
+        assertThat(actualYaml).isEqualTo(expectedYaml)
     }
 
     @Test
@@ -100,6 +109,14 @@ class ConfigurationMetadataProcessorIT {
         val expected = loadFixture("it_nested_classes.json")
         val actual = mapper.readTree(metadataFile)
         assertThat(actual).isEqualTo(expected)
+
+        val yamlFile =
+            compilation.workingDir.resolve("ksp/sources/resources/META-INF/config-schema.yaml")
+        assertThat(yamlFile).exists()
+        val yamlMapper = YAMLMapper.builder().build()
+        val expectedYaml = yamlMapper.readTree(javaClass.classLoader.getResourceAsStream("fixtures/it_nested_classes.yaml"))
+        val actualYaml = yamlMapper.readTree(yamlFile)
+        assertThat(actualYaml).isEqualTo(expectedYaml)
     }
 
     @Test

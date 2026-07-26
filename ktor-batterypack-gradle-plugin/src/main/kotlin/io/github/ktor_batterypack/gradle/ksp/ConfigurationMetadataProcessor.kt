@@ -9,10 +9,6 @@ import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSValueParameter
-import tools.jackson.databind.ObjectMapper
-import tools.jackson.databind.node.ObjectNode
-import tools.jackson.databind.node.ArrayNode
-
 class ConfigurationMetadataProcessor(
     private val environment: SymbolProcessorEnvironment
 ) : SymbolProcessor {
@@ -32,23 +28,31 @@ class ConfigurationMetadataProcessor(
             return emptyList()
         }
 
-        val properties = mutableListOf<PropertyMeta>()
-        val groups = mutableListOf<GroupMeta>()
+        val properties = mutableListOf<ConfigProperty>()
+        val groups = mutableListOf<ConfigGroup>()
         extractProperties(classDecl, resolver, "", className, properties, groups)
 
-        val json = buildMetadataJson(properties, groups)
+        val metadata = SpringConfigMetadata(properties = properties, groups = groups)
+        val json = MetadataWriter.writeJson(metadata)
+        val yaml = MetadataWriter.writeYaml(metadata)
 
         val containingFile = classDecl.containingFile
         if (containingFile != null) {
-            val fileStream = environment.codeGenerator.createNewFileByPath(
-                dependencies = Dependencies(aggregating = false, classDecl.containingFile!!),
+            val dep = Dependencies(aggregating = false, containingFile)
+
+            val jsonStream = environment.codeGenerator.createNewFileByPath(
+                dependencies = dep,
                 path = "META-INF/spring-configuration-metadata",
                 extensionName = "json"
             )
+            jsonStream.use { stream -> stream.write(json.toByteArray()) }
 
-            fileStream.use { stream ->
-                stream.write(json.toByteArray())
-            }
+            val yamlStream = environment.codeGenerator.createNewFileByPath(
+                dependencies = dep,
+                path = "META-INF/config-schema",
+                extensionName = "yaml"
+            )
+            yamlStream.use { stream -> stream.write(yaml.toByteArray()) }
         } else {
             environment.logger.error("ConfigurationMetadataProcessor: could not determine source file for $className")
         }
@@ -62,8 +66,8 @@ class ConfigurationMetadataProcessor(
         resolver: Resolver,
         keyPrefix: String,
         sourceType: String,
-        properties: MutableList<PropertyMeta>,
-        groups: MutableList<GroupMeta>
+        properties: MutableList<ConfigProperty>,
+        groups: MutableList<ConfigGroup>
     ) {
         val constructor = classDecl.primaryConstructor ?: return
         for (param in constructor.parameters) {
@@ -78,14 +82,14 @@ class ConfigurationMetadataProcessor(
                 (qualifiedName.startsWith("kotlin.") || qualifiedName.startsWith("java."))
 
             if (isBuiltIn) {
-                properties.add(PropertyMeta(fullName, mappedType, sourceType, param.description()))
+                properties.add(ConfigProperty(fullName, mappedType, sourceType, param.description()))
                 continue
             }
 
             val nestedClassDecl = resolvedType.declaration as? KSClassDeclaration
             if (nestedClassDecl != null && nestedClassDecl.primaryConstructor != null && nestedClassDecl.classKind == com.google.devtools.ksp.symbol.ClassKind.CLASS) {
                 val nestedSourceType = qualifiedName ?: continue
-                groups.add(GroupMeta(fullName, nestedSourceType, sourceType))
+                groups.add(ConfigGroup(fullName, nestedSourceType, sourceType))
                 extractProperties(
                     nestedClassDecl,
                     resolver,
@@ -95,20 +99,11 @@ class ConfigurationMetadataProcessor(
                     groups
                 )
             } else {
-                properties.add(PropertyMeta(fullName, mappedType, sourceType, param.description()))
+                properties.add(ConfigProperty(fullName, mappedType, sourceType, param.description()))
             }
         }
     }
-
-    data class PropertyMeta(
-        val name: String,
-        val type: String,
-        val sourceType: String,
-        val description: String? = null
-    )
 }
-
-data class GroupMeta(val name: String, val type: String, val sourceType: String)
 
 internal fun mapKotlinTypeToJava(kotlinFqcn: String?): String {
     if (kotlinFqcn == null) return "java.lang.Object"
@@ -142,8 +137,6 @@ internal fun resolveTypeWithGenerics(type: KSType): String {
     return "$baseType<${mappedArgs.joinToString(", ")}>"
 }
 
-private val mapper = ObjectMapper()
-
 private fun KSValueParameter.description(): String? {
     val descAnnotation = annotations.firstOrNull {
         it.annotationType.resolve().declaration.qualifiedName?.asString() == DESCRIPTION_FQCN
@@ -152,40 +145,6 @@ private fun KSValueParameter.description(): String? {
 }
 
 private const val DESCRIPTION_FQCN = "com.fasterxml.jackson.annotation.JsonPropertyDescription"
-
-internal fun buildMetadataJson(
-    properties: List<ConfigurationMetadataProcessor.PropertyMeta>,
-    groups: List<GroupMeta>
-): String {
-    val root: ObjectNode = mapper.createObjectNode()
-
-    val propsArray: ArrayNode = mapper.createArrayNode()
-    properties.forEach { prop ->
-        val entry: ObjectNode = mapper.createObjectNode()
-        entry.put("name", prop.name)
-        entry.put("type", prop.type)
-        entry.put("sourceType", prop.sourceType)
-        if (prop.description != null) {
-            entry.put("description", prop.description)
-        }
-        propsArray.add(entry)
-    }
-    root.set("properties", propsArray)
-
-    if (groups.isNotEmpty()) {
-        val groupsArray: ArrayNode = mapper.createArrayNode()
-        groups.forEach { group ->
-            val entry: ObjectNode = mapper.createObjectNode()
-            entry.put("name", group.name)
-            entry.put("type", group.type)
-            entry.put("sourceType", group.sourceType)
-            groupsArray.add(entry)
-        }
-        root.set("groups", groupsArray)
-    }
-
-    return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(root)
-}
 
 class ConfigurationMetadataProcessorProvider : SymbolProcessorProvider {
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {

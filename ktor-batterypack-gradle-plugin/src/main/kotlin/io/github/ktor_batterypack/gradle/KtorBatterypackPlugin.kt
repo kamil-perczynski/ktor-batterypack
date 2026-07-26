@@ -51,9 +51,12 @@ class KtorBatterypackPlugin : Plugin<Project> {
 
         val jacksonDatabind =
             project.dependencies.create("tools.jackson.core:jackson-databind:3.1.3")
+        val jacksonDataformatYaml =
+            project.dependencies.create("tools.jackson.dataformat:jackson-dataformat-yaml:3.1.3")
 
         project.dependencies.add("ksp", pluginJar)
         project.dependencies.add("ksp", jacksonDatabind)
+        project.dependencies.add("ksp", jacksonDataformatYaml)
 
         project.afterEvaluate {
             val className = extension.configMetadataClass ?: return@afterEvaluate
