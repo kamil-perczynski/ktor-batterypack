@@ -1,11 +1,27 @@
 {
-  "properties": [
-    {"name": "redis.fetcher.consumerPrefix", "type": "java.lang.String", "sourceType": "com.example.FetcherProps"},
-    {"name": "redis.fetcher.fetchingTimeout", "type": "java.lang.Long", "sourceType": "com.example.FetcherProps"},
-    {"name": "redis.url", "type": "java.lang.String", "sourceType": "com.example.RedisProps"}
-  ],
-  "groups": [
-    {"name": "redis.fetcher", "type": "com.example.FetcherProps", "sourceType": "com.example.RedisProps"},
-    {"name": "redis", "type": "com.example.RedisProps", "sourceType": "com.example.AppConfig"}
-  ]
+  "groups" : [ {
+    "name" : "redis.fetcher",
+    "sourceType" : "com.example.RedisProps",
+    "type" : "com.example.FetcherProps"
+  }, {
+    "name" : "redis",
+    "sourceType" : "com.example.AppConfig",
+    "type" : "com.example.RedisProps"
+  } ],
+  "properties" : [ {
+    "description" : null,
+    "name" : "redis.fetcher.consumerPrefix",
+    "sourceType" : "com.example.FetcherProps",
+    "type" : "java.lang.String"
+  }, {
+    "description" : null,
+    "name" : "redis.fetcher.fetchingTimeout",
+    "sourceType" : "com.example.FetcherProps",
+    "type" : "java.lang.Long"
+  }, {
+    "description" : null,
+    "name" : "redis.url",
+    "sourceType" : "com.example.RedisProps",
+    "type" : "java.lang.String"
+  } ]
 }

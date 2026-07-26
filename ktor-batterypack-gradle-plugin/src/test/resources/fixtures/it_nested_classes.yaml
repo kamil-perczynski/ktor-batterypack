@@ -1,0 +1,19 @@
+"$schema": "https://json-schema.org/draft/2020-12/schema"
+type: "object"
+properties:
+  database:
+    type: "object"
+    description: "test.DatabaseConfig"
+    properties:
+      poolSize:
+        type: "integer"
+      url:
+        type: "string"
+  server:
+    type: "object"
+    description: "test.ServerConfig"
+    properties:
+      host:
+        type: "string"
+      port:
+        type: "integer"

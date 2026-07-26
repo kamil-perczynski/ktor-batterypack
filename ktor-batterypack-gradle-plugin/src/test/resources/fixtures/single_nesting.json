@@ -1,10 +1,23 @@
 {
-  "properties": [
-    {"name": "server.host", "type": "java.lang.String", "sourceType": "com.example.ServerProps"},
-    {"name": "server.port", "type": "java.lang.Integer", "sourceType": "com.example.ServerProps"},
-    {"name": "name", "type": "java.lang.String", "sourceType": "com.example.AppConfig"}
-  ],
-  "groups": [
-    {"name": "server", "type": "com.example.ServerProps", "sourceType": "com.example.AppConfig"}
-  ]
+  "groups" : [ {
+    "name" : "server",
+    "sourceType" : "com.example.AppConfig",
+    "type" : "com.example.ServerProps"
+  } ],
+  "properties" : [ {
+    "description" : null,
+    "name" : "server.host",
+    "sourceType" : "com.example.ServerProps",
+    "type" : "java.lang.String"
+  }, {
+    "description" : null,
+    "name" : "server.port",
+    "sourceType" : "com.example.ServerProps",
+    "type" : "java.lang.Integer"
+  }, {
+    "description" : null,
+    "name" : "name",
+    "sourceType" : "com.example.AppConfig",
+    "type" : "java.lang.String"
+  } ]
 }

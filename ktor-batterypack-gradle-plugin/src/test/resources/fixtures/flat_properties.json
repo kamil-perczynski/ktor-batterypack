@@ -1,6 +1,14 @@
 {
-  "properties": [
-    {"name": "host", "type": "java.lang.String", "sourceType": "com.example.ServerProps"},
-    {"name": "port", "type": "java.lang.Integer", "sourceType": "com.example.ServerProps"}
-  ]
+  "groups" : [ ],
+  "properties" : [ {
+    "description" : null,
+    "name" : "host",
+    "sourceType" : "com.example.ServerProps",
+    "type" : "java.lang.String"
+  }, {
+    "description" : null,
+    "name" : "port",
+    "sourceType" : "com.example.ServerProps",
+    "type" : "java.lang.Integer"
+  } ]
 }

@@ -1,12 +1,32 @@
 {
-  "properties": [
-    {"name": "server.host", "type": "java.lang.String", "sourceType": "test.ServerConfig"},
-    {"name": "server.port", "type": "java.lang.Integer", "sourceType": "test.ServerConfig"},
-    {"name": "database.url", "type": "java.lang.String", "sourceType": "test.DatabaseConfig"},
-    {"name": "database.poolSize", "type": "java.lang.Integer", "sourceType": "test.DatabaseConfig"}
-  ],
-  "groups": [
-    {"name": "server", "type": "test.ServerConfig", "sourceType": "test.AppConfig"},
-    {"name": "database", "type": "test.DatabaseConfig", "sourceType": "test.AppConfig"}
-  ]
+  "groups" : [ {
+    "name" : "server",
+    "sourceType" : "test.AppConfig",
+    "type" : "test.ServerConfig"
+  }, {
+    "name" : "database",
+    "sourceType" : "test.AppConfig",
+    "type" : "test.DatabaseConfig"
+  } ],
+  "properties" : [ {
+    "description" : null,
+    "name" : "server.host",
+    "sourceType" : "test.ServerConfig",
+    "type" : "java.lang.String"
+  }, {
+    "description" : null,
+    "name" : "server.port",
+    "sourceType" : "test.ServerConfig",
+    "type" : "java.lang.Integer"
+  }, {
+    "description" : null,
+    "name" : "database.url",
+    "sourceType" : "test.DatabaseConfig",
+    "type" : "java.lang.String"
+  }, {
+    "description" : null,
+    "name" : "database.poolSize",
+    "sourceType" : "test.DatabaseConfig",
+    "type" : "java.lang.Integer"
+  } ]
 }

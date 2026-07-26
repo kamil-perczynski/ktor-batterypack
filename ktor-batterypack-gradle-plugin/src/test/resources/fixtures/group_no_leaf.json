@@ -1,8 +1,13 @@
 {
-  "properties": [
-    {"name": "name", "type": "java.lang.String", "sourceType": "com.example.RootProps"}
-  ],
-  "groups": [
-    {"name": "empty", "type": "com.example.EmptyProps", "sourceType": "com.example.RootProps"}
-  ]
+  "groups" : [ {
+    "name" : "empty",
+    "sourceType" : "com.example.RootProps",
+    "type" : "com.example.EmptyProps"
+  } ],
+  "properties" : [ {
+    "description" : null,
+    "name" : "name",
+    "sourceType" : "com.example.RootProps",
+    "type" : "java.lang.String"
+  } ]
 }
