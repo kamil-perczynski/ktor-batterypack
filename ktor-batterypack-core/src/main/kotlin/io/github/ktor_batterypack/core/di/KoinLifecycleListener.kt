@@ -24,6 +24,7 @@ class KoinLifecycleListener(
                 callback.onInit()
             } catch (e: Exception) {
                 log.error("Initialization callback failed", e)
+                throw IllegalStateException("Initialization callback=${callback.javaClass.name} failed", e)
             }
         }
     }
