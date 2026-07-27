@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "io.github.kperczynski"
-version = "0.0.0-SNAPSHOT"
+version = "0.0.8-alpha"
 
 repositories {
     mavenCentral()
