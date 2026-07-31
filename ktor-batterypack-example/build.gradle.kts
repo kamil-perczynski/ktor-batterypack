@@ -42,6 +42,11 @@ kotlin {
 }
 
 dependencies {
+    ksp(libs.jackson.databind)
+    ksp(libs.jackson.dataformat.yaml)
+    ksp(project(":ktor-batterypack-validation-ksp"))
+
+    implementation(project(":ktor-batterypack-annotations"))
     implementation(project(":ktor-batterypack-core"))
     implementation(project(":ktor-batterypack-database"))
     implementation(project(":ktor-batterypack-metrics"))

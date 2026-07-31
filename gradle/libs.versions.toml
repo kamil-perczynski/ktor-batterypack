@@ -1,5 +1,6 @@
 [versions]
 assertj = "3.27.7"
+handlebars = "4.5.3"
 konform = "0.11.1"
 exposed = "1.2.0"
 hikari = "7.0.2"
@@ -22,6 +23,7 @@ assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
 konform = { module = "io.konform:konform", version.ref = "konform" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 
+handlebars = { module = "com.github.jknack:handlebars", version.ref = "handlebars" }
 exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
 exposed-java-time = { module = "org.jetbrains.exposed:exposed-java-time", version.ref = "exposed" }
 exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
@@ -30,6 +32,7 @@ exposed-r2dbc = { module = "org.jetbrains.exposed:exposed-r2dbc", version.ref = 
 hikari = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
 hoplite-core = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "hoplite" }
 jackson-databind = { module = "tools.jackson.core:jackson-databind", version.ref = "jackson" }
+jackson-dataformat-yaml = { module = "tools.jackson.dataformat:jackson-dataformat-yaml", version.ref = "jackson" }
 jackson-module-kotlin = { module = "tools.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
 ktor-server-metrics-micrometer = { module = "io.ktor:ktor-server-metrics-micrometer", version.ref = "ktor" }
 hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "hoplite" }

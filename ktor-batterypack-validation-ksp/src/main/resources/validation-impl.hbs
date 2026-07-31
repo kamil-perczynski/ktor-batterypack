@@ -1,0 +1,49 @@
+package {{packageName}}
+{{#each imports}}
+import {{this}}
+{{~/each}}
+
+class {{implSimpleName}} : {{interfaceSimpleName}} {
+{{#each methods}}
+    override fun {{name}}({{paramName}}: {{dtoSimpleName}}) {
+        {{~#each properties~}}
+        {{~#if isString~}}
+        {{~#if isNullable}}
+        require({{paramName}}.{{accessor}} == null || {{paramName}}.{{accessor}}?.isNotBlank() == true) { "{{accessor}} must not be blank" }
+        {{~else}}
+        require({{paramName}}.{{accessor}}.isNotBlank()) { "{{accessor}} must not be blank" }
+        {{~/if~}}
+        {{~/if~}}
+        {{~#if isNumeric~}}
+        {{~#if isNullable}}
+        require({{paramName}}.{{accessor}} == null || {{paramName}}.{{accessor}} > 0) { "{{accessor}} must be positive" }
+        {{~else}}
+        require({{paramName}}.{{accessor}} > 0) { "{{accessor}} must be positive" }
+        {{~/if~}}
+        {{~/if~}}
+        {{~#if isBoolean}}
+        require({{paramName}}.{{accessor}}) { "{{accessor}} must be true" }
+        {{~/if~}}
+        {{~#each nested~}}
+        {{~#if isString~}}
+        {{~#if isNullable}}
+        require({{paramName}}.{{accessor}} == null || {{paramName}}.{{accessor}}?.isNotBlank() == true) { "{{accessor}} must not be blank" }
+        {{~else}}
+        require({{paramName}}.{{accessor}}.isNotBlank()) { "{{accessor}} must not be blank" }
+        {{~/if~}}
+        {{~/if~}}
+        {{~#if isNumeric~}}
+        {{~#if isNullable}}
+        require({{paramName}}.{{accessor}} == null || {{paramName}}.{{accessor}} > 0) { "{{accessor}} must be positive" }
+        {{~else}}
+        require({{paramName}}.{{accessor}} > 0) { "{{accessor}} must be positive" }
+        {{~/if~}}
+        {{~/if~}}
+        {{~/each~}}
+        {{~/each}}
+    }
+{{~#unless @last}}
+
+{{~/unless}}
+{{/each}}
+}
