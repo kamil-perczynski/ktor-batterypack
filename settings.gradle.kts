@@ -21,6 +21,7 @@ plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 
+include("ktor-batterypack-annotations")
 include("ktor-batterypack-core")
 include("ktor-batterypack-database")
 include("ktor-batterypack-metrics")
@@ -28,3 +29,4 @@ include("ktor-batterypack-redis")
 include("ktor-batterypack-redis-testing")
 include("ktor-batterypack-database-testing")
 include("ktor-batterypack-example")
+include("ktor-batterypack-validation-ksp")

@@ -9,6 +9,7 @@ import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSValueParameter
+
 class ConfigurationMetadataProcessor(
     private val environment: SymbolProcessorEnvironment
 ) : SymbolProcessor {
@@ -16,7 +17,10 @@ class ConfigurationMetadataProcessor(
     private var generated = false
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
-        if (generated) return emptyList()
+        if (generated) {
+            return emptyList()
+        }
+
         val className = environment.options["configMetadataClass"] ?: return emptyList()
         environment.logger.info("ConfigurationMetadataProcessor: processing $className")
 

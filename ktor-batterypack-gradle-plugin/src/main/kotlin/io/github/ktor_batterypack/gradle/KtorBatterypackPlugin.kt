@@ -1,7 +1,9 @@
 package io.github.ktor_batterypack.gradle
 
+import com.google.devtools.ksp.gradle.KspExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Sync
 import org.gradle.api.tasks.bundling.Jar
@@ -60,7 +62,7 @@ class KtorBatterypackPlugin : Plugin<Project> {
 
         project.afterEvaluate {
             val className = extension.configMetadataClass ?: return@afterEvaluate
-            project.extensions.configure(com.google.devtools.ksp.gradle.KspExtension::class.java) { ksp ->
+            project.extensions.configure(KspExtension::class.java) { ksp ->
                 ksp.arg("configMetadataClass", className)
             }
 
@@ -72,7 +74,7 @@ class KtorBatterypackPlugin : Plugin<Project> {
 
             project.tasks.named("processResources", ProcessResources::class.java) { task ->
                 task.dependsOn("kspKotlin")
-                task.duplicatesStrategy = org.gradle.api.file.DuplicatesStrategy.INCLUDE
+                task.duplicatesStrategy = DuplicatesStrategy.INCLUDE
             }
         }
 
