@@ -1,0 +1,3 @@
+package io.github.ktor_batterypack.validation
+
+sealed interface ConstraintError

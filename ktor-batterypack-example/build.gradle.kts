@@ -45,8 +45,11 @@ dependencies {
     ksp(libs.jackson.databind)
     ksp(libs.jackson.dataformat.yaml)
     ksp(project(":ktor-batterypack-validation-ksp"))
+    implementation("jakarta.validation:jakarta.validation-api:3.1.1")
+
 
     implementation(project(":ktor-batterypack-annotations"))
+    implementation(project(":ktor-batterypack-validation"))
     implementation(project(":ktor-batterypack-core"))
     implementation(project(":ktor-batterypack-database"))
     implementation(project(":ktor-batterypack-metrics"))

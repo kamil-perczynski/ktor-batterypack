@@ -1,0 +1,11 @@
+{{~#if prop.nullable}}
+        {{~else}}
+        Constraints.checkNotNull("{{prop.name}}", {{param.name}}.{{prop.name}}, call)
+        {{~/if}}
+        {{~#if prop.constraints.size}}
+        {{param.name}}.{{prop.name}}?.let {
+        {{~#each prop.constraints}}
+            Constraints.{{name}}("{{../name}}", it, call{{~#if args.size}}, {{#each args}}{{@key}}={{quote .}}, {{/each}}{{/if}})
+        {{~/each}}
+        }
+        {{~/if}}
