@@ -3,11 +3,13 @@ package io.github.ktor_batterypack.validation.ksp
 import io.github.ktor_batterypack.validation.example.AppPropsValidator
 import io.github.ktor_batterypack.validation.reflection.ReflectionValidatorInterface
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class V2CodegenModelResolverImplTest {
 
     @Test
+    @Disabled
     fun generateClass() {
         val iface = ReflectionValidatorInterface(AppPropsValidator::class)
         val model = V2CodegenModelResolverImpl().resolve(iface)

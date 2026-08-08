@@ -29,8 +29,6 @@ class V2CodegenModelResolverImpl(private val maxDepth: Int = 10) : V2CodegenMode
                         true -> publicMethods.add(toPublicMethod(node, allPrivateMethods))
                         false -> privateMethods.add(toPrivateMethod(node, allPrivateMethods))
                     }
-
-                    println("Method: ${node.name}(${node.paramName}: ${node.param.properName}): ${node.returnType?.properName}")
                 }
 
                 is CodegenType -> throw IllegalStateException("All types should be resolved. Offender: $node")
