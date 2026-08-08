@@ -69,6 +69,7 @@ dependencies {
     api(libs.koin.core)
     api(libs.koin.ktor)
 
+    implementation("jakarta.validation:jakarta.validation-api:3.1.1")
     implementation(libs.logback.classic)
 
     testImplementation(platform(libs.junit.bom))

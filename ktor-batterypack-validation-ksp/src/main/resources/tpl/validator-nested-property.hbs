@@ -1,0 +1,21 @@
+{{~#if prop.nullable}}
+        {{~else}}
+        Constraints.checkNotNull("{{prop.name}}", {{param.name}}.{{prop.name}}, call)
+        {{~/if}}
+        {{~#if prop.isObject}}
+        {{param.name}}.{{prop.name}}?.let {
+            val itemCall = call.nestedProperty("{{prop.name}}")
+            {{validatorMethodName}}(it, itemCall)
+            itemCall.finishObject()
+        }
+        {{~/if}}
+        {{~#if prop.isList}}
+        {{param.name}}.{{prop.name}}?.let {
+            val itemCall = call.nestedProperty("{{prop.name}}")
+            {{~#each prop.constraints}}
+            Constraints.{{name}}("{{../name}}", it, itemCall)
+            {{~/each}}
+            {{validatorMethodName}}(it, itemCall)
+            itemCall.finishList()
+        }
+        {{~/if}}

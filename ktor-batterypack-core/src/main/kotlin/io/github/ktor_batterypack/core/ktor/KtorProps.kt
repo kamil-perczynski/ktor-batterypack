@@ -2,6 +2,7 @@ package io.github.ktor_batterypack.core.ktor
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription
 import io.github.ktor_batterypack.core.multipart.MultipartProps
+import jakarta.validation.constraints.NotEmpty
 
 /**
  * Top-level configuration properties for a Ktor application.
@@ -14,5 +15,6 @@ data class KtorProps(
     @param:JsonPropertyDescription("Multipart form handling limits")
     val multipart: MultipartProps = MultipartProps(),
     @param:JsonPropertyDescription("Optional startup banner text")
+    @field:NotEmpty
     val banner: String? = null
 )

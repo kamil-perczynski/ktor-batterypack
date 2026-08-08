@@ -1,0 +1,64 @@
+@file:Suppress("unused")
+
+package {{packageName}}
+{{#each imports}}
+import {{this}}
+{{~/each}}
+import io.github.ktor_batterypack.validation.SingleConstraintError
+import io.github.ktor_batterypack.validation.Constraints
+import io.github.ktor_batterypack.validation.ValidationCall
+
+import javax.annotation.processing.Generated
+
+@Generated
+@Suppress("UNNECESSARY_SAFE_CALL")
+class {{typeName}} : {{interfaceName}} {
+{{#each methods}}
+    override fun {{name}}({{param.name}}: {{param.type}}): ValidationResult<{{param.type}}> {
+        val call = ValidationCall()
+        {{validationMethodName}}({{param.name}}, call)
+        val errors = call.finishObject()
+
+        val result : ValidationResult<{{param.type}}> =
+            if (errors != null) ValidationResult.invalid(errors)
+            else ValidationResult.valid({{param.name}})
+
+        return result
+    }
+{{~#unless @last}}
+
+{{~/unless}}
+{{/each}}
+
+{{~#each privateMethods}}
+    private fun {{name}}({{param.name}}: {{param.type}}?, call: ValidationCall) {
+        if ({{param.name}} == null) return
+        {{#each directProperties}}
+        {{~>validator-direct-property prop=. param=param}}
+        {{~#unless @last}}
+
+        {{~/unless}}
+        {{~/each}}
+        {{~#if param.isList}}
+        for (item in {{param.name}}) {
+            val itemCall = call.listItem()
+            Constraints.checkNotNull("__root__", item, itemCall)
+            {{~#if param.itemValidatorMethodName}}
+            {{param.itemValidatorMethodName}}(item, itemCall)
+            {{~/if}}
+            itemCall.finishObject()
+        }
+        {{~else}}
+        {{~#each nestedProperties~}}
+            {{~>validator-nested-property prop=. param=param}}
+            {{~#unless @last}}
+
+            {{~/unless}}
+        {{~/each}}
+        {{~/if}}
+    }
+{{~#unless @last}}
+
+{{~/unless}}
+{{/each}}
+}
