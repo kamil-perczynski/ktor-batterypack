@@ -1,5 +1,7 @@
 package io.github.kperczynski.infra
 
+import com.sksamuel.hoplite.indent
+import io.github.kperczynski.controllers.AppPropsValidator.Companion.appPropsValidator
 import io.github.kperczynski.infra.florin.FlorinModule
 import io.github.ktor_batterypack.core.KtorBatterypackCoreModule
 import io.github.ktor_batterypack.core.config.loadConfig
@@ -15,6 +17,7 @@ import io.micrometer.core.instrument.MeterRegistry
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.koin.core.annotation.*
 import org.slf4j.LoggerFactory
+import tools.jackson.databind.json.JsonMapper
 import javax.sql.DataSource
 
 private val log = LoggerFactory.getLogger(KtorFrameModule::class.java)
@@ -40,13 +43,23 @@ object KtorFrameApp
 )
 @ComponentScan("io.github.kperczynski")
 @Configuration
+@Suppress("unused")
 class KtorFrameModule {
 
     @Singleton
-    fun appConfig(@Property("app.profiles") profiles: String): AppProps {
+    fun appConfig(@Property("app.profiles") profiles: String, jsonMapper: JsonMapper): AppProps {
         val profileList = profiles.split(",").map { it.trim() }.filter { it.isNotEmpty() }
         log.info("Loading application configuration with profiles: $profileList")
-        return loadConfig(profileList)
+        val config = loadConfig<AppProps>(profileList)
+
+        return appPropsValidator.validate(config).fold({ it }, { _, errors ->
+            val json = jsonMapper
+                .writerWithDefaultPrettyPrinter()
+                .writeValueAsString(errors)
+                .indent("  ")
+
+            throw IllegalStateException("Application config is invalid. Check the following errors:\n$json")
+        })
     }
 
     @Singleton
@@ -70,7 +83,10 @@ class KtorFrameModule {
     }
 
     @Singleton
-    fun monitoredTransactions(database: Database, meterRegistry: MeterRegistry): MonitoredTransactions {
+    fun monitoredTransactions(
+        database: Database,
+        meterRegistry: MeterRegistry
+    ): MonitoredTransactions {
         return MonitoredTransactions(database, meterRegistry)
     }
 }

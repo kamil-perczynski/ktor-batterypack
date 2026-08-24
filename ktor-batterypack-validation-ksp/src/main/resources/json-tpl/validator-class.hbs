@@ -1,0 +1,108 @@
+@file:Suppress("unused")
+
+package {{packageName}}
+
+import io.github.ktor_batterypack.validation.ValidationCall
+import io.github.ktor_batterypack.validation.ValidationResult
+import io.github.ktor_batterypack.validation.Constraints
+import io.github.ktor_batterypack.validation.JsonConstraints
+import tools.jackson.databind.JsonNode
+import tools.jackson.databind.node.ArrayNode
+import tools.jackson.databind.node.ObjectNode
+import javax.annotation.processing.Generated
+
+
+@Generated
+@Suppress("UNNECESSARY_SAFE_CALL")
+class {{typeName}} : {{interfaceName}} {
+{{#each methods}}
+    override fun {{name}}({{param.name}}: JsonNode): ValidationResult<JsonNode> {
+        val call = ValidationCall()
+        JsonConstraints.checkNotNull({{param.name}}, call)
+        JsonConstraints.checkObject({{param.name}}, call)?.let {
+        {{~#with (findValidationMethod param=param)}}
+            {{this}}(it, call)
+        {{~/with}}
+        }
+        val errors = call.finishObject()
+
+        val result : ValidationResult<JsonNode> =
+            if (errors != null) ValidationResult.invalid({{param.name}}, errors)
+            else ValidationResult.valid({{param.name}})
+
+        return result
+    }
+{{~#unless @last}}
+
+{{~/unless}}
+{{/each}}
+
+{{~#each privateMethods}}
+    {{#if isOverride}}override{{else}}private{{/if}} fun {{name}}({{param.name}}: {{toJsonType param.codegenType}}?, call: ValidationCall) {
+        if ({{param.name}} == null) return
+        {{#each directProperties}}
+        {{~>validator-direct-property prop=. param=param}}
+        {{~#unless @last}}
+
+        {{~/unless}}
+        {{~/each}}
+        {{~#if param.isList}}
+        for (item in {{param.name}}) {
+            val itemCall = call.listItem()
+            JsonConstraints.checkNotNull(item, itemCall)
+
+            {{~#if param.itemConstraints.size}}
+            item?.let {
+            {{~#each param.itemConstraints}}
+                JsonConstraints.{{name}}(it, itemCall{{~#if args.size}}, {{#each args}}{{@key}}={{quote .}}, {{/each}}{{/if}})
+            {{~/each}}
+            }
+            {{~/if}}
+
+            {{~#with (findItemValidationMethod param=param)}}
+            JsonConstraints.checkObject(item, itemCall)?.let {
+                {{this}}(it, itemCall)
+            }
+            {{~/with}}
+            itemCall.finishObject()
+        }
+        {{~else if param.isMap}}
+        for (entry in {{param.name}}.entries) {
+            val (key, value) = entry
+
+            val nested = call.nestedProperty(key)
+            JsonConstraints.checkNotNull(value, nested)
+
+            {{~#if param.itemConstraints.size}}
+            value?.let {
+            {{~#each param.itemConstraints}}
+                JsonConstraints.{{name}}(it, nested{{~#if args.size}}, {{#each args}}{{@key}}={{quote .}}, {{/each}}{{/if}})
+            {{~/each}}
+            }
+            {{~/if}}
+
+            {{~#with (findItemValidationMethod param=param)}}
+            JsonConstraints.checkObject(value, nested)?.let {
+                {{this}}(it, nested)
+            }
+            {{~/with}}
+            nested.finishObject()
+        }
+        {{~else}}
+        {{~#each nestedProperties~}}
+            {{~>validator-nested-property prop=. param=param}}
+            {{~#unless @last}}
+
+            {{~/unless}}
+        {{~/each}}
+        {{~/if}}
+
+        {{~#each additionalValidationMethods}}
+        {{name}}({{../param.name}}, call)
+        {{~/each}}
+    }
+{{~#unless @last}}
+
+{{~/unless}}
+{{/each}}
+}

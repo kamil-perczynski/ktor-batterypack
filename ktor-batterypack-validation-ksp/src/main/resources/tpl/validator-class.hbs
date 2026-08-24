@@ -16,11 +16,13 @@ class {{typeName}} : {{interfaceName}} {
 {{#each methods}}
     override fun {{name}}({{param.name}}: {{param.type}}): ValidationResult<{{param.type}}> {
         val call = ValidationCall()
-        {{validationMethodName}}({{param.name}}, call)
+        {{~#with (findValidationMethod param=param)}}
+        {{this}}({{param.name}}, call)
+        {{~/with}}
         val errors = call.finishObject()
 
         val result : ValidationResult<{{param.type}}> =
-            if (errors != null) ValidationResult.invalid(errors)
+            if (errors != null) ValidationResult.invalid({{param.name}}, errors)
             else ValidationResult.valid({{param.name}})
 
         return result
@@ -31,7 +33,7 @@ class {{typeName}} : {{interfaceName}} {
 {{/each}}
 
 {{~#each privateMethods}}
-    private fun {{name}}({{param.name}}: {{param.type}}?, call: ValidationCall) {
+    {{#if isOverride}}override{{else}}private{{/if}} fun {{name}}({{param.name}}: {{param.type}}?, call: ValidationCall) {
         if ({{param.name}} == null) return
         {{#each directProperties}}
         {{~>validator-direct-property prop=. param=param}}
@@ -42,11 +44,38 @@ class {{typeName}} : {{interfaceName}} {
         {{~#if param.isList}}
         for (item in {{param.name}}) {
             val itemCall = call.listItem()
-            Constraints.checkNotNull("__root__", item, itemCall)
-            {{~#if param.itemValidatorMethodName}}
-            {{param.itemValidatorMethodName}}(item, itemCall)
+
+            {{~#if param.itemConstraints.size}}
+            item?.let {
+            {{~#each param.itemConstraints}}
+                Constraints.{{name}}("$", it, itemCall{{~#if args.size}}, {{#each args}}{{@key}}={{quote .}}, {{/each}}{{/if}})
+            {{~/each}}
+            }
             {{~/if}}
+
+            {{~#with (findItemValidationMethod param=param)}}
+            {{this}}(item, itemCall)
+            {{~/with}}
             itemCall.finishObject()
+        }
+        {{~else if param.isMap}}
+        for (entry in {{param.name}}.entries) {
+            val (key, value) = entry
+
+            val nested = call.nestedProperty(key)
+
+            {{~#if param.itemConstraints.size}}
+            value?.let {
+            {{~#each param.itemConstraints}}
+                Constraints.{{name}}("$", it, nested{{~#if args.size}}, {{#each args}}{{@key}}={{quote .}}, {{/each}}{{/if}})
+            {{~/each}}
+            }
+            {{~/if}}
+
+            {{~#with (findItemValidationMethod param=param)}}
+            {{this}}(value, nested)
+            {{~/with}}
+            nested.finishObject()
         }
         {{~else}}
         {{~#each nestedProperties~}}
@@ -56,6 +85,10 @@ class {{typeName}} : {{interfaceName}} {
             {{~/unless}}
         {{~/each}}
         {{~/if}}
+
+        {{~#each additionalValidationMethods}}
+        {{name}}({{../param.name}}, call)
+        {{~/each}}
     }
 {{~#unless @last}}
 

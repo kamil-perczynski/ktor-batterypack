@@ -1,5 +1,6 @@
 package io.github.ktor_batterypack.validation
 
+import java.math.BigDecimal
 import java.time.LocalDate
 
 object Constraints {
@@ -12,11 +13,7 @@ object Constraints {
 
     fun checkNotEmpty(prop: String, data: Collection<Any>, call: ValidationCall) {
         if (data.isEmpty()) {
-            if (prop.isEmpty()) {
-                call.directError(SingleConstraintError("NotEmpty"))
-            } else {
-                call.propertyError(prop, SingleConstraintError("NotEmpty"))
-            }
+            call.directError(SingleConstraintError("NotEmpty"))
         }
     }
 
@@ -38,33 +35,65 @@ object Constraints {
         }
     }
 
-    fun checkMin(prop: String, num: Double, call: ValidationCall, value: Number) {
-        if (num < value.toDouble()) {
-            call.propertyError(prop, SingleConstraintError("Min", "Must be at least $value"))
-        }
-    }
-
-    fun checkMax(prop: String, num: Double, call: ValidationCall, value: Number) {
-        if (num > value.toDouble()) {
-            call.propertyError(prop, SingleConstraintError("Max", "Must be at most $value"))
-        }
-    }
-
-    fun checkMin(prop: String, num: Int, call: ValidationCall, value: Number) {
-        if (num < value.toDouble()) {
-            call.propertyError(prop, SingleConstraintError("Min", "Must be at least $value"))
-        }
-    }
-
-    fun checkMax(prop: String, num: Int, call: ValidationCall, value: Number) {
-        if (num > value.toDouble()) {
-            call.propertyError(prop, SingleConstraintError("Max", "Must be at most $value"))
-        }
-    }
-
     fun checkPattern(prop: String, str: String, call: ValidationCall, regexp: String) {
         if (!Regex(regexp).matches(str)) {
             call.propertyError(prop, SingleConstraintError("Pattern", "Must match $regexp"))
+        }
+    }
+
+    fun checkSize(prop: String, data: String, call: ValidationCall, min: Int, max: Int) {
+        if (data.length < min) {
+            call.propertyError(prop, SingleConstraintError("Size", "Must be longer than min=$min"))
+        }
+        if (data.length > max) {
+            call.propertyError(prop, SingleConstraintError("Size", "Must be shorter than max=$max"))
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    // ==========================================
+    // Int Overloads (Zero Boxing, Inlined)
+    // ==========================================
+
+    fun checkMin(prop: String, num: Int, call: ValidationCall, value: Int) {
+        if (num < value) call.propertyError(prop, SingleConstraintError("Min", "Must be at least $value"))
+    }
+
+    fun checkMax(prop: String, num: Int, call: ValidationCall, value: Int) {
+        if (num > value) call.propertyError(prop, SingleConstraintError("Max", "Must be at most $value"))
+    }
+
+    // ==========================================
+    // Long Overloads (Zero Boxing, Inlined)
+    // ==========================================
+
+    fun checkMin(prop: String, num: Long, call: ValidationCall, value: Long) {
+        if (num < value) call.propertyError(prop, SingleConstraintError("Min", "Must be at least $value"))
+    }
+
+    fun checkMax(prop: String, num: Long, call: ValidationCall, value: Long) {
+        if (num > value) call.propertyError(prop, SingleConstraintError("Max", "Must be at most $value"))
+    }
+
+    fun checkMin(prop: String, num: Double, call: ValidationCall, value: Long) {
+        if (num < value) call.propertyError(prop, SingleConstraintError("Min", "Must be at least $value"))
+    }
+
+    fun checkMax(prop: String, num: Double, call: ValidationCall, value: Long) {
+        if (num > value) call.propertyError(prop, SingleConstraintError("Max", "Must be at most $value"))
+    }
+
+    fun checkPositive(prop: String, value: BigDecimal, call: ValidationCall) {
+        if (value <= BigDecimal.ZERO) {
+            call.propertyError(prop, SingleConstraintError("Positive"))
         }
     }
 

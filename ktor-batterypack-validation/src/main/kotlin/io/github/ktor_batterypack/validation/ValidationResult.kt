@@ -7,8 +7,8 @@ sealed interface ValidationResult<U> {
             return ValidResult(data)
         }
 
-        fun <T : Any> invalid(errors: ConstraintError): ValidationResult<T> {
-            return InvalidResult(errors)
+        fun <T : Any> invalid(data: T, errors: ConstraintError): ValidationResult<T> {
+            return InvalidResult(data, errors)
         }
     }
 
@@ -16,9 +16,10 @@ sealed interface ValidationResult<U> {
     val isInvalid: Boolean
 
     fun <T> fold(
-        onValid: (validationResult: U) -> T,
-        onInvalid: (validationResult: ConstraintError) -> T,
+        onValid: (validResult: U) -> T,
+        onInvalid: (data: U, errors: ConstraintError) -> T,
     ): T
+
 }
 
 data class ValidResult<U>(val data: U) : ValidationResult<U> {
@@ -26,21 +27,30 @@ data class ValidResult<U>(val data: U) : ValidationResult<U> {
     override val isInvalid: Boolean = false
 
     override fun <T> fold(
-        onValid: (validationResult: U) -> T,
-        onInvalid: (validationResult: ConstraintError) -> T
+        onValid: (validResult: U) -> T,
+        onInvalid: (data: U, errors: ConstraintError) -> T
     ): T {
         return onValid(data)
     }
 }
 
-data class InvalidResult<U>(val errors: ConstraintError) : ValidationResult<U> {
+data class InvalidResult<U>(val data: U, val errors: ConstraintError) : ValidationResult<U> {
     override val isValid: Boolean = false
     override val isInvalid: Boolean = true
 
     override fun <T> fold(
-        onValid: (validationResult: U) -> T,
-        onInvalid: (validationResult: ConstraintError) -> T
+        onValid: (validResult: U) -> T,
+        onInvalid: (data: U, errors: ConstraintError) -> T
     ): T {
-        return onInvalid(errors)
+        return onInvalid(data, errors)
     }
+}
+
+fun <T> ValidationResult<T>.check(): T {
+    return fold(
+        onValid = { it },
+        onInvalid = { data, errors ->
+            throw ValidationException(data as Any, errors)
+        }
+    )
 }

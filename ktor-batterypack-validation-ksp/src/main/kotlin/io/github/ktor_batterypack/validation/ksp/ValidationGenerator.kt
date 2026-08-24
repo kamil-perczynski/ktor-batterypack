@@ -19,35 +19,60 @@ class ValidationGenerator(
     override fun process(resolver: Resolver): List<KSAnnotated> {
         if (generated) return emptyList()
 
-        val annotated = resolver.getSymbolsWithAnnotation("io.github.ktor_batterypack.annotation.Validator")
-            .filterIsInstance<KSClassDeclaration>()
-            .toList()
+        val validatorClassesSymbols =
+            resolver.getSymbolsWithAnnotation("io.github.ktor_batterypack.annotation.Validator")
+                .filterIsInstance<KSClassDeclaration>()
+                .toList()
+
+        val jsonValidatorClassesSymbols =
+            resolver.getSymbolsWithAnnotation("io.github.ktor_batterypack.annotation.JsonValidator")
+                .filterIsInstance<KSClassDeclaration>()
+                .toList()
 
         val deferred = mutableListOf<KSAnnotated>()
 
-        for (classDecl in annotated) {
-            val qualifiedName = classDecl.qualifiedName?.asString() ?: continue
-            environment.logger.warn("ValidationGenerator: processing $qualifiedName")
-
-            val model = V2CodegenModelResolverImpl().resolve(KspValidatorInterface(classDecl))
-            val source = codegen.generateValidatorClass(model)
-
-            val sourceFile = classDecl.containingFile ?: continue
-            val dependencies = Dependencies(aggregating = false, sourceFile)
-
-            environment.codeGenerator.createNewFile(
-                dependencies = dependencies,
-                packageName = model.packageName,
-                fileName = model.typeName
-            ).use { stream ->
-                stream.write(source.toByteArray())
+        for (classDecl in validatorClassesSymbols) {
+            generateValidatorClass(classDecl) { model ->
+                codegen.generateValidatorClass(model)
             }
-
-            environment.logger.warn("Generated ${model.fqTypeName}")
+        }
+        for (classDecl in jsonValidatorClassesSymbols) {
+            generateValidatorClass(classDecl) { model ->
+                codegen.generateJsonValidatorClass(model)
+            }
         }
 
         generated = true
         return deferred
+    }
+
+    private fun generateValidatorClass(
+        classDecl: KSClassDeclaration,
+        genFn: (CodegenModel) -> String
+    ) {
+        val qualifiedName = classDecl.qualifiedName?.asString() ?: return
+        environment.logger.warn("ValidationGenerator: processing $qualifiedName")
+
+        val resolver = CodegenModelResolver(
+            namingConvention = DefaultCodegenNamingConvention.DEFAULT_CODEGEN_NAMING_CONVENTION
+        )
+
+        val model = resolver.resolve(KspValidatorInterface(classDecl))
+
+        val source = genFn(model)
+
+        val sourceFile = classDecl.containingFile ?: return
+        val dependencies = Dependencies(aggregating = false, sourceFile)
+
+        environment.codeGenerator
+            .createNewFile(
+                dependencies = dependencies,
+                packageName = model.packageName,
+                fileName = model.typeName
+            )
+            .use { stream -> stream.write(source.toByteArray()) }
+
+        environment.logger.warn("Generated ${model.fqTypeName}")
     }
 }
 

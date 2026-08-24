@@ -1,0 +1,25 @@
+{{~#if prop.nullable}}
+        {{~else}}
+        JsonConstraints.checkNotNull("{{prop.name}}", {{param.name}}, call)
+        {{~/if}}
+        {{~#if prop.isObject}}
+        JsonConstraints.checkObject("{{prop.name}}", {{param.name}}, call)?.let {
+            val itemCall = call.nestedProperty("{{prop.name}}")
+            {{~#with (findValidationMethod param=param prop=prop)}}
+            {{this}}(it, itemCall)
+            {{~/with}}
+            itemCall.finishObject()
+        }
+        {{~/if}}
+        {{~#if prop.isList}}
+        JsonConstraints.checkArray("{{prop.name}}", {{param.name}}, call)?.let {
+            val itemCall = call.nestedProperty("{{prop.name}}")
+            {{~#each prop.constraints}}
+            JsonConstraints.{{name}}(it, itemCall)
+            {{~/each}}
+            {{~#with (findValidationMethod param=param prop=prop)}}
+            {{this}}(it, itemCall)
+            {{~/with}}
+            itemCall.finishList()
+        }
+        {{~/if}}

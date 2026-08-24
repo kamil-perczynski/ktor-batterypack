@@ -1,14 +1,19 @@
 package io.github.ktor_batterypack.validation.example
 
+import io.github.ktor_batterypack.validation.ksp.CodegenModelResolver
+import io.github.ktor_batterypack.validation.ksp.ValidatorCodegen
 import io.github.ktor_batterypack.validation.model.Address
+import io.github.ktor_batterypack.validation.model.LegacyIdentification
 import io.github.ktor_batterypack.validation.model.Person
-import io.github.ktor_batterypack.validation.model.PersonIdentification
 import io.github.ktor_batterypack.validation.model.PersonIdentificationType.*
-import org.assertj.core.api.Assertions
+import io.github.ktor_batterypack.validation.reflection.ReflectionValidatorInterface
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import tools.jackson.databind.json.JsonMapper
 import tools.jackson.module.kotlin.KotlinModule
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.time.LocalDate
 
 class PersonValidatorTest {
@@ -16,6 +21,27 @@ class PersonValidatorTest {
     private val jsonMapper = JsonMapper.builder()
         .addModule(KotlinModule.Builder().build())
         .build()
+
+    @Test
+    @Disabled
+    fun testGenerateAndWritePersonValidator() {
+        val sourceRoot = Paths.get("src/test/kotlin").toAbsolutePath()
+
+        val codegenModelResolver = CodegenModelResolver()
+
+        val model = codegenModelResolver.resolve(
+            ReflectionValidatorInterface(PersonValidator::class)
+        )
+
+        val validatorClass = ValidatorCodegen().generateValidatorClass(model)
+
+        val filePath = Paths.get(
+            sourceRoot.toString(),
+            "io/github/ktor_batterypack/validation/example/PersonValidatorImpl.kt"
+        )
+
+        Files.writeString(filePath, validatorClass)
+    }
 
     @Test
     fun testInvalidObject() {
@@ -31,44 +57,28 @@ class PersonValidatorTest {
             ),
             birthDate = LocalDate.parse("1995-01-12"),
             identifications = listOf(
-                PersonIdentification(ID_DOCUMENT_CHECK, 50.0),
-                PersonIdentification(LIVENESS_CHECK, 50.0),
-                PersonIdentification(SIGNATURE_SPECIMEN_1, 150.0)
+                LegacyIdentification(ID_DOCUMENT_CHECK),
+                LegacyIdentification(LIVENESS_CHECK),
+                LegacyIdentification(SIGNATURE_SPECIMEN_1)
             ),
         )
 
         val result = validator.validate(person)
 
-        val json = jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(result)
+        val json = jsonMapper.writerWithDefaultPrettyPrinter()
+            .writeValueAsString(result.fold({ it }, { _, errors -> errors }))
 
         assertThat(json).isEqualTo(
             """
                 {
-                  "errors" : {
-                    "identifications" : {
-                      "errors" : [ ],
-                      "items" : [ null, null, {
-                        "confidence" : {
-                          "errors" : [ {
-                            "constraint" : "Max",
-                            "message" : "Must be at most 100"
-                          } ]
-                        }
-                      } ]
-                    },
-                    "address" : {
-                      "zipCode" : {
-                        "errors" : [ {
-                          "constraint" : "NotBlank"
-                        }, {
-                          "constraint" : "Pattern",
-                          "message" : "Must match \\d{2}-\\d{3}"
-                        } ]
-                      }
-                    }
-                  },
-                  "isInvalid" : true,
-                  "isValid" : false
+                  "address" : {
+                    "zipCode" : [ {
+                      "constraint" : "NotBlank"
+                    }, {
+                      "constraint" : "Pattern",
+                      "message" : "Must match \\d{2}-\\d{3}"
+                    } ]
+                  }
                 }
             """.trimIndent()
         )
@@ -88,7 +98,7 @@ class PersonValidatorTest {
             ),
             birthDate = LocalDate.parse("1995-01-12"),
             identifications = listOf(
-                PersonIdentification(ID_DOCUMENT_CHECK, 50.0)
+                LegacyIdentification(ID_DOCUMENT_CHECK)
             ),
         )
 
@@ -109,8 +119,7 @@ class PersonValidatorTest {
                     },
                     "birthDate" : "1995-01-12",
                     "identifications" : [ {
-                      "type" : "ID_DOCUMENT_CHECK",
-                      "confidence" : 50.0
+                      "type" : "ID_DOCUMENT_CHECK"
                     } ]
                   },
                   "isInvalid" : false,

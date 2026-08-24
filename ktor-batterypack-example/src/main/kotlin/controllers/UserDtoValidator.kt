@@ -2,80 +2,18 @@ package io.github.kperczynski.controllers
 
 import io.github.kperczynski.domain.user.UserCreate
 import io.github.kperczynski.domain.user.UserUpdate
-import io.github.ktor_batterypack.core.exception.FieldError
-import io.github.ktor_batterypack.core.exception.ValidationException
-import io.konform.validation.Validation
-import io.konform.validation.ValidationResult
-import io.konform.validation.constraints.minLength
-import org.koin.core.annotation.Singleton
+import io.github.ktor_batterypack.annotation.Validator
+import io.github.ktor_batterypack.validation.ValidationResult
 
-@Singleton
-class UserDtoValidator {
+@Validator
+interface UserDtoValidator {
 
-    private val createValidator = Validation {
-        UserCreate::name {
-            minLength(1) hint "Name must not be empty" userContext mapOf(
-                "code" to "minLength",
-                "min" to 2
-            )
-            minLength(2) hint "Name must be at least 2 characters" userContext mapOf(
-                "code" to "minLength",
-                "min" to 2
-            )
-        }
-        UserCreate::age {
-            constrain("must be at least 0") { it >= 0 } userContext mapOf(
-                "code" to "minValue",
-                "min" to 0
-            )
-            constrain("must be at most 150") { it <= 150 } userContext mapOf(
-                "code" to "maxValue",
-                "max" to 150
-            )
-        }
+    companion object {
+        val userDtoValidator : UserDtoValidator = UserDtoValidatorImpl()
     }
 
-    private val updateValidator = Validation {
-        UserUpdate::name {
-            minLength(1) hint "Name must not be empty" userContext mapOf(
-                "code" to "minLength",
-                "min" to 2
-            )
-            minLength(2) hint "Name must be at least 2 characters" userContext mapOf(
-                "code" to "minLength",
-                "min" to 2
-            )
-        }
-        UserUpdate::age {
-            constrain("must be at least 0") { it >= 0 } userContext mapOf(
-                "code" to "minValue",
-                "min" to 0
-            )
-            constrain("must be at most 150") { it <= 150 } userContext mapOf(
-                "code" to "maxValue",
-                "max" to 150
-            )
-        }
-    }
+    fun validate(userCreate: UserCreate): ValidationResult<UserCreate>
 
-    fun validateCreate(value: UserCreate) {
-        val result = createValidator(value)
-        checkValid(result)
-    }
+    fun validate(userUpdate: UserUpdate): ValidationResult<UserUpdate>
 
-    fun validateUpdate(value: UserUpdate) {
-        val result = updateValidator(value)
-        checkValid(result)
-    }
-}
-
-@Suppress("UNCHECKED_CAST")
-private fun checkValid(result: ValidationResult<*>) {
-    if (!result.isValid) {
-        val errors = result.errors.map {
-            FieldError(it.dataPath, it.message, it.userContext as Map<String, Any>)
-        }
-
-        throw ValidationException(errors)
-    }
 }

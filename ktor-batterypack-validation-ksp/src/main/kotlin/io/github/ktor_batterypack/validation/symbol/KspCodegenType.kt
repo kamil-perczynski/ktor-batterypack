@@ -5,6 +5,7 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import io.github.ktor_batterypack.validation.ksp.CodegenType
+import io.github.ktor_batterypack.validation.ksp.CodegenAnnotation
 import io.github.ktor_batterypack.validation.ksp.DeclaredMember
 import io.github.ktor_batterypack.validation.ksp.isPrimitive
 
@@ -34,13 +35,15 @@ data class KspCodegenType(private val type: KSType) : CodegenType {
     override val isMap: Boolean
         get() = isSubtypeOf(classDecl, "kotlin.collections.Map")
 
-    private val isEnum: Boolean
+    override val isEnum: Boolean
         get() = classDecl.classKind == ClassKind.ENUM_CLASS
 
     override val declaredMemberProperties: List<DeclaredMember>
         get() {
             if (isCollection) return emptyList()
             if (isMap) return emptyList()
+            if (isPrimitive) return emptyList()
+
             return classDecl.declarations
                 .filterIsInstance<KSPropertyDeclaration>()
                 .map { KspDeclaredMember(it) }
@@ -52,6 +55,12 @@ data class KspCodegenType(private val type: KSType) : CodegenType {
             if (typeParams.isEmpty()) return name
             return "$name<${typeParams.joinToString(", ") { it.properName }}>"
         }
+
+    override val annotations: List<CodegenAnnotation>
+        get() = type.annotations.map { KspCodegenAnnotation(it) }.toList()
+
+    override val isMarkedNullable: Boolean
+        get() = type.isMarkedNullable
 
 }
 

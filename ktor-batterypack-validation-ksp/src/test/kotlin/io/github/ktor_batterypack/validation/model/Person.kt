@@ -28,12 +28,30 @@ data class Address(
     val zipCode: String,
 )
 
-data class PersonIdentification(
-    val type: PersonIdentificationType,
-    @field:Min(0)
-    @field:Max(100)
+data class LegacyIdentification(override val type: PersonIdentificationType): PersonIdentification
+
+interface PersonIdentification {
+    val type: PersonIdentificationType
+}
+
+data class IdDocIdentification(
+    override val type: PersonIdentificationType,
+    @get:NotBlank val idNumber: String,
+    @get:NotBlank val issueDate: String
+) : PersonIdentification
+
+data class LivenessIdentification(
+    override val type: PersonIdentificationType,
+    @get:Min(0)
+    @get:Max(100)
     val confidence: Double
-)
+) : PersonIdentification
+
+data class SignatureSpecimen1(
+    override val type: PersonIdentificationType, @get:NotBlank val filePath: String, @get:Min(0)
+    @get:Max(100)
+    val confidence: Double
+) : PersonIdentification
 
 enum class PersonIdentificationType {
     ID_DOCUMENT_CHECK,
