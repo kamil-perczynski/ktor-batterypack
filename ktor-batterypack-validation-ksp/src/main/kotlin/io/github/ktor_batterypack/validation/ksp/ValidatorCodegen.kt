@@ -58,6 +58,7 @@ class ValidatorCodegen {
                     "java.time.LocalTime" -> "checkLocalTime"
                     "java.time.OffsetDateTime" -> "checkOffsetDateTime"
                     "java.time.Instant" -> "checkInstant"
+                    "java.util.UUID" -> "checkUuid"
                     else -> throw IllegalArgumentException("Unsupported type ${type.fqName}")
                 }
             } else {

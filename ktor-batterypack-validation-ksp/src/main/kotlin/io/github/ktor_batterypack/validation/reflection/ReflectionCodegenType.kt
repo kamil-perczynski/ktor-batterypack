@@ -74,5 +74,8 @@ data class ReflectionCodegenType(
 
     override val isMarkedNullable: Boolean
         get() = ktype.isMarkedNullable
+
+    override val enumValues: List<String>
+        get() = kclass.java.enumConstants?.map { it.toString() } ?: emptyList()
 }
 

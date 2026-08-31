@@ -19,10 +19,13 @@ object StringFormats {
     private val INSTANT_PATTERN =
         Regex("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?$OFFSET_PATTERN$")
 
-    fun checkUuid(prop: String, value: String, call: ValidationCall) {
+    fun checkUuid(prop: String, value: String, call: ValidationCall): Boolean {
         if (!UUID_PATTERN.matches(value)) {
             call.propertyError(prop, SingleConstraintError("Format", "Must be a valid UUID"))
+            return false
         }
+
+        return true
     }
 
     fun checkLocalDate(prop: String, value: String, call: ValidationCall? = null): Boolean {

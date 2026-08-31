@@ -12,4 +12,5 @@ interface CodegenType : CodegenNode {
     val properName: String
     val annotations: List<CodegenAnnotation>
     val isMarkedNullable: Boolean
+    val enumValues : List<String>
 }

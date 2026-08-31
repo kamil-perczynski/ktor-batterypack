@@ -3,6 +3,18 @@
         JsonConstraints.checkNotNull("{{prop.name}}", {{param.name}}, call)
         {{~/if}}
         JsonConstraints.{{toTypeCheckMethodName prop.codegenType}}("{{prop.name}}", {{param.name}}, call)?.let {
+        {{~#if prop.codegenType.isEnum}}
+            JsonConstraints.checkEnum(
+                prop = "{{prop.name}}",
+                value = it,
+                call = call,
+                allowedValues = setOf(
+                {{~#each prop.codegenType.enumValues}}
+                    "{{this}}",
+                {{~/each}}
+                )
+            )
+        {{~/if}}
         {{~#if prop.constraints.size}}
         {{~#each prop.constraints}}
             Constraints.{{name}}("{{../name}}", it, call{{~#if args.size}}, {{#each args}}{{@key}}={{quote .}}, {{/each}}{{/if}})

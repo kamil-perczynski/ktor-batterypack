@@ -61,6 +61,13 @@ data class KspCodegenType(private val type: KSType) : CodegenType {
 
     override val isMarkedNullable: Boolean
         get() = type.isMarkedNullable
+    
+    override val enumValues: List<String>
+        get() = classDecl.declarations
+            .filterIsInstance<KSClassDeclaration>()
+            .filter { it.classKind == ClassKind.ENUM_ENTRY }
+            .map { it.simpleName.asString() }
+            .toList()
 
 }
 

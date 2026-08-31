@@ -6,8 +6,19 @@ import tools.jackson.databind.node.JsonNodeType
 import tools.jackson.databind.node.ObjectNode
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.util.UUID
 
 object JsonConstraints {
+
+    @JvmStatic
+    fun checkEnum(prop: String, value: String, call: ValidationCall?, allowedValues: Set<String>) {
+        if (!allowedValues.contains(value)) {
+            call?.propertyError(
+                prop,
+                SingleConstraintError("EnumValues", "Allowed values are: $allowedValues")
+            )
+        }
+    }
 
     @JvmStatic
     fun checkObject(prop: String, jsonNode: JsonNode, call: ValidationCall? = null): ObjectNode? {
@@ -143,6 +154,14 @@ object JsonConstraints {
         }
 
         return numberNode.intValue()
+    }
+
+    @JvmStatic
+    fun checkUuid(prop: String, node: JsonNode, call: ValidationCall): UUID? {
+        val value = checkString(prop, node, call) ?: return null
+        if (!StringFormats.checkUuid(prop, value, call)) return null
+
+        return UUID.fromString(value)
     }
 
 }
