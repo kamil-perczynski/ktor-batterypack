@@ -42,10 +42,12 @@ object StringFormats {
         }
     }
 
-    fun checkOffsetDateTime(prop: String, value: String, call: ValidationCall) {
+    fun checkOffsetDateTime(prop: String, value: String, call: ValidationCall): Boolean {
         if (!OFFSET_DATE_TIME_PATTERN.matches(value)) {
             call.propertyError(prop, SingleConstraintError("Format", "Must be a valid offset date-time"))
+            return false
         }
+        return true
     }
 
     fun checkInstant(prop: String, value: String, call: ValidationCall) {

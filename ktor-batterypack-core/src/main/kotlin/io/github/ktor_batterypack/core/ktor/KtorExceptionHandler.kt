@@ -94,7 +94,7 @@ class KtorExceptionHandler(private val jsonMapper: JsonMapper) {
                 type = "VALIDATION_ERROR",
                 title = "Validation Failed",
                 status = 400,
-                detail = "Request validation failed",
+                detail = cause.message ?: "Request validation failed",
                 instance = call.request.uri,
                 extensionData = mapOf("validation" to cause.errors)
             )

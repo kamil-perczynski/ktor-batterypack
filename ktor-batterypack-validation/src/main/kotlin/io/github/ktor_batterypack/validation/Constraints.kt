@@ -97,4 +97,29 @@ object Constraints {
         }
     }
 
+    fun checkDecimalMin(
+        prop: String,
+        checkedValue: BigDecimal,
+        call: ValidationCall,
+        value: String,
+        inclusive: Boolean
+    ) {
+        val comparison = checkedValue.compareTo(value.toBigDecimal())
+        if (comparison == -1 || (comparison == 0 && inclusive)) {
+            call.propertyError(prop, SingleConstraintError("Min", "Must be greater than $value"))
+        }
+    }
+    fun checkDecimalMax(
+        prop: String,
+        checkedValue: BigDecimal,
+        call: ValidationCall,
+        value: String,
+        inclusive: Boolean
+    ) {
+        val comparison = checkedValue.compareTo(value.toBigDecimal())
+        if (comparison == 1 || (comparison == 0 && inclusive)) {
+            call.propertyError(prop, SingleConstraintError("Max", "Must be greater than $value"))
+        }
+    }
+
 }

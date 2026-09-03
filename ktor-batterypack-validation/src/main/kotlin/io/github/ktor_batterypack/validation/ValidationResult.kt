@@ -46,11 +46,11 @@ data class InvalidResult<U>(val data: U, val errors: ConstraintError) : Validati
     }
 }
 
-fun <T> ValidationResult<T>.check(): T {
+fun <T> ValidationResult<T>.check(message: String? = null): T {
     return fold(
         onValid = { it },
         onInvalid = { data, errors ->
-            throw ValidationException(data as Any, errors)
+            throw ValidationException(data as Any, errors, message)
         }
     )
 }

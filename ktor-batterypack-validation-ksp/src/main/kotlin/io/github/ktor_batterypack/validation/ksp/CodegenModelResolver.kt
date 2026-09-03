@@ -263,7 +263,9 @@ class CodegenModelResolver(
             return emptyMap()
         }
 
-        return constraints.associate { constraint ->
+        return constraints
+            .filter { it.fqName.startsWith("jakarta.validation.constraints") }
+            .associate { constraint ->
             constraint.name to ConstraintMethod(
                 "check${constraint.name}",
                 constraint.args

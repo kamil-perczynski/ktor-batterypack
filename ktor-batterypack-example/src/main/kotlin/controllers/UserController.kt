@@ -4,6 +4,7 @@ import io.github.kperczynski.controllers.UserApiValidator.Companion.userApiValid
 import io.github.kperczynski.domain.user.UserCreate
 import io.github.kperczynski.domain.user.UserService
 import io.github.kperczynski.domain.user.UserUpdate
+import io.github.ktor_batterypack.core.ktor.JsonBinder
 import io.github.ktor_batterypack.core.ktor.KtorController
 import io.ktor.http.*
 import io.ktor.server.response.*
@@ -18,7 +19,7 @@ class UserController(
 
     override fun register(routing: Routing) {
         routing.post("/users") {
-            val userCreate = jsonBinder.bind<UserCreate>(
+            val userCreate = jsonBinder.bindBody<UserCreate>(
                 call = call,
                 validatorFn = userApiValidator::validateUserCreate
             )
@@ -35,7 +36,7 @@ class UserController(
 
         routing.put("/users/{id}") {
             val id = call.parameters["id"]?.toUInt() ?: throw IllegalArgumentException("Invalid ID")
-            val userUpdate = jsonBinder.bind<UserUpdate>(call, userApiValidator::validateUserCreate)
+            val userUpdate = jsonBinder.bindBody<UserUpdate>(call, userApiValidator::validateUserCreate)
             userService.update(id, userUpdate)
             call.respond(HttpStatusCode.NoContent)
         }

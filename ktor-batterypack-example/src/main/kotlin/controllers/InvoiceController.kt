@@ -2,6 +2,7 @@ package io.github.kperczynski.controllers
 
 import io.github.kperczynski.domain.invoice.InvoiceCreate
 import io.github.kperczynski.domain.invoice.JsonInvoiceCreateValidator.Companion.jsonInvoiceCreateValidator
+import io.github.ktor_batterypack.core.ktor.JsonBinder
 import io.github.ktor_batterypack.core.ktor.KtorController
 import io.ktor.http.*
 import io.ktor.server.response.*
@@ -17,7 +18,7 @@ class InvoiceController(private val binder: JsonBinder) : KtorController {
     override fun register(routing: Routing) {
         routing.post("/invoices") {
             val invoiceCreate =
-                binder.bind<InvoiceCreate>(call, jsonInvoiceCreateValidator::validateInvoiceCreate)
+                binder.bindBody<InvoiceCreate>(call, jsonInvoiceCreateValidator::validateInvoiceCreate)
 
             log.info("Received valid invoiceCreate=={}", invoiceCreate)
 

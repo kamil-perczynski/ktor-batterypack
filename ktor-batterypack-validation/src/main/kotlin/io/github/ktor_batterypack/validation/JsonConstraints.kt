@@ -1,11 +1,14 @@
 package io.github.ktor_batterypack.validation
 
+import tools.jackson.core.io.NumberInput
 import tools.jackson.databind.JsonNode
 import tools.jackson.databind.node.ArrayNode
+import tools.jackson.databind.node.DecimalNode
 import tools.jackson.databind.node.JsonNodeType
 import tools.jackson.databind.node.ObjectNode
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.OffsetDateTime
 import java.util.UUID
 
 object JsonConstraints {
@@ -60,12 +63,17 @@ object JsonConstraints {
     @JvmStatic
     fun checkDouble(prop: String, jsonNode: JsonNode, call: ValidationCall? = null): Double? {
         val numberNode = jsonNode.get(prop) ?: return null
-        if (!numberNode.isNumber) {
-            call?.typeMismatch(prop, JsonNodeType.NUMBER, numberNode.nodeType)
-            return null
+
+        if (numberNode.isNumber) {
+            return numberNode.doubleValue()
         }
 
-        return numberNode.doubleValue()
+        if (numberNode.isString && NumberInput.looksLikeValidNumber(numberNode.asString())) {
+            return NumberInput.parseDouble(numberNode.asString(), true)
+        }
+
+        call?.typeMismatch(prop, JsonNodeType.NUMBER, numberNode.nodeType)
+        return null
     }
 
     @JvmStatic
@@ -75,13 +83,19 @@ object JsonConstraints {
         call: ValidationCall? = null
     ): BigDecimal? {
         val numberNode = jsonNode.get(prop) ?: return null
-        if (!numberNode.isNumber) {
-            call?.typeMismatch(prop, JsonNodeType.NUMBER, numberNode.nodeType)
-            return null
+
+        if (numberNode.isNumber) {
+            return numberNode.asDecimal()
         }
 
-        return numberNode.asDecimal()
+        if (numberNode.isString && NumberInput.looksLikeValidNumber(numberNode.asString())) {
+            return NumberInput.parseBigDecimal(numberNode.asString(), true)
+        }
+
+        call?.typeMismatch(prop, JsonNodeType.NUMBER, numberNode.nodeType)
+        return null
     }
+
 
     @JvmStatic
     fun checkString(prop: String, jsonNode: JsonNode, call: ValidationCall? = null): String? {
@@ -148,12 +162,16 @@ object JsonConstraints {
     fun checkInt(prop: String, jsonNode: JsonNode, call: ValidationCall? = null): Int? {
         val numberNode = jsonNode.get(prop) ?: return null
 
-        if (!numberNode.isNumber) {
-            call?.typeMismatch(prop, JsonNodeType.NUMBER, numberNode.nodeType)
-            return null
+        if (numberNode.isNumber) {
+            return numberNode.intValue()
         }
 
-        return numberNode.intValue()
+        if (numberNode.isString && NumberInput.looksLikeValidNumber(numberNode.asString())) {
+            return NumberInput.parseInt(numberNode.asString())
+        }
+
+        call?.typeMismatch(prop, JsonNodeType.NUMBER, numberNode.nodeType)
+        return null
     }
 
     @JvmStatic
@@ -162,6 +180,30 @@ object JsonConstraints {
         if (!StringFormats.checkUuid(prop, value, call)) return null
 
         return UUID.fromString(value)
+    }
+
+    @JvmStatic
+    fun checkOffsetDateTime(prop: String, node: ObjectNode, call: ValidationCall): OffsetDateTime? {
+        val value = checkString(prop, node, call) ?: return null
+        if (!StringFormats.checkOffsetDateTime(prop, value, call)) return null
+
+        return OffsetDateTime.parse(value)
+    }
+
+    @JvmStatic
+    fun checkLong(prop: String, jsonNode: JsonNode, call: ValidationCall?): Long? {
+        val numberNode = jsonNode.get(prop) ?: return null
+
+        if (numberNode.isNumber) {
+            return numberNode.longValue()
+        }
+
+        if (numberNode.isString && NumberInput.looksLikeValidNumber(numberNode.asString())) {
+            return NumberInput.parseLong(numberNode.asString())
+        }
+
+        call?.typeMismatch(prop, JsonNodeType.NUMBER, numberNode.nodeType)
+        return null
     }
 
 }
@@ -187,4 +229,18 @@ private fun ValidationCall.typeMismatch(expected: JsonNodeType, actual: JsonNode
             "Expected ${expected.name.lowercase()} but was ${actual.name.lowercase()}"
         )
     )
+}
+
+private fun canCoerceToNumber(jsonNode: JsonNode): Boolean {
+    if (!jsonNode.isString) {
+        return false
+    }
+
+    val value = jsonNode.asString()
+
+    if (Regex("^[0-9]+$").matches(value)) {
+        return true
+    }
+
+    return Regex("^[0-9]*\\.$[0-9]+").matches(value)
 }
