@@ -54,7 +54,7 @@ class {{typeName}} : {{interfaceName}} {
             {{~/if}}
 
             {{~#with (findItemValidationMethod param=param)}}
-            {{this}}(item, itemCall)
+            {{name}}(item, itemCall)
             {{~/with}}
             itemCall.finishObject()
         }
@@ -73,7 +73,7 @@ class {{typeName}} : {{interfaceName}} {
             {{~/if}}
 
             {{~#with (findItemValidationMethod param=param)}}
-            {{this}}(value, nested)
+            {{name}}(value, nested)
             {{~/with}}
             nested.finishObject()
         }

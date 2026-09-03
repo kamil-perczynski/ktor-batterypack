@@ -3,21 +3,20 @@ package io.github.ktor_batterypack.validation
 import tools.jackson.core.io.NumberInput
 import tools.jackson.databind.JsonNode
 import tools.jackson.databind.node.ArrayNode
-import tools.jackson.databind.node.DecimalNode
 import tools.jackson.databind.node.JsonNodeType
 import tools.jackson.databind.node.ObjectNode
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.OffsetDateTime
-import java.util.UUID
+import java.util.*
 
 object JsonConstraints {
 
     @JvmStatic
-    fun checkEnum(prop: String, value: String, call: ValidationCall?, allowedValues: Set<String>) {
+    fun checkEnum(prop: String?, value: String, call: ValidationCall?, allowedValues: Set<String>) {
         if (!allowedValues.contains(value)) {
             call?.propertyError(
-                prop,
+                prop ?: "$",
                 SingleConstraintError("EnumValues", "Allowed values are: $allowedValues")
             )
         }
@@ -98,13 +97,16 @@ object JsonConstraints {
 
 
     @JvmStatic
-    fun checkString(prop: String, jsonNode: JsonNode, call: ValidationCall? = null): String? {
-        val stringNode = jsonNode.get(prop) ?: return null
+    fun checkString(prop: String?, jsonNode: JsonNode, call: ValidationCall? = null): String? {
+        val stringNode = if (prop != null)
+            jsonNode.get(prop)
+        else
+            jsonNode
 
-        if (stringNode.isNull) return null
+        if (stringNode == null || stringNode.isNull) return null
 
         if (!stringNode.isString) {
-            call?.typeMismatch(prop, JsonNodeType.STRING, stringNode.nodeType)
+            call?.typeMismatch(prop ?: "$", JsonNodeType.STRING, stringNode.nodeType)
             return null
         }
 
@@ -229,18 +231,4 @@ private fun ValidationCall.typeMismatch(expected: JsonNodeType, actual: JsonNode
             "Expected ${expected.name.lowercase()} but was ${actual.name.lowercase()}"
         )
     )
-}
-
-private fun canCoerceToNumber(jsonNode: JsonNode): Boolean {
-    if (!jsonNode.isString) {
-        return false
-    }
-
-    val value = jsonNode.asString()
-
-    if (Regex("^[0-9]+$").matches(value)) {
-        return true
-    }
-
-    return Regex("^[0-9]*\\.$[0-9]+").matches(value)
 }

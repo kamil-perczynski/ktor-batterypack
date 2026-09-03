@@ -38,7 +38,7 @@ class {{typeName}} : {{interfaceName}} {
 {{/each}}
 
 {{~#each privateMethods}}
-    {{#if isOverride}}override{{else}}private{{/if}} fun {{name}}({{param.name}}: {{toJsonType param.codegenType}}?, call: ValidationCall) {
+    {{#if isOverride}}override{{else}}private{{/if}} fun {{name}}({{param.name}}: {{toJsonType param.codegenType}}?, call: ValidationCall{{#if param.codegenType.isEnum}}, prop: String?{{/if}}) {
         if ({{param.name}} == null) return
         {{#each directProperties}}
         {{~>validator-direct-property prop=. param=param}}
@@ -58,11 +58,14 @@ class {{typeName}} : {{interfaceName}} {
             {{~/each}}
             }
             {{~/if}}
-
             {{~#with (findItemValidationMethod param=param)}}
+            {{~#if param.isEnum}}
+            {{name}}(item, itemCall, prop=null)
+            {{~else}}
             JsonConstraints.checkObject(item, itemCall)?.let {
-                {{this}}(it, itemCall)
+                {{name}}(it, itemCall)
             }
+            {{/if}}
             {{~/with}}
             itemCall.finishObject()
         }
@@ -82,11 +85,28 @@ class {{typeName}} : {{interfaceName}} {
             {{~/if}}
 
             {{~#with (findItemValidationMethod param=param)}}
+            {{~#if param.isEnum}}
+            {{name}}(value, nested, null)
+            {{~else}}
             JsonConstraints.checkObject(value, nested)?.let {
-                {{this}}(it, nested)
+                {{name}}(it, nested)
             }
+            {{/if}}
             {{~/with}}
             nested.finishObject()
+        }
+        {{~else if param.codegenType.isEnum}}
+        JsonConstraints.checkString(prop, {{param.name}}, call)?.let {
+            JsonConstraints.checkEnum(
+                prop = prop,
+                value = it,
+                call = call,
+                allowedValues = setOf(
+                {{~#each param.codegenType.enumValues}}
+                    "{{this}}",
+                {{~/each}}
+                )
+            )
         }
         {{~else}}
         {{~#each nestedProperties~}}

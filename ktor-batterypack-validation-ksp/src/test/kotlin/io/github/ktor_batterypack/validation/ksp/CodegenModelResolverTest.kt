@@ -32,6 +32,7 @@ class CodegenModelResolverTest {
                 tuple(true, "validateIdDocIdentification", "IdDocIdentification"),
                 tuple(true, "validateLivenessIdentification", "LivenessIdentification"),
                 tuple(false, "validatePerson", "Person"),
+                tuple(false, "validatePersonIdentificationType", "PersonIdentificationType"),
                 tuple(false, "validatePersonIdentificationsList", "List<PersonIdentification>")
             )
     }
@@ -51,11 +52,12 @@ class CodegenModelResolverTest {
             .containsExactly(
                 tuple(false, "validatePerson", "Person"),
                 tuple(false, "validatePersonIdentification", "PersonIdentification"),
+                tuple(false, "validatePersonIdentificationType", "PersonIdentificationType"),
                 tuple(false, "validatePersonIdentificationsList", "List<PersonIdentification>")
             )
 
         val validatePersonIdentification = model.privateMethods
-            .find { it.name == "validatePersonIdentification" }
+            .find { it.name == "validatePersonIdentificationType" }
 
         assertThat(validatePersonIdentification).isNotNull
 
@@ -66,10 +68,10 @@ class CodegenModelResolverTest {
             "SIGNATURE_SPECIMEN_1",
             "SIGNATURE_SPECIMEN_2"
         )
-
-        assertThat(validatePersonIdentification?.directProperties)
-            .extracting({ it?.name }, { it?.codegenType?.isEnum }, { it?.codegenType?.enumValues })
-            .containsExactly(tuple("type", true, enumConstants))
+        val param = validatePersonIdentification?.param
+        assertThat(param?.name).isEqualTo("personIdentificationType")
+        assertThat(param?.codegenType?.isEnum).isTrue
+        assertThat(param?.codegenType?.enumValues).isEqualTo(enumConstants)
     }
 
     @Test
@@ -86,6 +88,7 @@ class CodegenModelResolverTest {
         assertThat(model.privateMethods)
             .extracting({ it.isOverride }, { it.name }, { it.param.type })
             .containsExactly(
+                tuple(false, "validateBillingComponentUnit", "BillingComponentUnit"),
                 tuple(false, "validateContractParty", "ContractParty"),
                 tuple(false, "validateInvoiceCreate", "InvoiceCreate"),
                 tuple(
@@ -211,7 +214,7 @@ class CodegenModelResolverTest {
 
     @Test
     fun testGenerateBasicValidatorClassJson() {
-        val iface = ReflectionValidatorInterface(PersonValidator::class)
+        val iface = ReflectionValidatorInterface(JsonPersonValidator::class)
         val model = resolver.resolve(iface)
 
         val generatedValidatorClass = ValidatorCodegen().generateJsonValidatorClass(model)
@@ -234,9 +237,9 @@ class CodegenModelResolverTest {
 
                 @Generated
                 @Suppress("UNNECESSARY_SAFE_CALL")
-                class PersonValidatorImpl : PersonValidator {
+                class JsonPersonValidatorImpl : JsonPersonValidator {
 
-                    override fun validate(person: JsonNode): ValidationResult<JsonNode> {
+                    override fun validatePerson(person: JsonNode): ValidationResult<JsonNode> {
                         val call = ValidationCall()
                         JsonConstraints.checkNotNull(person, call)
                         JsonConstraints.checkObject(person, call)?.let {
@@ -268,6 +271,33 @@ class CodegenModelResolverTest {
                             Constraints.checkPattern("zipCode", it, call, regexp="\\d{2}-\\d{3}", )
                         }
 
+                        checkAddressLines(address, call)
+                    }
+
+                    override fun validateIdDocIdentification(idDocIdentification: ObjectNode?, call: ValidationCall) {
+                        if (idDocIdentification == null) return
+                        
+                        JsonConstraints.checkNotNull("idNumber", idDocIdentification, call)
+                        JsonConstraints.checkString("idNumber", idDocIdentification, call)?.let {
+                        }
+
+                        JsonConstraints.checkNotNull("issueDate", idDocIdentification, call)
+                        JsonConstraints.checkString("issueDate", idDocIdentification, call)?.let {
+                        }
+
+                        JsonConstraints.checkNotNull("type", idDocIdentification, call)
+                        validatePersonIdentificationType(idDocIdentification, call, "type")
+                    }
+
+                    override fun validateLivenessIdentification(livenessIdentification: ObjectNode?, call: ValidationCall) {
+                        if (livenessIdentification == null) return
+                        
+                        JsonConstraints.checkNotNull("confidence", livenessIdentification, call)
+                        JsonConstraints.checkDouble("confidence", livenessIdentification, call)?.let {
+                        }
+
+                        JsonConstraints.checkNotNull("type", livenessIdentification, call)
+                        validatePersonIdentificationType(livenessIdentification, call, "type")
                     }
 
                     private fun validatePerson(person: ObjectNode?, call: ValidationCall) {
@@ -278,13 +308,13 @@ class CodegenModelResolverTest {
                             Constraints.checkPast("birthDate", it, call)
                         }
 
+                        JsonConstraints.checkNotNull("firstName", person, call)
                         JsonConstraints.checkString("firstName", person, call)?.let {
-                            Constraints.checkNotNull("firstName", it, call)
                             Constraints.checkNotBlank("firstName", it, call)
                         }
 
+                        JsonConstraints.checkNotNull("lastName", person, call)
                         JsonConstraints.checkString("lastName", person, call)?.let {
-                            Constraints.checkNotNull("lastName", it, call)
                             Constraints.checkNotBlank("lastName", it, call)
                         }
 
@@ -303,13 +333,12 @@ class CodegenModelResolverTest {
                         }
                     }
 
-                    private fun validatePersonIdentification(personIdentification: ObjectNode?, call: ValidationCall) {
-                        if (personIdentification == null) return
+                    private fun validatePersonIdentificationType(personIdentificationType: JsonNode?, call: ValidationCall, prop: String?) {
+                        if (personIdentificationType == null) return
                         
-                        JsonConstraints.checkNotNull("type", personIdentification, call)
-                        JsonConstraints.checkString("type", personIdentification, call)?.let {
+                        JsonConstraints.checkString(prop, personIdentificationType, call)?.let {
                             JsonConstraints.checkEnum(
-                                prop = "type",
+                                prop = prop,
                                 value = it,
                                 call = call,
                                 allowedValues = setOf(
@@ -321,7 +350,6 @@ class CodegenModelResolverTest {
                                 )
                             )
                         }
-
                     }
 
                     private fun validatePersonIdentificationsList(identifications: ArrayNode?, call: ValidationCall) {
@@ -333,6 +361,7 @@ class CodegenModelResolverTest {
                             JsonConstraints.checkObject(item, itemCall)?.let {
                                 validatePersonIdentification(it, itemCall)
                             }
+                            
                             itemCall.finishObject()
                         }
                     }

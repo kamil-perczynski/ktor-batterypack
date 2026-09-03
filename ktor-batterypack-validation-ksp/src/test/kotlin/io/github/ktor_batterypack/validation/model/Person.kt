@@ -6,10 +6,10 @@ import java.time.LocalDate
 data class Person(
     @field:NotNull
     @field:NotBlank
-    val firstName: String?,
+    val firstName: String,
     @field:NotNull
     @field:NotBlank
-    val lastName: String?,
+    val lastName: String,
 
     val address: Address,
 
@@ -17,7 +17,7 @@ data class Person(
     val birthDate: LocalDate,
 
     @field:NotEmpty
-    val identifications: List<PersonIdentification>
+    val identifications: List<PersonIdentification>,
 )
 
 data class Address(

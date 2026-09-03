@@ -4,6 +4,7 @@ import com.google.common.graph.GraphBuilder
 import com.google.common.graph.MutableGraph
 import com.google.common.graph.Traverser
 import io.github.ktor_batterypack.validation.ksp.DefaultCodegenNamingConvention.DEFAULT_CODEGEN_NAMING_CONVENTION
+import jakarta.validation.constraints.NotNull
 
 class CodegenModelResolver(
     private val maxDepth: Int = 10,
@@ -163,7 +164,7 @@ class CodegenModelResolver(
                                 }
                             }
                         } else {
-                            if (!property.type.isPrimitive) {
+                            if (!property.type.isPrimitive || property.type.isEnum) {
                                 graph.putEdge(codegenMethod, property.type)
                             }
                         }
@@ -218,26 +219,26 @@ class CodegenModelResolver(
                 itemConstraints = itemConstraints
             ),
             directProperties = method.param.declaredMemberProperties
-                .filter { it.type.isPrimitive }
+                .filter { it.type.isPrimitive && !it.type.isEnum }
                 .map {
                     val constraints = toConstraints(it.annotations)
                     DirectProperties(
                         name = it.name,
                         codegenType = it.type,
                         type = it.type.properName,
-                        nullable = it.type.isMarkedNullable,
+                        nullable = bool(it),
                         constraints = constraints,
                     )
                 },
             nestedProperties = method.param.declaredMemberProperties
-                .filter { !it.type.isPrimitive || it.type.isMap }
+                .filter { !it.type.isPrimitive || it.type.isMap || it.type.isEnum }
                 .map {
                     val constraints = toConstraints(it.annotations)
                     NestedProperty(
                         name = it.name,
                         codegenType = it.type,
                         type = it.type.properName,
-                        nullable = it.type.isMarkedNullable,
+                        nullable = bool(it),
                         constraints = constraints,
                         isList = it.type.isCollection,
                         isObject = isObject(it.type),
@@ -245,6 +246,9 @@ class CodegenModelResolver(
                 }
         )
     }
+
+    private fun bool(member: DeclaredMember): Boolean =
+        member.type.isMarkedNullable || member.type.annotations.any { annotation -> annotation.fqName == NotNull::class.qualifiedName }
 
     private fun findItemConstraints(method: CodegenMethod): Map<String, ConstraintMethod> {
         if (method.param.isCollection) {
@@ -265,12 +269,13 @@ class CodegenModelResolver(
 
         return constraints
             .filter { it.fqName.startsWith("jakarta.validation.constraints") }
+            .filter { it.fqName != NotNull::class.qualifiedName }
             .associate { constraint ->
-            constraint.name to ConstraintMethod(
-                "check${constraint.name}",
-                constraint.args
-            )
-        }
+                constraint.name to ConstraintMethod(
+                    "check${constraint.name}",
+                    constraint.args
+                )
+            }
     }
 
 }

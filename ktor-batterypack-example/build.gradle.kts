@@ -1,4 +1,5 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
@@ -153,4 +154,8 @@ tasks.whenTaskAdded {
 
 sourceSets {
     main { kotlin { srcDir("build/generated/src/main/kotlin") } }
+}
+
+tasks.withType<KotlinCompile> {
+    compilerOptions.freeCompilerArgs.set(listOf("-Xannotation-default-target=param-property"))
 }

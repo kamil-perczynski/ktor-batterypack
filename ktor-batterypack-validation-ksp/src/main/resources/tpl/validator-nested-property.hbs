@@ -19,3 +19,8 @@
             itemCall.finishList()
         }
         {{~/if}}
+        {{~#if prop.codegenType.isEnum}}
+        {{~#with (findValidationMethod param=param prop=prop)}}
+        {{this}}({{param.name}}.{{prop.name}}, call)
+        {{~/with}}
+        {{~/if}}

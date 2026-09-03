@@ -48,8 +48,8 @@ class PersonValidatorTest {
         val validator = GeneratedPersonValidatorImpl()
 
         val person = Person(
-            firstName = null,
-            lastName = null,
+            firstName = "",
+            lastName = "",
             address = Address(
                 addressLine1 = "123 Main Street",
                 addressLine2 = "",
@@ -71,6 +71,12 @@ class PersonValidatorTest {
         assertThat(json).isEqualTo(
             """
                 {
+                  "firstName" : [ {
+                    "constraint" : "NotBlank"
+                  } ],
+                  "lastName" : [ {
+                    "constraint" : "NotBlank"
+                  } ],
                   "address" : {
                     "zipCode" : [ {
                       "constraint" : "NotBlank"

@@ -137,7 +137,7 @@ class ValidatorCodegen {
             else
                 throw IllegalArgumentException("Illegal argument. Must be a map or a list")
 
-            if (searchedType.isPrimitive) {
+            if (searchedType.isPrimitive && !searchedType.isEnum) {
                 return@Helper null
             }
 
@@ -150,7 +150,7 @@ class ValidatorCodegen {
                 .filter { it.name == methodName }
                 .firstOrNull()
 
-            return@Helper firstOrNull?.name ?: "__NOT_FOUND__"
+            return@Helper firstOrNull
 
         })
     }

@@ -841,10 +841,10 @@ paths:
                 format: uuid
               createdAtLte:
                 type: string
-                format: local-date
+                format: date
               createdAtGte:
                 type: string
-                format: local-date
+                format: date-time
               paging:
                 type: object
                 required:
