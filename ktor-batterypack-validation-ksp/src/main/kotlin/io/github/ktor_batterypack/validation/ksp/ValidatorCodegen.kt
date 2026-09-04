@@ -81,14 +81,15 @@ class ValidatorCodegen {
         })
 
         handlebars.registerHelper("findValidationMethod", Helper<Any> { _, opts ->
-            val param = opts.hash<ValidationParameter>("param")
+            val paramType = opts.hash<CodegenType>("paramType")
+
             val prop = opts.hash<NestedProperty>("prop")
             val graph = opts.context.data<CodegenModel>("root")
 
-            if (param != null && prop != null && (prop.codegenType.isMap || prop.codegenType.isCollection)) {
+            if (paramType != null && prop != null && (prop.codegenType.isMap || prop.codegenType.isCollection)) {
                 val methodName =
                     DefaultCodegenNamingConvention.DEFAULT_CODEGEN_NAMING_CONVENTION.collectionValidationMethodName(
-                        param.codegenType,
+                        paramType,
                         prop.name,
                         prop.codegenType
                     )
@@ -98,19 +99,19 @@ class ValidatorCodegen {
                     .filter { it.name == methodName }
                     .firstOrNull()
 
-                return@Helper matchedMethod?.name ?: "__NOT_FOUND__"
+                return@Helper matchedMethod?.name
             }
 
             if (prop == null) {
                 val methodName =
-                    DefaultCodegenNamingConvention.DEFAULT_CODEGEN_NAMING_CONVENTION.validationMethodName(param.codegenType)
+                    DefaultCodegenNamingConvention.DEFAULT_CODEGEN_NAMING_CONVENTION.validationMethodName(paramType)
                 val firstOrNull = graph.methodsGraph.nodes()
                     .filterIsInstance<CodegenMethod>()
-                    .filter { it.param.properName == param.codegenType.properName }
+                    .filter { it.param.properName == paramType.properName }
                     .filter { it.name == methodName }
                     .firstOrNull()
 
-                return@Helper firstOrNull?.name ?: "__NOT_FOUND__"
+                return@Helper firstOrNull?.name
             }
 
             val methodName =
@@ -122,36 +123,7 @@ class ValidatorCodegen {
                 .filter { it.name == methodName }
                 .firstOrNull()
 
-            return@Helper firstOrNull?.name ?: "__NOT_FOUND__"
-        })
-
-
-        handlebars.registerHelper("findItemValidationMethod", Helper<Any> { _, opts ->
-            val param = opts.hash<ValidationParameter>("param")
-            val graph = opts.context.data<CodegenModel>("root")
-
-            val searchedType = if (param.isMap)
-                param.codegenType.typeParams[1]
-            else if (param.isList)
-                param.codegenType.typeParams[0]
-            else
-                throw IllegalArgumentException("Illegal argument. Must be a map or a list")
-
-            if (searchedType.isPrimitive && !searchedType.isEnum) {
-                return@Helper null
-            }
-
-            val methodName =
-                DefaultCodegenNamingConvention.DEFAULT_CODEGEN_NAMING_CONVENTION.validationMethodName(searchedType)
-
-            val firstOrNull = graph.methodsGraph.nodes()
-                .filterIsInstance<CodegenMethod>()
-                .filter { it.param.properName == searchedType.properName }
-                .filter { it.name == methodName }
-                .firstOrNull()
-
-            return@Helper firstOrNull
-
+            return@Helper firstOrNull?.name
         })
     }
 

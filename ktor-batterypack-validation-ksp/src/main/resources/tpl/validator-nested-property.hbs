@@ -1,7 +1,7 @@
         {{~#if prop.isObject}}
         {{param.name}}.{{prop.name}}?.let {
             val itemCall = call.nestedProperty("{{prop.name}}")
-            {{~#with (findValidationMethod param=param prop=prop)}}
+            {{~#with (findValidationMethod paramType=param.codegenType prop=prop)}}
             {{this}}(it, itemCall)
             {{~/with}}
             itemCall.finishObject()
@@ -13,14 +13,14 @@
             {{~#each prop.constraints}}
             Constraints.{{name}}("{{../name}}", it, itemCall)
             {{~/each}}
-            {{~#with (findValidationMethod param=param prop=prop)}}
+            {{~#with (findValidationMethod paramType=param.codegenType prop=prop)}}
             {{this}}(it, itemCall)
             {{~/with}}
             itemCall.finishList()
         }
         {{~/if}}
         {{~#if prop.codegenType.isEnum}}
-        {{~#with (findValidationMethod param=param prop=prop)}}
+        {{~#with (findValidationMethod paramType=param.codegenType prop=prop)}}
         {{this}}({{param.name}}.{{prop.name}}, call)
         {{~/with}}
         {{~/if}}

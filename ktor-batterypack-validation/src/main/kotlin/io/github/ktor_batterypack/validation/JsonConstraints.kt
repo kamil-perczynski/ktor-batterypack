@@ -208,6 +208,13 @@ object JsonConstraints {
         return null
     }
 
+    @JvmStatic
+    fun checkSize(node: ArrayNode, call: ValidationCall, min: Int, max: Int) {
+        if (node.size() !in min..max) {
+            call.directError(SingleConstraintError("Size", "Must have size between [$min, $max]"))
+        }
+    }
+
 }
 
 private fun ValidationCall.typeMismatch(

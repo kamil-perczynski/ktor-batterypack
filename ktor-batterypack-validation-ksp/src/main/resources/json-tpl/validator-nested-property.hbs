@@ -5,7 +5,7 @@
         {{~#if prop.isObject}}
         JsonConstraints.checkObject("{{prop.name}}", {{param.name}}, call)?.let {
             val itemCall = call.nestedProperty("{{prop.name}}")
-            {{~#with (findValidationMethod param=param prop=prop)}}
+            {{~#with (findValidationMethod paramType=param.codegenType prop=prop)}}
             {{this}}(it, itemCall)
             {{~/with}}
             itemCall.finishObject()
@@ -15,16 +15,16 @@
         JsonConstraints.checkArray("{{prop.name}}", {{param.name}}, call)?.let {
             val itemCall = call.nestedProperty("{{prop.name}}")
             {{~#each prop.constraints}}
-            JsonConstraints.{{name}}(it, itemCall)
+            JsonConstraints.{{name}}(it, itemCall{{~#if args.size}}, {{#each args}}{{@key}}={{quote .}}, {{/each}}{{/if}})
             {{~/each}}
-            {{~#with (findValidationMethod param=param prop=prop)}}
+            {{~#with (findValidationMethod paramType=param.codegenType prop=prop)}}
             {{this}}(it, itemCall)
             {{~/with}}
             itemCall.finishList()
         }
         {{~/if}}
         {{~#if prop.codegenType.isEnum}}
-        {{~#with (findValidationMethod param=param prop=prop)}}
+        {{~#with (findValidationMethod paramType=param.codegenType prop=prop)}}
         {{this}}({{param.name}}, call, "{{prop.name}}")
         {{~/with}}
         {{~/if}}

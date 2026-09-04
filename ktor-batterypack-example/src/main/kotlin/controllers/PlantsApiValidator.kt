@@ -12,8 +12,7 @@ import tools.jackson.databind.JsonNode
 interface PlantsApiValidator {
 
     companion object {
-        val plantsApiValidator: PlantsApiValidator =
-            PlantsApiValidatorImpl()
+        val plantsApiValidator: PlantsApiValidator = PlantsApiValidatorImpl()
     }
 
     @ValidationParamType(ListPlantsParamsParameterDto::class)

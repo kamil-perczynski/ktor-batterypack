@@ -834,6 +834,7 @@ paths:
                 $ref: '#/components/schemas/PlantStatus'
               statusIn:
                 type: array
+                minItems: 1
                 items:
                   $ref: '#/components/schemas/PlantStatus'
               id:

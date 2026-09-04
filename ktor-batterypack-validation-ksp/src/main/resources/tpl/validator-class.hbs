@@ -16,7 +16,7 @@ class {{typeName}} : {{interfaceName}} {
 {{#each methods}}
     override fun {{name}}({{param.name}}: {{param.type}}): ValidationResult<{{param.type}}> {
         val call = ValidationCall()
-        {{~#with (findValidationMethod param=param)}}
+        {{~#with (findValidationMethod paramType=param.codegenType)}}
         {{this}}({{param.name}}, call)
         {{~/with}}
         val errors = call.finishObject()
@@ -52,9 +52,8 @@ class {{typeName}} : {{interfaceName}} {
             {{~/each}}
             }
             {{~/if}}
-
-            {{~#with (findItemValidationMethod param=param)}}
-            {{name}}(item, itemCall)
+            {{~#with (findValidationMethod paramType=param.codegenType.typeParams.0)}}
+            {{this}}(item, itemCall)
             {{~/with}}
             itemCall.finishObject()
         }
@@ -72,8 +71,8 @@ class {{typeName}} : {{interfaceName}} {
             }
             {{~/if}}
 
-            {{~#with (findItemValidationMethod param=param)}}
-            {{name}}(value, nested)
+            {{~#with (findValidationMethod paramType=param.codegenType.typeParams.1)}}
+            {{this}}(value, nested)
             {{~/with}}
             nested.finishObject()
         }
