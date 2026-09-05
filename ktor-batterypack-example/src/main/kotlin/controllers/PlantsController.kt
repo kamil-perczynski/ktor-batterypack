@@ -20,6 +20,7 @@ import java.util.UUID
 
 @Singleton
 class PlantsController(private val binder: JsonBinder) : KtorController, PlantsApi {
+
     override fun register(routing: Routing) {
         routing.post("/api/plants") {
             val query = binder.bindQueryParams<ListPlantsParamsParameterDto>(
