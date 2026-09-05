@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.Positive
+import jakarta.validation.constraints.Size
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -29,6 +30,7 @@ data class InvoiceCreate(
     val party4: ContractParty?,
     val party5: ContractParty?,
     @field:NotEmpty
+    @Size(max = 100)
     val positions: List<InvoicePosition>,
     @field:NotEmpty
     val meteringPointPositions: List<MeteringPointPosition>

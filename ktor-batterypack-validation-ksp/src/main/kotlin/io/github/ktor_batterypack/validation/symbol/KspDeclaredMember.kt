@@ -16,12 +16,4 @@ class KspDeclaredMember(private val prop: KSPropertyDeclaration) : DeclaredMembe
     override val type: CodegenType
         get() = toKspCodegenType(prop.type.resolve())
 
-    override val itemType: CodegenType?
-        get() {
-            if (type.isCollection) {
-                val typeArgs = prop.type.resolve().arguments
-                return toKspCodegenType(typeArgs.first().type!!.resolve())
-            }
-            return null
-        }
 }

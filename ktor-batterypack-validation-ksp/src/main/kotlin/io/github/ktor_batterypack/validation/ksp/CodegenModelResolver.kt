@@ -8,7 +8,8 @@ import jakarta.validation.constraints.NotNull
 
 class CodegenModelResolver(
     private val maxDepth: Int = 10,
-    private val namingConvention: CodegenNamingConvention = DEFAULT_CODEGEN_NAMING_CONVENTION
+    private val namingConvention: CodegenNamingConvention = DEFAULT_CODEGEN_NAMING_CONVENTION,
+    private val constraintRegistry: ConstraintRegistry = ConstraintRegistry()
 ) {
 
     fun resolve(validatorInterface: ValidatorInterface): CodegenModel {
@@ -201,7 +202,7 @@ class CodegenModelResolver(
         method: CodegenMethod,
         additionalValidationMethods: List<CodegenMethod>
     ): PrivateValidationMethod {
-        val itemConstraints = findItemConstraints(method)
+        val itemConstraints = constraintRegistry.findItemConstraints(method.param)
 
         return PrivateValidationMethod(
             name = method.name,
@@ -221,7 +222,7 @@ class CodegenModelResolver(
             directProperties = method.param.declaredMemberProperties
                 .filter { it.type.isPrimitive }
                 .map {
-                    val constraints = toConstraints(it.annotations)
+                    val constraints = constraintRegistry.toConstraints(it.type, it.annotations)
                     DirectProperties(
                         name = it.name,
                         codegenType = it.type,
@@ -233,7 +234,7 @@ class CodegenModelResolver(
             nestedProperties = method.param.declaredMemberProperties
                 .filter { !it.type.isPrimitive }
                 .map {
-                    val constraints = toConstraints(it.annotations)
+                    val constraints = constraintRegistry.toConstraints(it.type, it.annotations)
                     NestedProperty(
                         name = it.name,
                         codegenType = it.type,
@@ -250,34 +251,6 @@ class CodegenModelResolver(
     private fun isNullable(member: DeclaredMember): Boolean {
         return member.type.isMarkedNullable
             || member.type.annotations.any { annotation -> annotation.fqName == NotNull::class.qualifiedName }
-    }
-
-    private fun findItemConstraints(method: CodegenMethod): Map<String, ConstraintMethod> {
-        if (method.param.isCollection) {
-            return toConstraints(method.param.typeParams[0].annotations)
-        }
-
-        if (method.param.isMap) {
-            return toConstraints(method.param.typeParams[1].annotations)
-        }
-
-        return toConstraints(method.param.annotations)
-    }
-
-    private fun toConstraints(constraints: List<CodegenAnnotation>): Map<String, ConstraintMethod> {
-        if (constraints.isEmpty()) {
-            return emptyMap()
-        }
-
-        return constraints
-            .filter { it.fqName.startsWith("jakarta.validation.constraints") }
-            .filter { it.fqName != NotNull::class.qualifiedName }
-            .associate { constraint ->
-                constraint.name to ConstraintMethod(
-                    "check${constraint.name}",
-                    constraint.args
-                )
-            }
     }
 
 }

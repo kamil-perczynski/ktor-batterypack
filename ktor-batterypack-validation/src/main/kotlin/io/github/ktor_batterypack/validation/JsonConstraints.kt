@@ -215,6 +215,16 @@ object JsonConstraints {
         }
     }
 
+    @JvmStatic
+    fun checkSize(prop: String, value: String, call: ValidationCall, min: Int, max: Int) {
+        return Constraints.checkSize(prop, value, call, min, max)
+    }
+
+    @JvmStatic
+    fun checkNotEmpty(prop: String, value: String, call: ValidationCall) {
+        return Constraints.checkNotEmpty(prop, value, call)
+    }
+
 }
 
 private fun ValidationCall.typeMismatch(

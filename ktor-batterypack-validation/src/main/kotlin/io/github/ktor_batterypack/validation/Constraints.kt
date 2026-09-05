@@ -11,7 +11,7 @@ object Constraints {
         }
     }
 
-    fun checkNotEmpty(prop: String, data: Collection<Any>, call: ValidationCall) {
+    fun checkNotEmpty(data: Collection<Any>, call: ValidationCall) {
         if (data.isEmpty()) {
             call.directError(SingleConstraintError("NotEmpty"))
         }
@@ -26,6 +26,12 @@ object Constraints {
     fun checkNotBlank(prop: String, data: String, call: ValidationCall) {
         if (data.isBlank()) {
             call.propertyError(prop, SingleConstraintError("NotBlank"))
+        }
+    }
+
+    fun checkNotBlank(data: String, call: ValidationCall) {
+        if (data.isBlank()) {
+            call.directError(SingleConstraintError("NotBlank"))
         }
     }
 
@@ -49,15 +55,6 @@ object Constraints {
             call.propertyError(prop, SingleConstraintError("Size", "Must be shorter than max=$max"))
         }
     }
-
-
-
-
-
-
-
-
-
 
     // ==========================================
     // Int Overloads (Zero Boxing, Inlined)
@@ -119,6 +116,18 @@ object Constraints {
         val comparison = checkedValue.compareTo(value.toBigDecimal())
         if (comparison == 1 || (comparison == 0 && inclusive)) {
             call.propertyError(prop, SingleConstraintError("Max", "Must be greater than $value"))
+        }
+    }
+
+    fun checkSize(prop: String, data: Collection<*>, call: ValidationCall, max: Int, min: Int) {
+        if (data.size !in min..max) {
+            call.propertyError(prop, SingleConstraintError("Size", "Must have size between [$min, $max]"))
+        }
+    }
+
+    fun checkSize(data: Collection<*>, call: ValidationCall, max: Int, min: Int) {
+        if (data.size !in min..max) {
+            call.directError(SingleConstraintError("Size", "Must have size between [$min, $max]"))
         }
     }
 

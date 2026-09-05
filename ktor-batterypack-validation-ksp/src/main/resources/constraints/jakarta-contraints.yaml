@@ -1,0 +1,15 @@
+$schema: ../jakarta-constraints.schema.yaml
+import: io.github.ktor_batterypack.validation.Constraints
+jsonImport: io.github.ktor_batterypack.validation.JsonConstraints
+defaults:
+  callTpl: Constraints.{{methodName}}({{#with prop}}{{quote .}}, {{/with}}{{value}}, {{call}}{{#with (constraintArgs args)}}, {{this}}{{/with}})
+constraints:
+  - annotation: jakarta.validation.constraints.NotBlank
+  - annotation: jakarta.validation.constraints.NotEmpty
+    jsonCallTpl: JsonConstraints.checkNotEmpty({{#with prop}}{{quote .}}, {{/with}}{{value}}, {{call}})
+  - annotation: jakarta.validation.constraints.Min
+  - annotation: jakarta.validation.constraints.Max
+  - annotation: jakarta.validation.constraints.Size
+    jsonCallTpl: JsonConstraints.checkSize({{#with prop}}{{quote .}}, {{/with}}{{value}}, {{call}}, {{constraintArgs args}})
+  - annotation: jakarta.validation.constraints.Past
+  - annotation: jakarta.validation.constraints.Pattern

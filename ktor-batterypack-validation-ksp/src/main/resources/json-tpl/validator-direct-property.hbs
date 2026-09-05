@@ -5,7 +5,7 @@
         JsonConstraints.{{toTypeCheckMethodName prop.codegenType}}("{{prop.name}}", {{param.name}}, call)?.let {
         {{~#if prop.constraints.size}}
         {{~#each prop.constraints}}
-            Constraints.{{name}}("{{../name}}", it, call{{~#if args.size}}, {{#each args}}{{@key}}={{quote .}}, {{/each}}{{/if}})
+            {{jsonConstraint constraint=this prop=../name}}
         {{~/each}}
         {{~/if}}
         }

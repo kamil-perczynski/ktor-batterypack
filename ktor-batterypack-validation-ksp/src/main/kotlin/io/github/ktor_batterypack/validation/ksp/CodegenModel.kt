@@ -1,5 +1,7 @@
 package io.github.ktor_batterypack.validation.ksp
 
+import io.github.ktor_batterypack.validation.codegen.ConstraintsDescriptor
+
 data class CodegenModel(
     val imports: List<String>,
     val packageName: String,
@@ -60,5 +62,6 @@ data class ValidationParameter(
 
 data class ConstraintMethod(
     val name: String,
-    val args: Map<String, Any> = emptyMap()
+    val args: Map<String, Any> = emptyMap(),
+    val descriptor: ConstraintsDescriptor.Constraint
 )

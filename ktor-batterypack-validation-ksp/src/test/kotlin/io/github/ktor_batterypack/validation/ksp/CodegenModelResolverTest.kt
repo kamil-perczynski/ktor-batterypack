@@ -188,7 +188,7 @@ class CodegenModelResolverTest {
                         
                         ktorProps.modules?.let {
                             val itemCall = call.nestedProperty("modules")
-                            Constraints.checkNotEmpty("modules", it, itemCall)
+                            Constraints.checkNotEmpty(it, itemCall)
                             validateKtorPropsModulesList(it, itemCall)
                             itemCall.finishList()
                         }
@@ -200,7 +200,7 @@ class CodegenModelResolverTest {
                         for (item in modules) {
                             val itemCall = call.listItem()
                             item?.let {
-                                Constraints.checkNotBlank("$", it, itemCall)
+                                Constraints.checkNotBlank(it, itemCall)
                             }
                             itemCall.finishObject()
                         }
@@ -268,7 +268,8 @@ class CodegenModelResolverTest {
                         JsonConstraints.checkNotNull("zipCode", address, call)
                         JsonConstraints.checkString("zipCode", address, call)?.let {
                             Constraints.checkNotBlank("zipCode", it, call)
-                            Constraints.checkPattern("zipCode", it, call, regexp="\\d{2}-\\d{3}", )
+                            Constraints.checkPattern("zipCode", it, call, regexp="\\d{2}-\\d{3}")
+                            JsonConstraints.checkSize("zipCode", it, call, min=1, max=100)
                         }
 
                         checkAddressLines(address, call)

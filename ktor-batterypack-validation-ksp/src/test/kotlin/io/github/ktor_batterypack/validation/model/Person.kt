@@ -25,6 +25,7 @@ data class Address(
     val addressLine2: String,
     @field:NotBlank
     @field:Pattern(regexp = "\\d{2}-\\d{3}")
+    @field:Size(min = 1, max = 100)
     val zipCode: String,
 )
 

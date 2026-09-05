@@ -54,7 +54,7 @@ class {{typeName}} : {{interfaceName}} {
             {{~#if param.itemConstraints.size}}
             item?.let {
             {{~#each param.itemConstraints}}
-                JsonConstraints.{{name}}(it, itemCall{{~#if args.size}}, {{#each args}}{{@key}}={{quote .}}, {{/each}}{{/if}})
+                {{jsonConstraint constraint=this prop=../name call='itemCall'}}
             {{~/each}}
             }
             {{~/if}}
@@ -84,7 +84,7 @@ class {{typeName}} : {{interfaceName}} {
             {{~#if param.itemConstraints.size}}
             value?.let {
             {{~#each param.itemConstraints}}
-                JsonConstraints.{{name}}(it, nested{{~#if args.size}}, {{#each args}}{{@key}}={{quote .}}, {{/each}}{{/if}})
+                {{jsonConstraint constraint=this prop=null call='nested'}}
             {{~/each}}
             }
             {{~/if}}

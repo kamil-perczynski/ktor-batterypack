@@ -56,7 +56,7 @@ class PersonValidatorImpl : PersonValidator {
         }
         person.identifications?.let {
             val itemCall = call.nestedProperty("identifications")
-            Constraints.checkNotEmpty("identifications", it, itemCall)
+            Constraints.checkNotEmpty(it, itemCall)
             validatePersonIdentificationsList(it, itemCall)
             itemCall.finishList()
         }

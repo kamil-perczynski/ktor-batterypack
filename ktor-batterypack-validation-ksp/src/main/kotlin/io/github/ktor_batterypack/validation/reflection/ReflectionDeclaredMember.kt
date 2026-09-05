@@ -17,13 +17,4 @@ data class ReflectionDeclaredMember(val prop: KProperty<*>) : DeclaredMember {
     override val type: CodegenType
         get() = toReflectionCodegenType(prop.returnType)
 
-    override val itemType: CodegenType?
-        get() {
-            if (type.isCollection) {
-                return toReflectionCodegenType(prop.returnType.arguments.first().type!!)
-            }
-
-            return null
-        }
-
 }

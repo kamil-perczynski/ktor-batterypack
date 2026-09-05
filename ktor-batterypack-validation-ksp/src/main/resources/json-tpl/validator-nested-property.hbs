@@ -15,7 +15,7 @@
         JsonConstraints.checkArray("{{prop.name}}", {{param.name}}, call)?.let {
             val itemCall = call.nestedProperty("{{prop.name}}")
             {{~#each prop.constraints}}
-            JsonConstraints.{{name}}(it, itemCall{{~#if args.size}}, {{#each args}}{{@key}}={{quote .}}, {{/each}}{{/if}})
+            {{jsonConstraint constraint=this prop=null call='itemCall'}}
             {{~/each}}
             {{~#with (findValidationMethod paramType=param.codegenType prop=prop)}}
             {{this}}(it, itemCall)

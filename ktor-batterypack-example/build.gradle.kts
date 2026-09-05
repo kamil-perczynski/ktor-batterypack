@@ -46,11 +46,11 @@ kotlin {
 dependencies {
     ksp(libs.jackson.databind)
     ksp(libs.jackson.dataformat.yaml)
+    ksp("org.jetbrains.kotlin:kotlin-reflect:${libs.versions.kotlin}")
     ksp(project(":ktor-batterypack-validation-ksp"))
     implementation("jakarta.validation:jakarta.validation-api:3.1.1")
     implementation("jakarta.ws.rs:jakarta.ws.rs-api:4.0.0")
     implementation("jakarta.annotation:jakarta.annotation-api:3.0.0")
-
 
     implementation(project(":ktor-batterypack-annotations"))
     implementation(project(":ktor-batterypack-validation"))
