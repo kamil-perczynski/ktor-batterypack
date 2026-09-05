@@ -26,7 +26,11 @@ class ValidatorCodegen {
                 return@Helper "ObjectNode"
             } else if (type.isCollection) {
                 return@Helper "ArrayNode"
-            } else if (type.isPrimitive) {
+            }
+            else if (type.isEnum) {
+                return@Helper "JsonNode"
+            }
+            else if (type.isPrimitive) {
                 return@Helper "JsonNode"
             } else {
                 return@Helper "ObjectNode"

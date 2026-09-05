@@ -26,7 +26,7 @@ data class KspCodegenType(private val type: KSType) : CodegenType {
         get() {
             if (isCollection) return false
             if (isMap) return false
-            return isPrimitive(fqName, isEnum)
+            return isPrimitive(fqName)
         }
 
     override val isCollection: Boolean
@@ -43,6 +43,7 @@ data class KspCodegenType(private val type: KSType) : CodegenType {
             if (isCollection) return emptyList()
             if (isMap) return emptyList()
             if (isPrimitive) return emptyList()
+            if (isEnum) return emptyList()
 
             return classDecl.declarations
                 .filterIsInstance<KSPropertyDeclaration>()

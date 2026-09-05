@@ -164,7 +164,7 @@ class CodegenModelResolver(
                                 }
                             }
                         } else {
-                            if (!property.type.isPrimitive || property.type.isEnum) {
+                            if (!property.type.isPrimitive) {
                                 graph.putEdge(codegenMethod, property.type)
                             }
                         }
@@ -192,7 +192,7 @@ class CodegenModelResolver(
                 fqName = method.param.fqName,
                 isList = method.param.isCollection,
                 isMap = method.param.isMap,
-                isObject = !method.param.isPrimitive && !method.param.isCollection,
+                isObject = !method.param.isPrimitive && !method.param.isCollection && !method.param.isEnum,
             )
         )
     }
@@ -219,26 +219,26 @@ class CodegenModelResolver(
                 itemConstraints = itemConstraints
             ),
             directProperties = method.param.declaredMemberProperties
-                .filter { it.type.isPrimitive && !it.type.isEnum }
+                .filter { it.type.isPrimitive }
                 .map {
                     val constraints = toConstraints(it.annotations)
                     DirectProperties(
                         name = it.name,
                         codegenType = it.type,
                         type = it.type.properName,
-                        nullable = bool(it),
+                        nullable = isNullable(it),
                         constraints = constraints,
                     )
                 },
             nestedProperties = method.param.declaredMemberProperties
-                .filter { !it.type.isPrimitive || it.type.isMap || it.type.isEnum }
+                .filter { !it.type.isPrimitive }
                 .map {
                     val constraints = toConstraints(it.annotations)
                     NestedProperty(
                         name = it.name,
                         codegenType = it.type,
                         type = it.type.properName,
-                        nullable = bool(it),
+                        nullable = isNullable(it),
                         constraints = constraints,
                         isList = it.type.isCollection,
                         isObject = isObject(it.type),
@@ -247,8 +247,10 @@ class CodegenModelResolver(
         )
     }
 
-    private fun bool(member: DeclaredMember): Boolean =
-        member.type.isMarkedNullable || member.type.annotations.any { annotation -> annotation.fqName == NotNull::class.qualifiedName }
+    private fun isNullable(member: DeclaredMember): Boolean {
+        return member.type.isMarkedNullable
+            || member.type.annotations.any { annotation -> annotation.fqName == NotNull::class.qualifiedName }
+    }
 
     private fun findItemConstraints(method: CodegenMethod): Map<String, ConstraintMethod> {
         if (method.param.isCollection) {
@@ -281,7 +283,7 @@ class CodegenModelResolver(
 }
 
 private fun isObject(type: CodegenType): Boolean {
-    return (!type.isPrimitive && !type.isCollection) || type.isMap
+    return (!type.isPrimitive && !type.isCollection && !type.isEnum) || type.isMap
 }
 
 private fun isBuiltInMethod(function: MemberFn): Boolean {

@@ -33,7 +33,7 @@ data class ReflectionCodegenType(
                 return false
             }
 
-            return isPrimitive(ktype.jvmErasure.qualifiedName!!, isEnum)
+            return isPrimitive(ktype.jvmErasure.qualifiedName!!)
         }
 
     override val isCollection: Boolean
@@ -54,6 +54,9 @@ data class ReflectionCodegenType(
                 return emptyList()
             }
             if (isMap) {
+                return emptyList()
+            }
+            if (isEnum) {
                 return emptyList()
             }
 
