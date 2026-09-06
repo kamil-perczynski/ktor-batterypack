@@ -9,11 +9,13 @@ import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.routing.*
 import org.koin.core.KoinApplication
+import org.koin.dsl.module
 import org.koin.ktor.ext.get
 import org.koin.ktor.plugin.Koin
 import org.koin.ktor.plugin.KoinApplicationStarted
 import org.koin.ktor.plugin.KoinApplicationStopPreparing
 import org.koin.ktor.plugin.koin
+import org.koin.plugin.module.dsl.module
 import tools.jackson.databind.json.JsonMapper
 
 /**

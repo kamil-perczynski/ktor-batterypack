@@ -1,0 +1,20 @@
+package io.github.kperczynski.libs.ktor.reflect
+
+import io.micrometer.core.instrument.MeterRegistry
+import org.koin.core.annotation.Singleton
+import java.lang.reflect.InvocationHandler
+
+/**
+ * Factory for creating [TimingInvocationHandler] proxies for repository beans.
+ */
+@Singleton
+class TimingInvocationHandlerFactory(private val meterRegistry: MeterRegistry) {
+
+    /**
+     * Creates an invocation handler that times calls on [originalTarget] exposed as [interfaceName].
+     */
+    fun create(originalTarget: Any, interfaceName: String): InvocationHandler {
+        return TimingInvocationHandler(originalTarget, interfaceName,  meterRegistry)
+    }
+
+}
