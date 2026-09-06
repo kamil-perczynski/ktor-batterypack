@@ -1,6 +1,6 @@
 package io.github.kperczynski.controllers
 
-import io.github.kperczynski.controllers.UserApiValidator.Companion.userApiValidator
+import io.github.kperczynski.controllers.UserApiValidator
 import io.github.kperczynski.domain.user.UserCreate
 import io.github.kperczynski.domain.user.UserService
 import io.github.kperczynski.domain.user.UserUpdate
@@ -21,7 +21,7 @@ class UserController(
         routing.post("/users") {
             val userCreate = jsonBinder.bindBody<UserCreate>(
                 call = call,
-                validatorFn = userApiValidator::validateUserCreate
+                validatorFn = UserApiValidator::validateUserCreate
             )
 
             val createdUser = userService.create(userCreate)
@@ -36,7 +36,7 @@ class UserController(
 
         routing.put("/users/{id}") {
             val id = call.parameters["id"]?.toUInt() ?: throw IllegalArgumentException("Invalid ID")
-            val userUpdate = jsonBinder.bindBody<UserUpdate>(call, userApiValidator::validateUserCreate)
+            val userUpdate = jsonBinder.bindBody<UserUpdate>(call, UserApiValidator::validateUserCreate)
             userService.update(id, userUpdate)
             call.respond(HttpStatusCode.NoContent)
         }

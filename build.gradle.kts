@@ -2,7 +2,6 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.koin.compiler)
     id("ktor-batterypack-gradle-plugin")
 }
@@ -71,11 +70,9 @@ dependencies {
     implementation(libs.exposed.java.time)
     implementation(libs.exposed.jdbc)
     implementation(libs.exposed.json)
-    implementation(libs.exposed.r2dbc)
     implementation(libs.hikari)
     implementation(libs.hoplite.core)
     implementation(libs.hoplite.yaml)
-    implementation(libs.konform)
     implementation(libs.koin.annotations)
     implementation(libs.koin.core)
     implementation(libs.koin.ktor)

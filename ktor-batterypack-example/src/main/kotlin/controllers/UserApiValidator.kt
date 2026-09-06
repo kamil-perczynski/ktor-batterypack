@@ -6,13 +6,12 @@ import io.github.ktor_batterypack.annotation.JsonValidator
 import io.github.ktor_batterypack.validation.ValidationParamType
 import io.github.ktor_batterypack.validation.ValidationResult
 import tools.jackson.databind.JsonNode
+import tools.jackson.databind.node.JsonNodeFactory
 
 @JsonValidator
 interface UserApiValidator {
 
-    companion object {
-        val userApiValidator : UserApiValidator = UserApiValidatorImpl()
-    }
+    companion object : UserApiValidator by UserApiValidatorImpl()
 
     @ValidationParamType(UserCreate::class)
     fun validateUserCreate(userCreate: JsonNode): ValidationResult<JsonNode>

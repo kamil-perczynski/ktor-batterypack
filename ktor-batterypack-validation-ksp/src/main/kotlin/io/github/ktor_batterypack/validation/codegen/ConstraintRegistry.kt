@@ -5,7 +5,7 @@ import io.github.ktor_batterypack.validation.ksp.CodegenType
 import io.github.ktor_batterypack.validation.ksp.ConstraintMethod
 import tools.jackson.dataformat.yaml.YAMLMapper
 
-class ConstraintRegistry(private val sources: List<ConstraintDescriptionSource>) {
+class ConstraintRegistry(sources: List<ConstraintDescriptionSource>) {
 
     companion object {
         fun default(): ConstraintRegistry {

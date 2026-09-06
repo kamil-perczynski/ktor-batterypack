@@ -59,6 +59,7 @@ dependencies {
     api(project(":ktor-batterypack-metrics"))
 
     api(libs.lettuce.core)
+    api(libs.kotlinx.coroutines.reactive)
 
     implementation(libs.jackson.databind)
     implementation(libs.jackson.module.kotlin)

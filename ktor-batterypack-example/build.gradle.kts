@@ -3,7 +3,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.koin.compiler)
     id("org.openapi.generator") version "7.25.0"
     id("ktor-batterypack-gradle-plugin")
@@ -44,9 +43,6 @@ kotlin {
 }
 
 dependencies {
-    ksp(libs.jackson.databind)
-    ksp(libs.jackson.dataformat.yaml)
-    ksp("org.jetbrains.kotlin:kotlin-reflect:${libs.versions.kotlin}")
     ksp(project(":ktor-batterypack-validation-ksp"))
     implementation("jakarta.validation:jakarta.validation-api:3.1.1")
     implementation("jakarta.ws.rs:jakarta.ws.rs-api:4.0.0")
@@ -78,11 +74,9 @@ dependencies {
     implementation(libs.exposed.java.time)
     implementation(libs.exposed.jdbc)
     implementation(libs.exposed.json)
-    implementation(libs.exposed.r2dbc)
     implementation(libs.hikari)
     implementation(libs.hoplite.core)
     implementation(libs.hoplite.yaml)
-    implementation(libs.konform)
     implementation(libs.koin.annotations)
     implementation(libs.koin.core)
     implementation(libs.koin.ktor)

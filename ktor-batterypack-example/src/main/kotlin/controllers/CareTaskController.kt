@@ -20,7 +20,7 @@ import java.util.UUID
 class CareTaskController(private val binder: JsonBinder) : KtorController, CareTasksApi {
 
     override fun register(routing: Routing) {
-        routing.post("/care-tasks/{taskId}/snooze") {
+        routing.post("/api/care-tasks/{taskId}/snooze") {
             val dto = binder.bindBody<CareTaskSnoozeRequestDto>(
                 call,
                 plantsApiValidator::validateCareTaskSnoozeRequestDto
@@ -31,9 +31,20 @@ class CareTaskController(private val binder: JsonBinder) : KtorController, CareT
             val taskDto = snoozeCareTask(taskId, dto)
             call.respond(taskDto)
         }
+
+        routing.patch("/api/care-tasks/{taskId}/status") {
+            val dto = binder.bindBody<CareTaskStatusUpdateDto>(
+                call,
+                plantsApiValidator::validateCareTaskStatusUpdateDto
+            )
+
+            val taskId = call.pathParameters.getOrFail("taskId").let { UUID.fromString(it) }
+
+            val taskDto = updateCareTaskStatus(taskId, dto)
+            call.respond(taskDto)
+        }
+
     }
-
-
 
     override suspend fun completeAllTasksForDay(date: LocalDate): List<CareTaskDto> {
         TODO("Not yet implemented")
@@ -56,7 +67,13 @@ class CareTaskController(private val binder: JsonBinder) : KtorController, CareT
         taskId: UUID,
         careTaskStatusUpdateDto: CareTaskStatusUpdateDto
     ): CareTaskDto {
-        TODO("Not yet implemented")
+        return CareTaskDto(
+            id = UUID.randomUUID(),
+            plantId = UUID.randomUUID(),
+            dueDate = LocalDate.now().plusDays(14),
+            status = CareTaskStatusDto.TODO,
+            type = CareTaskTypeDto.FERTILIZING,
+        )
     }
 
 }
