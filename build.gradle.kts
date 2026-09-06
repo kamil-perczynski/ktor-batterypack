@@ -4,7 +4,7 @@ plugins {
     `maven-publish`
 }
 
-group = "io.github.kperczynski"
+group = "io.github.ktor_batterypack"
 version = "0.0.0-SNAPSHOT"
 
 allprojects {
