@@ -22,9 +22,7 @@ import java.util.UUID
 private val log = LoggerFactory.getLogger(ExposedPlantRepo::class.java)
 
 @Singleton
-class ExposedPlantRepo(
-    private val database: Database
-) : PlantRepo, InitCallback {
+class ExposedPlantRepo(private val database: Database) : PlantRepo, InitCallback {
 
     override fun onInit() {
         transaction(database) {

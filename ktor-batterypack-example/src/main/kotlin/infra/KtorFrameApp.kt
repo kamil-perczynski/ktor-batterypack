@@ -8,12 +8,10 @@ import io.github.ktor_batterypack.core.config.loadConfig
 import io.github.ktor_batterypack.core.ktor.KtorProps
 import io.github.ktor_batterypack.database.DatabaseProps
 import io.github.ktor_batterypack.database.KtorBatterypackDatabaseModule
-import io.github.ktor_batterypack.database.MonitoredTransactions
 import io.github.ktor_batterypack.metrics.KtorBatterypackMetricsModule
 import io.github.ktor_batterypack.redis.KtorBatterypackRedisModule
 import io.github.ktor_batterypack.redis.KtorBatterypackRedisStreamsModule
 import io.github.ktor_batterypack.redis.RedisProps
-import io.micrometer.core.instrument.MeterRegistry
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.koin.core.annotation.*
 import org.slf4j.LoggerFactory
@@ -82,11 +80,4 @@ class KtorFrameModule {
         return Database.connect(dataSource)
     }
 
-    @Singleton
-    fun monitoredTransactions(
-        database: Database,
-        meterRegistry: MeterRegistry
-    ): MonitoredTransactions {
-        return MonitoredTransactions(database, meterRegistry)
-    }
 }
