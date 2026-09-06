@@ -2,9 +2,9 @@ package io.github.ktor_batterypack.validation.symbol
 
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSType
-import io.github.ktor_batterypack.validation.ksp.DeclaredConstraint
+import io.github.ktor_batterypack.validation.ksp.CodegenAnnotation
 
-class KspDeclaredConstraint(private val annotation: KSAnnotation) : DeclaredConstraint {
+class KspCodegenAnnotation(private val annotation: KSAnnotation) : CodegenAnnotation {
 
     private val resolvedDeclaration by lazy {
         annotation.annotationType.resolve().declaration
@@ -35,7 +35,7 @@ class KspDeclaredConstraint(private val annotation: KSAnnotation) : DeclaredCons
         return when (value) {
             is List<*> -> value.filterNotNull().map { unwrapKspValue(it) }
             is KSType -> value.declaration.qualifiedName?.asString() ?: value.toString()
-            is KSAnnotation -> KspDeclaredConstraint(value)
+            is KSAnnotation -> KspCodegenAnnotation(value)
             else -> value
         }
     }

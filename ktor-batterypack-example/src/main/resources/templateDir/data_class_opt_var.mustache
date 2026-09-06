@@ -1,0 +1,8 @@
+{{#description}}
+    /* {{{.}}} */
+{{/description}}
+@JsonProperty("{{#lambda.escapeDollar}}{{baseName}}{{/lambda.escapeDollar}}")
+{{#vendorExtensions.x-extra-annotations}}
+    {{{.}}}
+{{/vendorExtensions.x-extra-annotations}}
+{{#useBeanValidation}}{{>beanValidation}}{{>beanValidationModel}}{{/useBeanValidation}}     {{>modelMutable}} {{{name}}}: {{#isEnum}}{{classname}}.{{nameInPascalCase}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}}? = {{{defaultValue}}}{{^defaultValue}}null{{/defaultValue}}

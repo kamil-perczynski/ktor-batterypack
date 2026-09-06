@@ -17,8 +17,7 @@ private const val MAX_IMAGES = 3
 @Singleton
 class PlantController(
     private val plantService: PlantService,
-    private val multipartParser: MultipartParser,
-    private val plantDtoValidator: PlantDtoValidator
+    private val multipartParser: MultipartParser
 ) : KtorController {
 
     override fun register(routing: Routing) {
@@ -36,8 +35,6 @@ class PlantController(
         routing.post("/api/plant-identification") {
             val tempIdentityId = call.request.queryParameters["tempIdentityId"]
                 ?: throw IllegalArgumentException("Missing required query parameter: tempIdentityId")
-
-            plantDtoValidator.validateIdentification(tempIdentityId)
 
             val multipart = call.receiveMultipart()
             val uploads = multipartParser.parseUploads(multipart, MAX_IMAGES)

@@ -33,14 +33,14 @@ class GeneratedPersonValidatorImpl : PersonValidator {
         Constraints.checkNotNull("identifications", person.identifications, call)
         if (person.identifications != null) {
             val itemCall = call.nestedProperty("identifications")
-            Constraints.checkNotEmpty("identifications", person.identifications, itemCall)
+            Constraints.checkNotEmpty("$", person.identifications, itemCall)
             validateIdentifications(person.identifications, itemCall)
             itemCall.finishList()
         }
 
         val errors = call.finishObject()
         val result : ValidationResult<Person> =
-            if (errors != null) ValidationResult.invalid(errors)
+            if (errors != null) ValidationResult.invalid(person, errors)
             else ValidationResult.valid(person)
 
         return result
@@ -62,11 +62,7 @@ class GeneratedPersonValidatorImpl : PersonValidator {
         if (personIdentification == null) return
 
         Constraints.checkNotNull("type", personIdentification.type, call)
-        Constraints.checkNotNull("confidence", personIdentification.confidence, call)
-        if (personIdentification.confidence != null) {
-            Constraints.checkMin("confidence", personIdentification.confidence, call, value=0)
-            Constraints.checkMax("confidence", personIdentification.confidence, call, value=100)
-        }
+
     }
 
     private fun validateIdentifications(identifications: List<PersonIdentification>?, call: ValidationCall) {
@@ -74,7 +70,7 @@ class GeneratedPersonValidatorImpl : PersonValidator {
 
         for (item in identifications) {
             val itemCall = call.listItem()
-            Constraints.checkNotNull("__root__", item, itemCall)
+            Constraints.checkNotNull("$", item, itemCall)
 
             validatePersonIdentification(item, itemCall)
             itemCall.finishObject()

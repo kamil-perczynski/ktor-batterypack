@@ -6,10 +6,10 @@ import java.time.LocalDate
 data class Person(
     @field:NotNull
     @field:NotBlank
-    val firstName: String?,
+    val firstName: String,
     @field:NotNull
     @field:NotBlank
-    val lastName: String?,
+    val lastName: String,
 
     val address: Address,
 
@@ -17,7 +17,7 @@ data class Person(
     val birthDate: LocalDate,
 
     @field:NotEmpty
-    val identifications: List<PersonIdentification>
+    val identifications: List<PersonIdentification>,
 )
 
 data class Address(
@@ -25,15 +25,34 @@ data class Address(
     val addressLine2: String,
     @field:NotBlank
     @field:Pattern(regexp = "\\d{2}-\\d{3}")
+    @field:Size(min = 1, max = 100)
     val zipCode: String,
 )
 
-data class PersonIdentification(
-    val type: PersonIdentificationType,
-    @field:Min(0)
-    @field:Max(100)
+data class LegacyIdentification(override val type: PersonIdentificationType): PersonIdentification
+
+interface PersonIdentification {
+    val type: PersonIdentificationType
+}
+
+data class IdDocIdentification(
+    override val type: PersonIdentificationType,
+    @get:NotBlank val idNumber: String,
+    @get:NotBlank val issueDate: String
+) : PersonIdentification
+
+data class LivenessIdentification(
+    override val type: PersonIdentificationType,
+    @get:Min(0)
+    @get:Max(100)
     val confidence: Double
-)
+) : PersonIdentification
+
+data class SignatureSpecimen1(
+    override val type: PersonIdentificationType, @get:NotBlank val filePath: String, @get:Min(0)
+    @get:Max(100)
+    val confidence: Double
+) : PersonIdentification
 
 enum class PersonIdentificationType {
     ID_DOCUMENT_CHECK,

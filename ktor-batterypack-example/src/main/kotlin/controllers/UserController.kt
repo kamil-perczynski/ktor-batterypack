@@ -1,11 +1,12 @@
 package io.github.kperczynski.controllers
 
+import io.github.kperczynski.controllers.UserApiValidator
 import io.github.kperczynski.domain.user.UserCreate
 import io.github.kperczynski.domain.user.UserService
 import io.github.kperczynski.domain.user.UserUpdate
+import io.github.ktor_batterypack.core.ktor.JsonBinder
 import io.github.ktor_batterypack.core.ktor.KtorController
 import io.ktor.http.*
-import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.koin.core.annotation.Singleton
@@ -13,13 +14,16 @@ import org.koin.core.annotation.Singleton
 @Singleton
 class UserController(
     private val userService: UserService,
-    private val userDtoValidator: UserDtoValidator
+    private val jsonBinder: JsonBinder
 ) : KtorController {
 
     override fun register(routing: Routing) {
         routing.post("/users") {
-            val userCreate = call.receive<UserCreate>()
-            userDtoValidator.validateCreate(userCreate)
+            val userCreate = jsonBinder.bindBody<UserCreate>(
+                call = call,
+                validatorFn = UserApiValidator::validateUserCreate
+            )
+
             val createdUser = userService.create(userCreate)
             call.respond(HttpStatusCode.Created, createdUser)
         }
@@ -32,8 +36,7 @@ class UserController(
 
         routing.put("/users/{id}") {
             val id = call.parameters["id"]?.toUInt() ?: throw IllegalArgumentException("Invalid ID")
-            val userUpdate = call.receive<UserUpdate>()
-            userDtoValidator.validateUpdate(userUpdate)
+            val userUpdate = jsonBinder.bindBody<UserUpdate>(call, UserApiValidator::validateUserCreate)
             userService.update(id, userUpdate)
             call.respond(HttpStatusCode.NoContent)
         }

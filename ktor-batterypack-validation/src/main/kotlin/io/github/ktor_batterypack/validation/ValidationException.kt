@@ -1,7 +1,4 @@
 package io.github.ktor_batterypack.validation
 
-class ValidationException(
-    val data: Any,
-    val validatorClass: Class<*>,
-    val errors: ConstraintError
-) : RuntimeException("Validation failed")
+class ValidationException(val data: Any, val errors: ConstraintError, message: String? = null) :
+    RuntimeException(message ?: "Validation failed")

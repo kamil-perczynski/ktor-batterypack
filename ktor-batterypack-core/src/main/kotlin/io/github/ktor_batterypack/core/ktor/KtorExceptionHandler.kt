@@ -2,8 +2,8 @@ package io.github.ktor_batterypack.core.ktor
 
 import io.github.ktor_batterypack.core.exception.ErrorCodeException
 import io.github.ktor_batterypack.core.exception.ResourceMissingException
-import io.github.ktor_batterypack.core.exception.ValidationException
 import io.github.ktor_batterypack.core.problemdetail.ProblemDetail
+import io.github.ktor_batterypack.validation.ValidationException
 import io.ktor.http.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.*
@@ -90,15 +90,13 @@ class KtorExceptionHandler(private val jsonMapper: JsonMapper) {
 
     private fun registerValidationException(it: StatusPagesConfig) {
         it.exception<ValidationException> { call, cause ->
-            val errors = jsonMapper.convertValue(cause.errors, List::class.java)
-
             val problemDetail = ProblemDetail(
                 type = "VALIDATION_ERROR",
                 title = "Validation Failed",
                 status = 400,
-                detail = "Request validation failed",
+                detail = cause.message ?: "Request validation failed",
                 instance = call.request.uri,
-                extensionData = mapOf("errors" to errors)
+                extensionData = mapOf("validation" to cause.errors)
             )
             call.respond(HttpStatusCode.BadRequest, problemDetail)
         }

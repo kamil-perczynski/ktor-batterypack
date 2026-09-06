@@ -1,0 +1,11 @@
+{{~#if prop.nullable}}
+        {{~else}}
+        JsonTypeChecks.checkNotNull("{{prop.name}}", {{param.name}}, call)
+        {{~/if}}
+        JsonTypeChecks.{{toTypeCheckMethodName prop.codegenType}}("{{prop.name}}", {{param.name}}, call)?.let {
+        {{~#if prop.constraints.size}}
+        {{~#each prop.constraints}}
+            {{jsonConstraint constraint=this prop=../name}}
+        {{~/each}}
+        {{~/if}}
+        }

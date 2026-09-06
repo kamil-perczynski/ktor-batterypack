@@ -1,9 +1,10 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.koin.compiler)
+    id("org.openapi.generator") version "7.25.0"
     id("ktor-batterypack-gradle-plugin")
 }
 
@@ -42,11 +43,10 @@ kotlin {
 }
 
 dependencies {
-    ksp(libs.jackson.databind)
-    ksp(libs.jackson.dataformat.yaml)
     ksp(project(":ktor-batterypack-validation-ksp"))
     implementation("jakarta.validation:jakarta.validation-api:3.1.1")
-
+    implementation("jakarta.ws.rs:jakarta.ws.rs-api:4.0.0")
+    implementation("jakarta.annotation:jakarta.annotation-api:3.0.0")
 
     implementation(project(":ktor-batterypack-annotations"))
     implementation(project(":ktor-batterypack-validation"))
@@ -74,11 +74,9 @@ dependencies {
     implementation(libs.exposed.java.time)
     implementation(libs.exposed.jdbc)
     implementation(libs.exposed.json)
-    implementation(libs.exposed.r2dbc)
     implementation(libs.hikari)
     implementation(libs.hoplite.core)
     implementation(libs.hoplite.yaml)
-    implementation(libs.konform)
     implementation(libs.koin.annotations)
     implementation(libs.koin.core)
     implementation(libs.koin.ktor)
@@ -96,4 +94,69 @@ dependencies {
     testImplementation(ktorLibs.server.testHost)
     testImplementation(ktorLibs.client.mock)
     testImplementation(libs.testcontainers)
+}
+
+/**
+ * https://openapi-generator.tech/docs/generators/kotlin-spring/
+ */
+openApiGenerate {
+    generatorName.set("kotlin-server")
+    library.set("jaxrs-spec")
+    generateApiDocumentation.set(false)
+    inputSpec.set("$projectDir/src/main/resources/static/schema/api.yaml")
+    outputDir.set("$projectDir/build/generated")
+    apiPackage.set("pl.kperczynski.florin.rest")
+    modelPackage.set("pl.kperczynski.florin.rest.dto")
+    modelNameSuffix.set("Dto")
+    auth.set("false")
+
+    templateDir.set("$projectDir/src/main/resources/templateDir")
+
+    typeMappings.set(
+        mapOf(
+            "double" to "java.math.BigDecimal",
+        )
+    )
+
+    configOptions.set(
+        mapOf(
+            "interfaceOnly" to "true",
+            "allowUnicodeIdentifiers" to "true",
+            "delegatePattern" to "true",
+            "useTags" to "true",
+            "useJakartaEe" to "true",
+            "serializationLibrary" to "jackson",
+            "useJackson3" to "true",
+            "omitGradleWrapper" to "true",
+            "enumPropertyNaming" to "original",
+            "useBeanValidation" to "true",
+            "openApiNullable" to "false",
+            "useCoroutines" to "true",
+        )
+    )
+}
+
+tasks.compileKotlin {
+    dependsOn(tasks.openApiGenerate)
+}
+
+tasks.whenTaskAdded {
+    if (name == "kspKotlin") {
+        dependsOn(tasks.openApiGenerate)
+    }
+}
+
+ksp {
+    arg(
+        "ktor.validation.constraint.dir",
+        project.layout.projectDirectory.dir("src/main/resources/constraints").toString()
+    )
+}
+
+sourceSets {
+    main { kotlin { srcDir("build/generated/src/main/kotlin") } }
+}
+
+tasks.withType<KotlinCompile> {
+    compilerOptions.freeCompilerArgs.set(listOf("-Xannotation-default-target=param-property"))
 }

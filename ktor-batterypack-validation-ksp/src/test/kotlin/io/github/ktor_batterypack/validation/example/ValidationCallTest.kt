@@ -2,7 +2,6 @@ package io.github.ktor_batterypack.validation.example
 
 import io.github.ktor_batterypack.validation.SingleConstraintError
 import io.github.ktor_batterypack.validation.ValidationCall
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import tools.jackson.databind.json.JsonMapper
@@ -58,35 +57,25 @@ class ValidationCallTest {
         assertThat(json).isEqualTo(
             """
                 {
-                  "firstName" : {
-                    "errors" : [ {
-                      "constraint" : "NotNull"
-                    }, {
-                      "constraint" : "NotBlank"
-                    } ]
-                  },
-                  "lastName" : {
-                    "errors" : [ {
-                      "constraint" : "NotNull"
-                    } ]
-                  },
-                  "createdAt" : {
-                    "errors" : [ {
-                      "constraint" : "NotNull"
-                    } ]
-                  },
+                  "firstName" : [ {
+                    "constraint" : "NotNull"
+                  }, {
+                    "constraint" : "NotBlank"
+                  } ],
+                  "lastName" : [ {
+                    "constraint" : "NotNull"
+                  } ],
+                  "createdAt" : [ {
+                    "constraint" : "NotNull"
+                  } ],
                   "address" : {
-                    "addressLine2" : {
-                      "errors" : [ {
-                        "constraint" : "Empty Address"
-                      } ]
-                    }
-                  },
-                  "lastModified" : {
-                    "errors" : [ {
-                      "constraint" : "NotBlank"
+                    "addressLine2" : [ {
+                      "constraint" : "Empty Address"
                     } ]
                   },
+                  "lastModified" : [ {
+                    "constraint" : "NotBlank"
+                  } ],
                   "identifications" : {
                     "errors" : [ {
                       "constraint" : "NotNull"
@@ -94,18 +83,14 @@ class ValidationCallTest {
                       "constraint" : "NotEmpty"
                     } ],
                     "items" : [ null, {
-                      "firstName" : {
-                        "errors" : [ {
-                          "constraint" : "NotNull"
-                        }, {
-                          "constraint" : "NotBlank"
-                        } ]
-                      },
-                      "lastName" : {
-                        "errors" : [ {
-                          "constraint" : "NotNull"
-                        } ]
-                      }
+                      "firstName" : [ {
+                        "constraint" : "NotNull"
+                      }, {
+                        "constraint" : "NotBlank"
+                      } ],
+                      "lastName" : [ {
+                        "constraint" : "NotNull"
+                      } ]
                     }, null ]
                   }
                 }

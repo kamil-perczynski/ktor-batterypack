@@ -21,7 +21,7 @@ import tools.jackson.databind.json.JsonMapper
  *
  * @param koinFn Callback to initialize the Koin application with resolved profiles.
  */
-fun Application.configureKtorServer(koinFn: KoinApplication.(profiles: String) -> Unit) {
+fun Application.configureKtorServer(koinFn: (ktorApp: Application, koinApp: KoinApplication, profiles: String) -> Unit) {
     monitor.subscribe(KoinApplicationStarted) {
         log.debug("Application has started. Notifying lifecycle listener")
         val lifecycleListener: LifecycleListener = get()
@@ -39,7 +39,7 @@ fun Application.configureKtorServer(koinFn: KoinApplication.(profiles: String) -
         ?: "local"
 
     install(Koin) {
-        koinFn(profiles)
+        koinFn(this@configureKtorServer, this, profiles)
     }
 
     val koin = koin()

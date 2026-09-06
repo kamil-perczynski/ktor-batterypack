@@ -7,15 +7,13 @@ import org.koin.dsl.module
 import org.koin.plugin.module.dsl.withConfiguration
 
 fun Application.configureServer() {
-    val ktorApp = this
-
-    configureKtorServer { profiles ->
-        modules(
+    configureKtorServer { ktorApp, koinApp, profiles ->
+        koinApp.modules(
             module {
                 single { ktorApp }
             }
         )
-        withConfiguration<KtorFrameApp>()
-        properties(mapOf("app.profiles" to profiles))
+        koinApp.withConfiguration<KtorFrameApp>()
+        koinApp.properties(mapOf("app.profiles" to profiles))
     }
 }

@@ -71,6 +71,7 @@ dependencies {
 
     implementation("jakarta.validation:jakarta.validation-api:3.1.1")
     implementation(libs.logback.classic)
+    implementation(project(":ktor-batterypack-validation"))
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)

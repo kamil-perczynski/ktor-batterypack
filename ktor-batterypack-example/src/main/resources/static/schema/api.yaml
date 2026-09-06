@@ -1,0 +1,2317 @@
+openapi: 3.0.0
+info:
+  version: 0.0.1
+  title: Florin API
+  description: API definition
+servers:
+  - url: http://localhost:8080
+paths:
+  /api/current-weather:
+    get:
+      description: Fetch current weather for user location
+      operationId: FetchCurrentWeather
+      tags:
+        - weather
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentWeatherResponse'
+        '404':
+          description: Temp identity not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /api/current-plan:
+    get:
+      description: Fetch current purchased plan
+      operationId: FetchCurrentPlan
+      tags:
+        - purchases
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchasedPlan'
+        '404':
+          description: No current plan found
+  /api/products:
+    get:
+      description: List all available plans
+      operationId: ListProducts
+      parameters:
+        - name: params
+          in: query
+          required: true
+          style: deepObject
+          schema:
+            type: object
+            properties:
+              productCode:
+                type: string
+                description: Filter by product code
+                example: "KROPLOWA_PREMIUM_2024"
+
+      tags:
+        - purchases
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductListing'
+  /api/account:
+    delete:
+      tags:
+        - account
+      summary: Delete user account
+      operationId: DeleteAccount
+      description: Delete the authenticated user's account and all associated data.
+      responses:
+        '200':
+          description: Account successfully deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ack'
+  /api/account/auth-methods/{authMethod}:
+    delete:
+      tags:
+        - account
+      summary: Disable authentication method
+      operationId: DisableAuthMethod
+      description: Disable a specific authentication method for the user.
+      parameters:
+        - name: authMethod
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/AuthMethod'
+      responses:
+        '200':
+          description: Authentication method successfully disabled.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ack'
+  /api/account/auth-methods/challenge:
+    get:
+      tags:
+        - account
+      summary: Enable authentication method
+      operationId: ChallengeAuthMethod
+      description: Enable a specific authentication method for the user.
+      parameters:
+        - name: method
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/AuthMethod'
+      responses:
+        '302':
+          description: Redirects to the appropriate URL to enable the authentication method.
+          headers:
+            Location:
+              schema:
+                type: string
+                description: URL to redirect to enable the authentication method.
+  /api/account/auth-methods:
+    get:
+      description: List available authentication methods.
+      operationId: ListAuthMethods
+      tags:
+        - account
+      responses:
+        '200':
+          description: Returns list of available authentication methods.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListAuthMethodsResponse'
+  /auth/user-info:
+    get:
+      description: Fetch authenticated user's info and token status.
+      operationId: FetchUserInfo
+      tags:
+        - auth
+      responses:
+        '200':
+          description: Returns user info and token status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthInfo'
+        '401':
+          description: Unauthorized - user is not authenticated.
+  /auth/auth-init:
+    get:
+      description: Initiate OpenID social sign-in and set nonce cookie.
+      parameters:
+        - name: params
+          in: query
+          style: deepObject
+          required: false
+          schema:
+            type: object
+            description: Social sign-in provider (e.g., Google, Facebook).
+            properties:
+              extendedScope:
+                type: boolean
+                description: Whether to request extended scopes during authentication.
+                default: false
+                example: true
+              provider:
+                $ref: '#/components/schemas/AuthProvider'
+      operationId: AuthInit
+      tags:
+        - auth
+      responses:
+        '302':
+          description: Redirects to social sign-in provider.
+          headers:
+            Location:
+              schema:
+                type: string
+  /auth/sign-out:
+    get:
+      description: Sign out user and clear authentication cookies.
+      operationId: SignOut
+      tags:
+        - auth
+      responses:
+        '302':
+          description: User successfully signed out.
+          headers:
+            Location:
+              schema:
+                type: string
+                description: URL to redirect after sign-out.
+  /api/account/personal-data-export:
+    get:
+      description: Export user's personal data in JSON format.
+      operationId: ExportPersonalData
+      tags:
+        - account
+      responses:
+        '200':
+          description: Successful response with personal data export.
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                description: Indicates that the response is a file attachment.
+                example: attachment; filename="personal_data.json"
+          content:
+            application/json:
+              schema:
+                type: object
+                description: User's personal data in JSON format.
+                additionalProperties: true
+        '422':
+          description: Unprocessable Entity - unable to process the request.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /api/account/update-account-settings-init:
+    put:
+      description: Initiate update of user attributes such as email and preferred username.
+      operationId: UpdateAccountSettingsInit
+      tags:
+        - account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: New email for the user.
+                  example: "John Doe"
+                preferredUsername:
+                  type: string
+                  description: New preferred username for the user.
+                  example: "john.doe"
+      responses:
+        '200':
+          description: User attributes successfully updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ack'
+        '422':
+          description: Unprocessable Entity - invalid input data.
+          content:
+            # problem details
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /api/account/update-account-settings-confirm:
+    post:
+      description: Confirm update of user attributes using the confirmation code sent to the user's email.
+      operationId: UpdateAccountSettingsConfirm
+      tags:
+        - account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - code
+              properties:
+                code:
+                  type: string
+                  description: Confirmation code sent to the user's email.
+                  example: "123456"
+      responses:
+        '200':
+          description: User attributes update confirmation successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ack'
+        '422':
+          description: Unprocessable Entity - invalid input data.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /auth/classic-auth:
+    post:
+      description: Authenticate user with email and password using Cognito.
+      operationId: ClassicAuth
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AuthClassicAuthRequest'
+      responses:
+        '200':
+          description: Authentication successful. Tokens are set as cookies; no response body.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ack'
+  /auth/refresh-auth:
+    post:
+      description: Refresh authentication tokens using a refresh token.
+      operationId: RefreshAuth
+      tags:
+        - auth
+      responses:
+        '200':
+          description: Returns refreshed authentication tokens.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ack'
+  /auth/forgot-password-init:
+    post:
+      description: Initiate forgot password process by sending a reset code to the user's email.
+      operationId: ForgotPasswordInit
+      tags:
+        - auth
+      responses:
+        '200':
+          description: Forgot password initiation successful. Reset code sent to email.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ack'
+        '400':
+          description: Invalid input
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  description: User's email address.
+  /auth/register-user-init:
+    post:
+      description: Register a new user with email and password
+      operationId: RegisterUserInit
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  description: User's email address.
+                  example: "john.doe@somedomain.com"
+                password:
+                  type: string
+                  description: User's password.
+                  example: "NotSoSecure"
+                username:
+                  type: string
+                  description: Desired username for the new user.
+                  example: "john.doe"
+      responses:
+        '200':
+          description: User registration successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ack'
+        '400':
+          description: Invalid input
+  /auth/register-user-confirm:
+    post:
+      description: Confirm user registration using the code sent to the user's email.
+      operationId: RegisterUserConfirm
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - code
+              properties:
+                email:
+                  type: string
+                  description: User's email address.
+                  example: "john.doe@somedomain.com"
+                code:
+                  type: string
+                  description: Confirmation code sent to the user's email.
+                  example: "123456"
+      responses:
+        '200':
+          description: User registration confirmation successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ack'
+        '400':
+          description: Invalid input
+  /auth/forgot-password-confirm:
+    post:
+      description: Confirm password reset using the code sent to the user's email.
+      operationId: ForgotPasswordConfirm
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - code
+                - nextPassword
+              properties:
+                email:
+                  type: string
+                  description: User's email address.
+                  example: "john.doe@somedomain.com"
+                code:
+                  type: string
+                  description: Password reset code sent to the user's email.
+                  example: "123456"
+                nextPassword:
+                  type: string
+                  description: New password to set for the user.
+                  example: "NotSoSecure123"
+      responses:
+        '200':
+          description: Password reset successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ack'
+        '400':
+          description: Invalid input
+  /auth/idp-callback:
+    get:
+      description: Handle OpenID provider callback and set authentication cookies.
+      operationId: IdpCallback
+      tags:
+        - auth
+      parameters:
+        - name: code
+          in: query
+          required: false
+          schema:
+            type: string
+            description: Authorization code from OpenID provider.
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+            description: State parameter to prevent CSRF attacks.
+      responses:
+        '200':
+          description: Redirects to home page after successful authentication.
+          content:
+            text/html:
+              schema:
+                type: string
+                example: "<html><body>Redirecting...</body></html>"
+        '500':
+          description: Internal server error
+  /api/init-payment:
+    get:
+      description: Initialize payment for the current plan.
+      operationId: InitPayment
+      parameters:
+        - name: offerCode
+          in: query
+          required: true
+          schema:
+            type: string
+            description: Code of the plan offer to initialize payment for.
+            example: "KROPLOWA_PRO_YEAR"
+      tags:
+        - payments
+      responses:
+        '301':
+          description: Redirects to payment provider for payment initialization.
+          headers:
+            Location:
+              schema:
+                type: string
+                description: URL to redirect for payment initialization.
+  /api/payment-callback/{offerCode}:
+    get:
+      description: Handle payment provider callback and finalize the purchase.
+      parameters:
+        - name: offerCode
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Code of the plan offer purchased.
+            example: "KROPLOWA_PRO_YEAR"
+      operationId: PaymentCallback
+      tags:
+        - payments
+      responses:
+        '200':
+          description: Payment processing failed.
+          content:
+            text/html:
+              schema:
+                description: "HTML content indicating payment success"
+                type: string
+  /api/internal/stripe-webhook:
+    post:
+      description: Handle Stripe webhook events for payment processing.
+      operationId: StripeWebhook
+      tags:
+        - payments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              description: "Raw Stripe event data"
+              type: string
+      responses:
+        '200':
+          description: Webhook event processed successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ack'
+  /api/account/payments:
+    get:
+      operationId: ListPayments
+      description: List all payments made by the user.
+      tags:
+        - payments
+      responses:
+        '200':
+          description: Successful response with payment listing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentListing'
+  /api/account/purchases/{purchaseId}/receipt:
+    get:
+      operationId: GetPurchaseReceipt
+      description: Get receipt for a specific purchase.
+      tags:
+        - purchases
+      parameters:
+        - name: purchaseId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            description: Unique identifier of the payment.
+      responses:
+        '200':
+          description: Successful response with receipt download link.
+          headers:
+            Location:
+              schema:
+                type: string
+                description: URL to download the receipt.
+  /api/admin/sales-report:
+    get:
+      operationId: AdminGenerateSalesReport
+      description: Generate sales report for admin purposes.
+      tags:
+        - admin
+      parameters:
+        - name: params
+          in: query
+          required: false
+          style: deepObject
+          schema:
+            type: object
+            properties:
+              bookingMonth:
+                type: string
+                description: Filter sales from this date
+                example: "2024-11"
+      responses:
+        '200':
+          description: Successful response with sales report.
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+  /api/admin/payments/facets:
+    get:
+      operationId: AdminListPaymentFacets
+      description: List payment facets for admin purposes.
+      tags:
+        - admin
+      responses:
+        '200':
+          description: Successful response with payment facets.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminPaymentFacets'
+  /api/admin/payments:
+    get:
+      operationId: AdminListPurchases
+      description: List all purchases for admin purposes.
+      tags:
+        - admin
+      parameters:
+        - name: params
+          in: query
+          required: false
+          style: deepObject
+          schema:
+            type: object
+            properties:
+              search:
+                type: string
+                description: Search term for filtering purchases
+              dateFrom:
+                type: string
+                format: date-time
+                description: Filter purchases from this date
+              dateTo:
+                type: string
+                format: date-time
+                description: Filter purchases up to this date
+              receiptNumber:
+                type: string
+                description: Filter by receipt number
+              processed:
+                type: boolean
+                description: Filter by processed status
+              userId:
+                type: string
+                description: Filter by user ID
+              externalId:
+                type: string
+                description: Filter by external payment ID
+              limit:
+                type: number
+                format: int64
+                description: Maximum number of purchases to return
+              offset:
+                type: number
+                format: int64
+                description: Offset for pagination
+      responses:
+        '200':
+          description: Successful response with purchase listing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminPaymentListing'
+  /api/plant-identification:
+    post:
+      description: Identify a plant from an image and provide care instructions
+      operationId: IdentifyPlant
+      tags:
+        - plants
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - image
+              properties:
+                image1:
+                  type: string
+                  format: binary
+                  description: Primary image of the plant to identify.
+                image2:
+                  type: string
+                  format: binary
+                  description: Additional image of the plant.
+                image3:
+                  type: string
+                  format: binary
+                  description: Additional image of the plant.
+      responses:
+        '200':
+          description: Successful plant identification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plant'
+        '422':
+          description: Unable to identify plant from the provided image
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /api/plant-images/{imageId}/{filename}:
+    get:
+      description: Get presigned URL for a plant identification image
+      operationId: FetchPlantImage
+      tags:
+        - plants
+      parameters:
+        - name: imageId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            description: Unique identifier of the plant image
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Original filename of the plant image
+      responses:
+        '302':
+          description: Redirect to presigned S3 URL
+          headers:
+            Location:
+              schema:
+                type: string
+                description: Presigned URL for the image
+        '404':
+          description: Image not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /api/consents:
+    post:
+      description: Accept user consent
+      operationId: AcceptUserConsent
+      tags:
+        - consents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcceptUserConsentInput'
+      responses:
+        '200':
+          description: Consent successfully recorded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ack'
+        '400':
+          description: Invalid input.
+        '401':
+          description: Unauthorized - user is not authenticated.
+  /api/temp-identities:
+    post:
+      description: Create a temporary identity for users without an account.
+      operationId: CreateTempIdentity
+      tags:
+        - temp-identities
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTempIdentityRequest'
+      responses:
+        '200':
+          description: Temporary identity created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TempIdentity'
+  /api/plants/{plantId}:
+    delete:
+      description: Delete a plant
+      operationId: DeletePlant
+      tags:
+        - plants
+      parameters:
+        - name: plantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            description: Unique identifier of the plant to delete
+      responses:
+        '200':
+          description: Plant successfully deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ack'
+        '404':
+          description: Plant not found or does not belong to temp identity
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /api/plants:
+    get:
+      description: List plants for a temp identity
+      operationId: ListPlants
+      parameters:
+        - name: params
+          in: query
+          required: false
+          style: deepObject
+          schema:
+            type: object
+            required:
+              - paging
+            properties:
+              status:
+                $ref: '#/components/schemas/PlantStatus'
+              statusIn:
+                type: array
+                minItems: 1
+                items:
+                  $ref: '#/components/schemas/PlantStatus'
+              id:
+                type: string
+                format: uuid
+              createdAtLte:
+                type: string
+                format: date
+              createdAtGte:
+                type: string
+                format: date-time
+              paging:
+                type: object
+                required:
+                  - limit
+                  - offset
+                properties:
+                  limit:
+                    type: integer
+                    format: int64
+                    maximum: 50
+                  offset:
+                    type: integer
+                    format: int64
+                    minimum: 0
+      tags:
+        - plants
+      responses:
+        '200':
+          description: List of plants
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlantListing'
+    post:
+      description: Claim a plant by creating it from an identification and questionnaire.
+      operationId: ClaimPlant
+      tags:
+        - plants
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlantCreate'
+      responses:
+        '200':
+          description: Plant successfully claimed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plant'
+        '404':
+          description: Plant identification or temp identity not found.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '422':
+          description: Validation error.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /api/plants/care-schedule:
+    get:
+      operationId: FetchCareSchedule
+      tags:
+        - plants
+      parameters:
+        - name: plantId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: dueDateGte
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+            description: Filter tasks with due date greater than or equal to this date (YYYY-MM-DD format)
+            example: "2026-01-01"
+        - name: dueDateLte
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+            description: Filter tasks with due date less than or equal to this date (YYYY-MM-DD format)
+            example: "2026-01-31"
+      responses:
+        '200':
+          description: Care schedule for the temp identity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareSchedule'
+        '404':
+          description: Temp identity not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /api/care-tasks/{taskId}/status:
+    patch:
+      operationId: UpdateCareTaskStatus
+      tags:
+        - care-tasks
+      summary: Update care task status
+      description: Update the status of a specific care task (TODO or COMPLETED)
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The ID of the care task to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CareTaskStatusUpdate'
+      responses:
+        '200':
+          description: Care task status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareTask'
+        '404':
+          description: Care task not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '422':
+          description: Unprocessable entity - invalid status or not owned by user
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /api/care-tasks/{taskId}/snooze:
+    post:
+      operationId: SnoozeCareTask
+      tags:
+        - care-tasks
+      summary: Snooze care task
+      description: Postpone the care task and all upcoming tasks for the same plant
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The ID of the care task to snooze
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CareTaskSnoozeRequest'
+      responses:
+        '200':
+          description: Care task snoozed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareTask'
+        '404':
+          description: Care task not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '422':
+          description: Unprocessable entity - task not owned by user
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /api/care-tasks/complete-day:
+    post:
+      operationId: CompleteAllTasksForDay
+      tags:
+        - care-tasks
+      summary: Complete all tasks for a specific day
+      description: Complete all TODO care tasks for the specified date. Already completed tasks are skipped. Returns all tasks for the day.
+      parameters:
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: The date for which to complete all tasks (ISO-8601 format, e.g., 2026-04-25)
+      responses:
+        '200':
+          description: Tasks completed successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CareTask'
+        '422':
+          description: No tasks found for the specified date
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    EnableAuthMethodRequest:
+      type: object
+      required:
+        - method
+      properties:
+        method:
+          $ref: '#/components/schemas/AuthMethod'
+    AdminPaymentFacets:
+      type: object
+      required:
+        - bookingMonths
+      properties:
+        bookingMonths:
+          type: array
+          description: List of months with bookings
+          items:
+            $ref: '#/components/schemas/AdminBookingMonthFacet'
+    AdminBookingMonthFacet:
+        type: object
+        required:
+          - bookingMonth
+          - purchasesCount
+          - unprocessedPaymentsCount
+          - totalNet
+          - totalVat
+          - totalGross
+        properties:
+          bookingMonth:
+            type: string
+            example: 2024-11
+          purchasesCount:
+            type: number
+            description: Number of purchases in the month
+            example: 3
+          unprocessedPaymentsCount:
+            type: number
+            description: Number of unprocessed payments in the month
+            example: 1
+          totalNet:
+            type: number
+            description: Total net amount for the month
+            example: 149.97
+          totalVat:
+            type: number
+            description: Total VAT amount for the month
+            example: 29.99
+          totalGross:
+            type: number
+            description: Total gross amount for the month
+            example: 179.96
+    ListAuthMethodsResponse:
+      type: object
+      required:
+        - total
+        - items
+      properties:
+        total:
+          type: integer
+          format: int64
+          description: Total number of available authentication providers.
+          example: 3
+        items:
+          type: array
+          description: List of available authentication providers.
+          items:
+            $ref: '#/components/schemas/AuthMethodListingItem'
+    AuthMethod:
+      type: string
+      description: Name of the authentication provider.
+      enum:
+        - GOOGLE
+        - FACEBOOK
+        - CLASSIC
+      example: "GOOGLE"
+    AuthMethodListingItem:
+      type: object
+      required:
+        - method
+        - status
+        - primary
+      properties:
+        method:
+          $ref: '#/components/schemas/AuthMethod'
+        primary:
+          type: boolean
+          description: Indicates if this is the primary authentication method.
+          example: true
+        status:
+          $ref: '#/components/schemas/AuthMethodStatus'
+    AuthMethodStatus:
+      type: string
+      description: Status of the authentication provider.
+      enum:
+        - ENABLED
+        - DISABLED
+        - UNKNOWN
+      example: "ENABLED"
+    AuthProvider:
+      type: string
+      description: Social sign-in provider to use.
+      enum:
+        - GOOGLE
+        - FACEBOOK
+      example: "GOOGLE"
+    ConsentType:
+      type: string
+      description: Type of consent being recorded.
+      enum:
+        - LIABILITY_NOTICE
+      example: "LIABILITY_NOTICE"
+    VatRate:
+      type: string
+      description: VAT rate applied to the purchase.
+      enum:
+        - VAT23
+      example: "VAT23"
+    OnboardingStatus:
+      type: string
+      description: Status of the onboarding process for the user.
+      enum:
+        - NOT_APPLICABLE
+        - NEEDED
+        - COMPLETED
+      example: "COMPLETED"
+    PlanPeriod:
+      type: string
+      description: Billing period for the plan variant.
+      enum:
+        - MONTH
+        - YEAR
+        - INDEFINITE
+      example: "MONTH"
+    PlantCondition:
+      type: string
+      description: Observable condition of the plant.
+      enum:
+        - HEALTHY
+        - DECLINING
+        - DISEASED
+        - PEST_INFESTED
+        - DEAD
+      example: "HEALTHY"
+    PlantConditionCause:
+      type: string
+      description: Identified or suspected cause of the condition.
+      enum:
+        - OVERWATERING
+        - UNDERWATERING
+        - SUNBURN
+        - INSUFFICIENT_LIGHT
+        - NUTRIENT_DEFICIENCY
+        - ROOT_ROT
+        - FUNGAL_INFECTION
+        - BACTERIAL_INFECTION
+        - PEST_DAMAGE
+      example: "OVERWATERING"
+    SoilType:
+      type: string
+      description: Type of commercially available soil mix.
+      enum:
+        - STANDARD
+        - AROID
+        - CACTUS
+        - ORCHID
+        - ACIDIC
+        - AQUATIC
+      example: "STANDARD"
+    LightingType:
+      type: string
+      description: Ideal lighting placement.
+      enum:
+        - DIRECT
+        - BRIGHT_INDIRECT
+        - MEDIUM_INDIRECT
+        - LOW
+      example: "BRIGHT_INDIRECT"
+    ToxicityLevel:
+      type: string
+      description: Overall toxicity level.
+      enum:
+        - NONE
+        - LOW
+        - MODERATE
+        - HIGH
+      example: "NONE"
+    PlantDifficulty:
+      type: string
+      description: How difficult the plant is to keep alive.
+      enum:
+        - BEGINNER
+        - EASY
+        - MODERATE
+        - EXPERT
+      example: "EASY"
+    AcceptUserConsentInput:
+      type: object
+      required:
+        - consentType
+      properties:
+        userId:
+          type: string
+          pattern: '^\d{3}-\d{2}-\d{4}$'
+        consentType:
+          $ref: '#/components/schemas/ConsentType'
+    AdminPaymentListing:
+      type: object
+      description: A paginated listing of payments with metadata for admin purposes.
+      required:
+        - total
+        - items
+      properties:
+        total:
+          type: integer
+          format: int64
+          description: Total number of purchases available.
+          example: 500
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminPayment'
+          description: List of purchases in this page.
+        rels:
+          type: object
+          description: Pagination links
+          properties:
+            purchases:
+              type: array
+              items:
+                $ref: '#/components/schemas/AdminPurchase'
+            offers:
+              type: array
+              items:
+                $ref: '#/components/schemas/PlanOffer'
+    AdminPayment:
+      type: object
+      required:
+        - id
+        - paymentMethod
+        - amount
+        - externalId
+        - externalCustomerId
+        - processed
+        - userId
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the payment.
+          example: "323e4567-e89b-12d3-a456-426614174000"
+        userId:
+          type: string
+          format: uuid
+          description: Unique identifier for the user who made the payment.
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        paymentMethod:
+          type: string
+          description: Payment method used for the payment.
+          example: "CARD"
+        walletType:
+          type: string
+          description: Type of wallet used for the payment, if applicable.
+          example: "APPLE_PAY"
+        amount:
+          type: number
+          description: Amount of the payment.
+          example: 59.98
+        externalId:
+          type: string
+          description: External identifier from the payment provider.
+          example: "pi_1F4Y2e2eZvKYlo2C0qL5X8bK"
+        externalCustomerId:
+          type: string
+          description: External customer identifier from the payment provider.
+          example: "cus_J5O2e2eZvKYlo2"
+        processed:
+          type: boolean
+          description: Indicates if the payment has been processed.
+          example: true
+        processedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the payment was processed.
+          example: "2024-04-01T12:00:00Z"
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the payment was created.
+          example: "2024-03-31T10:00:00Z"
+    AdminPurchase:
+      type: object
+      required:
+        - id
+        - userId
+        - receiptNumber
+        - net
+        - vat
+        - gross
+        - vatRate
+        - paymentId
+        - offerCode
+        - purchasedAt
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the purchase
+          example: "223e4567-e89b-12d3-a456-426614174000"
+        receiptNumber:
+          type: string
+          description: Receipt number for the purchase
+          example: "RCPT-2024-0001"
+        offerCode:
+          type: string
+          description: Code of the plan offer purchased
+          example: "KROPLOWA_PRO_YEAR"
+        purchasedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the purchase was made
+          example: "2024-04-01T12:00:00Z"
+        userId:
+          type: string
+          format: uuid
+          description: Unique identifier for the user who made the purchase
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        net:
+          type: number
+          description: Net amount of the purchase
+          example: 49.99
+        vat:
+          type: number
+          description: VAT amount of the purchase
+          example: 9.99
+        gross:
+          type: number
+          description: Gross amount of the purchase
+          example: 59.98
+        vatRate:
+          $ref: '#/components/schemas/VatRate'
+        paymentId:
+          type: string
+          format: uuid
+          description: Unique identifier for the payment associated with the purchase
+          example: "323e4567-e89b-12d3-a456-426614174000"
+        status:
+          $ref: '#/components/schemas/PurchaseStatus'
+    StripeEvent:
+      type: object
+      additionalProperties: true
+      required:
+        - id
+        - created
+        - type
+        - data
+      properties:
+        id:
+          type: string
+          description: The ID of the Stripe event.
+        created:
+          type: integer
+          description: The timestamp of when the event was created.
+        type:
+          type: string
+          description: The type of the Stripe event.
+        data:
+          type: object
+          description: The data associated with the Stripe event.
+          additionalProperties: true
+    Ack:
+      type: object
+      description: Acknowledgment response
+      required:
+        - ok
+      properties:
+        ok:
+          type: boolean
+          description: Indicates successful operation
+    AuthClassicAuthRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          description: User's email address.
+        password:
+          type: string
+          description: User's password.
+        increasedPrivileges:
+          type: boolean
+          description: Whether to request increased privileges.
+          default: false
+    AuthInfo:
+      type: object
+      description: Authenticated user info and token status response.
+      required:
+        - auth
+        - soonToExpire
+        - expired
+        - refreshPossible
+        - privileged
+      properties:
+        auth:
+          $ref: '#/components/schemas/Auth'
+        soonToExpire:
+          type: boolean
+          description: Whether the token is soon to expire.
+        expired:
+          type: boolean
+          description: Whether the token is expired.
+        refreshPossible:
+          type: boolean
+          description: Whether refresh is possible.
+        privileged:
+          type: boolean
+          description: Whether the user has access to modify its own data.
+          default: false
+    Auth:
+      type: object
+      description: Authenticated user info, or undefined if expired.
+      x-implements: ["Serializable"]
+      required:
+        - sub
+        - preferredUsername
+        - username
+        - email
+      properties:
+        sub:
+          type: string
+          description: User's unique identifier.
+          example: "1234567890"
+        username:
+          type: string
+          description: User's username.
+          example: "john.doe"
+        preferredUsername:
+          type: string
+          description: User's username.
+          example: "john.doe"
+        email:
+          type: string
+          description: User's email address.
+          x-extra-annotations:
+            - "@field:Email"
+            - "@field:NotBlank"
+    PaymentListing:
+      type: object
+      properties:
+        total:
+          type: integer
+          format: int64
+          description: Total number of payments available
+          example: 100
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Payment'
+          description: List of payments in this page
+        rels:
+          type: object
+          description: Related entities and their details
+          properties:
+            purchases:
+              type: array
+              items:
+                $ref: '#/components/schemas/Purchase'
+              description: List of purchases associated with the payments
+    Payment:
+      type: object
+      required:
+        - id
+        - amount
+        - paymentMethod
+        - receivedAt
+        - createdAt
+        - processed
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the payment transaction
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        amount:
+          type: number
+          format: double
+          description: Payment amount in the specified currency
+          example: 200.00
+        paymentMethod:
+          type: string
+          description: Method used for the payment
+          example: card
+        walletType:
+          type: string
+          nullable: true
+          description: Type of wallet used for the payment, if applicable
+          example: "APPLE_PAY"
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the payment record was created in the system
+          example: "2024-01-01T00:00:00Z"
+        processed:
+          type: boolean
+          description: Whether the payment has been processed successfully
+          example: true
+        processedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp when the payment was processed, if applicable
+          example: "2024-01-01T00:00:00Z"
+    Purchase:
+      type: object
+      required:
+        - id
+        - purchasedAt
+        - activeTo
+        - activeFrom
+        - offer
+        - paymentId
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the purchase
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        purchasedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the purchase was made
+          example: "2024-01-01T00:00:00Z"
+        activeTo:
+          type: string
+          format: date-time
+          description: Timestamp when the purchased plan expires or is renewed indefinitely
+          example: "2025-01-01T00:00:00Z"
+        activeFrom:
+          type: string
+          format: date-time
+          description: Timestamp when the purchased plan becomes active
+          example: "2024-01-01T00:00:00Z"
+        offer:
+          $ref: '#/components/schemas/PlanOffer'
+        net:
+          type: number
+          format: double
+          description: Net amount paid for the purchase in the specified currency
+          example: 81.30
+        vat:
+          type: number
+          format: double
+          description: VAT amount paid for the purchase in the specified currency
+          example: 17.70
+        gross:
+          type: number
+          format: double
+          description: Gross amount paid for the purchase in the specified currency
+          example: 99.00
+        receiptNumber:
+          type: string
+          description: Receipt number associated with the purchase
+          example: "023404-123420"
+        vatRate:
+          $ref: '#/components/schemas/VatRate'
+        paymentId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Unique identifier for the payment transaction, if applicable
+        status:
+          $ref: '#/components/schemas/PurchaseStatus'
+    PurchaseStatus:
+      type: string
+      description: Current status of the purchase transaction
+      enum:
+        - COMPLETED
+        - CANCELED
+    PurchasedPlan:
+      type: object
+      required:
+        - offer
+        - product
+        - features
+        - editorial
+        - onboardingStatus
+      properties:
+        activeFrom:
+          type: string
+          format: date-time
+          description: Start date of the plan. Indefinite offers may have this set to null.
+          example: "2024-01-01T00:00:00Z"
+        activeTo:
+          type: string
+          format: date-time
+          description: End date of the plan. Indefinite offers may have this set to null.
+          example: "2025-01-01T00:00:00Z"
+        features:
+          $ref: '#/components/schemas/PaidFeatures'
+        product:
+          $ref: '#/components/schemas/Product'
+        offer:
+          $ref: '#/components/schemas/PlanOffer'
+        editorial:
+          type: boolean
+          description: Whether the plan includes access to editorial content
+          example: false
+        onboardingStatus:
+          $ref: '#/components/schemas/OnboardingStatus'
+    PaidFeatures:
+      type: object
+      description: Features available in the purchased plan
+      required:
+        - reports
+      properties:
+        reports:
+          type: boolean
+          description: Whether the plan includes access to administration reports
+          example: true
+    Product:
+      type: object
+      required:
+        - code
+        - name
+        - active
+      properties:
+        code:
+          type: string
+          description: Code of the offered plan
+          example: "KROPLOWA_PREMIUM_2024"
+        name:
+          description: Name of the offered plan
+          $ref: '#/components/schemas/IntlString'
+          example:
+            en: "Kroplowa Premium"
+            pl: "Kroplowa Premium"
+        active:
+          type: boolean
+          description: Whether the offered plan is currently active
+          example: true
+    PlanOffer:
+      type: object
+      required:
+        - code
+        - productCode
+        - name
+        - price
+        - currency
+        - active
+      properties:
+        code:
+          type: string
+          description: Code of the plan variant
+          example: "KROPLOWA_PREMIUM_2024_1"
+        productCode:
+          type: string
+          description: Code of the product this plan variant belongs to
+          example: "KROPLOWA_PREMIUM_2024"
+        active:
+          type: boolean
+          description: Whether the plan variant is currently active
+          example: true
+        name:
+          description: Name of the plan variant
+          $ref: '#/components/schemas/IntlString'
+          example:
+            en: "Kroplowa PRO - monthly access"
+            pl: "Kroplowa PRO - dostęp na miesiąc"
+        period:
+          $ref: '#/components/schemas/PlanPeriod'
+        price:
+          type: number
+          format: double
+          description: Price of the plan variant in the specified currency
+          example: 99.99
+        currency:
+          $ref: '#/components/schemas/Currency'
+    Currency:
+      type: string
+      enum:
+        - PLN
+      description: ISO 4217 currency code
+      example: "PLN"
+    IntlString:
+      type: object
+      required:
+        - pl
+      description: A map of language codes to localized strings
+      properties:
+        pl:
+          type: string
+          description: Polish translation of the string
+          example: "Kroplowa Premium"
+        en:
+          type: string
+          description: English translation of the string
+    ProductListing:
+      type: object
+      description: A paginated listing of offered plans with metadata
+      required:
+        - total
+        - items
+      properties:
+        total:
+          type: integer
+          format: int64
+          description: Total number of offered plans available
+          example: 1
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+          description: List of offered plans in this page
+        rels:
+          type: object
+          description: Related entities and their details
+          properties:
+            offers:
+              type: array
+              items:
+                $ref: '#/components/schemas/PlanOffer'
+              description: List of plan offers available for the products
+    ProblemDetails:
+      type: object
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri
+          description: A URI reference that identifies the problem type.
+          example: "https://example.com/probs/out-of-credit"
+        title:
+          type: string
+          description: A short, human-readable summary of the problem type.
+          example: "You do not have enough credit."
+        status:
+          type: integer
+          format: int32
+          description: The HTTP status code generated by the origin server for this occurrence of the problem.
+          example: 403
+        detail:
+          type: string
+          description: A human-readable explanation specific to this occurrence of the problem.
+          example: "Your current balance is 30, but that costs 50."
+        instance:
+          type: string
+          format: uri
+          description: A URI reference that identifies the specific occurrence of the problem.
+          example: "/account/12345/transactions/abc"
+    PlantImageInfo:
+      type: object
+      required:
+        - id
+        - url
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the image.
+        url:
+          type: string
+          description: URL to fetch the image.
+    PlantIdentificationItem:
+      type: object
+      required:
+        - species
+        - speciesProbability
+      properties:
+        species:
+          type: string
+          description: Scientific name of the species.
+        mostLikelyCommonName:
+          type: string
+          description: The most likely common name for the plant, with cultivar if applicable.
+        cultivar:
+          type: string
+          nullable: true
+          description: Cultivar or variety name, if applicable.
+        commonNames:
+          type: array
+          items:
+            type: string
+          description: List of common names for the plant.
+        speciesProbability:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          description: AI confidence for the species (0.0 to 1.0).
+        cultivarProbability:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          description: AI confidence for the cultivar (0.0 to 1.0).
+    PlantHealthStatus:
+      type: object
+      required:
+        - condition
+      properties:
+        condition:
+          $ref: '#/components/schemas/PlantCondition'
+        cause:
+          $ref: '#/components/schemas/PlantConditionCause'
+        details:
+          type: string
+          description: Detailed explanation of the health status.
+    PlantCareInstructions:
+      type: object
+      required:
+        - watering
+        - soil
+        - repotting
+        - lighting
+        - fertilizing
+      properties:
+        watering:
+          $ref: '#/components/schemas/PlantMonthlySchedule'
+        soil:
+          $ref: '#/components/schemas/PlantSoil'
+        repotting:
+          $ref: '#/components/schemas/PlantRepotting'
+        lighting:
+          $ref: '#/components/schemas/PlantLighting'
+        fertilizing:
+          $ref: '#/components/schemas/PlantMonthlySchedule'
+    PlantMonthlySchedule:
+      type: object
+      required:
+        - jan
+        - feb
+        - mar
+        - apr
+        - may
+        - jun
+        - jul
+        - aug
+        - sep
+        - oct
+        - nov
+        - dec
+      properties:
+        jan:
+          type: integer
+          description: Days between actions in January.
+        feb:
+          type: integer
+          description: Days between actions in February.
+        mar:
+          type: integer
+          description: Days between actions in March.
+        apr:
+          type: integer
+          description: Days between actions in April.
+        may:
+          type: integer
+          description: Days between actions in May.
+        jun:
+          type: integer
+          description: Days between actions in June.
+        jul:
+          type: integer
+          description: Days between actions in July.
+        aug:
+          type: integer
+          description: Days between actions in August.
+        sep:
+          type: integer
+          description: Days between actions in September.
+        oct:
+          type: integer
+          description: Days between actions in October.
+        nov:
+          type: integer
+          description: Days between actions in November.
+        dec:
+          type: integer
+          description: Days between actions in December.
+        details:
+          type: string
+          description: Additional details.
+    PlantSoil:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          $ref: '#/components/schemas/SoilType'
+        details:
+          type: string
+          description: Additional details about the soil mix.
+    PlantRepotting:
+      type: object
+      required:
+        - intervalMonths
+        - recommendedMonths
+      properties:
+        intervalMonths:
+          type: integer
+          description: Recommended number of months between repottings.
+        recommendedMonths:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+            maximum: 12
+          description: Months of the year (1-12) when repotting is safe.
+        details:
+          type: string
+          description: Additional details about repotting.
+    PlantLighting:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          $ref: '#/components/schemas/LightingType'
+        details:
+          type: string
+          description: Additional details about lighting needs.
+    PlantToxicity:
+      type: object
+      required:
+        - level
+      properties:
+        level:
+          $ref: '#/components/schemas/ToxicityLevel'
+        details:
+          type: string
+          description: Additional details about toxic parts, symptoms, or precautions.
+    CreateTempIdentityRequest:
+      type: object
+      required:
+        - os
+      properties:
+        os:
+          $ref: '#/components/schemas/OperatingSystem'
+    OperatingSystem:
+      type: string
+      description: Operating system of the user's device.
+      enum:
+        - IOS
+        - ANDROID
+    TempIdentity:
+      type: object
+      required:
+        - id
+        - createdAt
+        - os
+        - continentCode
+        - countryCode
+        - timezone
+        - latitude
+        - longitude
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the temporary identity.
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the identity was created.
+        os:
+          $ref: '#/components/schemas/OperatingSystem'
+        continentCode:
+          type: string
+          description: Continent code (e.g., EU, NA).
+          example: "EU"
+        countryCode:
+          type: string
+          description: ISO 3166-1 alpha-2 country code.
+          example: "PL"
+        timezone:
+          type: string
+          description: Timezone identifier.
+          example: "Europe/Warsaw"
+        latitude:
+          type: number
+          format: double
+          description: Latitude coordinate.
+          example: 52.0
+        longitude:
+          type: number
+          format: double
+          description: Longitude coordinate.
+          example: 20.0
+    LastWateredOption:
+      type: string
+      description: When the plant was last watered.
+      enum:
+        - TODAY
+        - ONE_TO_TWO_DAYS
+        - THREE_TO_FIVE_DAYS
+        - MORE_THAN_WEEK
+        - UNKNOWN
+    SoilMoistureOption:
+      type: string
+      description: Current soil moisture level.
+      enum:
+        - WET
+        - MOIST
+        - SLIGHTLY_DRY
+        - DRY
+        - VERY_DRY
+    YesNoOption:
+      type: string
+      description: Yes or no answer.
+      enum:
+        - "YES"
+        - "NO"
+    LightLocationOption:
+      type: string
+      description: Light exposure location for the plant.
+      enum:
+        - FAR_FROM_WINDOW
+        - BRIGHT_ROOM
+        - NEXT_TO_WINDOW
+        - DIRECT_SUN
+    PlantCreate:
+      type: object
+      required:
+        - plantId
+        - displayName
+        - lastWatered
+        - soilMoisture
+        - repottedSinceBuying
+        - lightLocation
+        - nearHeatOrAc
+      properties:
+        plantId:
+          type: string
+          format: uuid
+          description: ID of the plant identification to claim.
+        displayName:
+          type: string
+          description: User-chosen display name for the plant.
+        lastWatered:
+          $ref: '#/components/schemas/LastWateredOption'
+        soilMoisture:
+          $ref: '#/components/schemas/SoilMoistureOption'
+        repottedSinceBuying:
+          $ref: '#/components/schemas/YesNoOption'
+        lightLocation:
+          $ref: '#/components/schemas/LightLocationOption'
+        nearHeatOrAc:
+          $ref: '#/components/schemas/YesNoOption'
+    Plant:
+      type: object
+      required:
+        - id
+        - createdAt
+        - status
+        - identifications
+        - healthStatus
+        - careInstructions
+        - difficulty
+        - toxicity
+        - images
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/PlantStatus'
+        identifications:
+          type: array
+          description: List of potential plant identifications sorted by probability.
+          items:
+            $ref: '#/components/schemas/PlantIdentificationItem'
+        displayName:
+          type: string
+          description: User-friendly name for the plant, based on the most likely identification.
+        species:
+          type: string
+          description: Scientific name of the species, based on the most likely identification.
+        cultivar:
+          type: string
+          description: Cultivar or variety name, if applicable, based on the most likely identification.
+        healthStatus:
+          $ref: '#/components/schemas/PlantHealthStatus'
+        careInstructions:
+          $ref: '#/components/schemas/PlantCareInstructions'
+        difficulty:
+          $ref: '#/components/schemas/PlantDifficulty'
+        toxicity:
+          $ref: '#/components/schemas/PlantToxicity'
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlantImageInfo'
+          description: List of images associated with the plant.
+        tempIdentityId:
+          type: string
+          format: uuid
+          description: Temporary identity ID for users without an account.
+        lastWatered:
+          $ref: '#/components/schemas/LastWateredOption'
+        soilMoisture:
+          $ref: '#/components/schemas/SoilMoistureOption'
+        repottedSinceBuying:
+          $ref: '#/components/schemas/YesNoOption'
+        lightLocation:
+          $ref: '#/components/schemas/LightLocationOption'
+        nearHeatOrAc:
+          $ref: '#/components/schemas/YesNoOption'
+        lastWateringDate:
+          type: string
+          format: date
+          description: Date of the last watering, calculated from lastWatered option at claim time.
+        lastFertilizationDate:
+          type: string
+          format: date
+          description: Date of the last fertilization, null if unknown.
+        lastRepottingDate:
+          type: string
+          format: date
+          description: Date of the last repotting, set to createdAt if repottedSinceBuying is TRUE.
+        lastStatusUpdateDate:
+          type: string
+          format: date
+          description: Date of the last status update, null if no status update yet.
+    PlantStatus:
+      type: string
+      enum:
+        - IDENTIFICATION
+        - CLAIMED_PLANT
+      description: Status of the plant record.
+    PlantListing:
+      type: object
+      required:
+        - total
+        - items
+      properties:
+        total:
+          type: integer
+          format: int64
+          description: Total number of plants.
+          example: 5
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Plant'
+          description: List of plants.
+    CareSchedule:
+      type: object
+      required:
+        - tasks
+        - rels
+      properties:
+        tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/CareTask'
+        rels:
+          type: object
+          required:
+            - plants
+          properties:
+            plants:
+              type: array
+              items:
+                $ref: '#/components/schemas/Plant'
+    CareTask:
+      type: object
+      required:
+        - id
+        - type
+        - plantId
+        - dueDate
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the care task
+        type:
+          $ref: '#/components/schemas/CareTaskType'
+        plantId:
+          type: string
+          format: uuid
+        dueDate:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/CareTaskStatus'
+    CareTaskType:
+      type: string
+      enum:
+        - WATERING
+        - FERTILIZING
+        - REPOTTING
+        - STATUS_UPDATE
+    CareTaskStatus:
+      type: string
+      enum:
+        - TODO
+        - COMPLETED
+    CareTaskStatusUpdate:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          $ref: '#/components/schemas/CareTaskStatus'
+    CareTaskSnoozeRequest:
+      type: object
+      required:
+        - snoozedDaysCount
+      properties:
+        notifyEmail:
+          type: string
+          minimum: 1
+          maximum: 30
+          description: Email
+          x-extra-annotations: |-
+            @io.github.kperczynski.libs.ktor.client.Email
+        snoozedDaysCount:
+          type: integer
+          minimum: 1
+          maximum: 30
+          description: Number of days to snooze the task
+    CurrentWeatherResponse:
+      type: object
+      required:
+        - temperature
+        - daylightHours
+        - condition
+      properties:
+        temperature:
+          type: number
+          format: double
+          description: Current temperature in Celsius
+          example: 22.5
+        daylightHours:
+          type: number
+          format: double
+          description: Total daylight hours for the current day
+          example: 14.5
+        condition:
+          $ref: '#/components/schemas/WeatherCondition'
+    WeatherCondition:
+      type: string
+      description: Current weather condition based on WMO weather code
+      enum:
+        - SUNNY
+        - CLOUDY
+        - RAINY
+        - SNOWY

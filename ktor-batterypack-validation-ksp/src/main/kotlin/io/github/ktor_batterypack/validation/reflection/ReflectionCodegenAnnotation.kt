@@ -1,8 +1,8 @@
 package io.github.ktor_batterypack.validation.reflection
 
-import io.github.ktor_batterypack.validation.ksp.DeclaredConstraint
+import io.github.ktor_batterypack.validation.ksp.CodegenAnnotation
 
-class ReflectionDeclaredConstraint(private val annotation: Annotation) : DeclaredConstraint {
+class ReflectionCodegenAnnotation(private val annotation: Annotation) : CodegenAnnotation {
 
     override val name: String
         get() = annotation.annotationClass.simpleName!!

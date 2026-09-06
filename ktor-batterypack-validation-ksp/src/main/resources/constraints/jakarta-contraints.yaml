@@ -1,0 +1,28 @@
+$schema: ../constraints-descriptor.schema.yaml
+imports:
+  - io.github.ktor_batterypack.validation.Constraints
+jsonImports:
+  - io.github.ktor_batterypack.validation.Constraints
+  - io.github.ktor_batterypack.validation.JsonConstraints
+defaults:
+  simpleClassName: Constraints
+constraints:
+  - annotation: jakarta.validation.constraints.NotBlank
+  - annotation: jakarta.validation.constraints.NotEmpty
+    jsonCallTpl: JsonConstraints.checkNotEmpty({{quote prop}}, {{value}}, {{call}})
+  - annotation: jakarta.validation.constraints.Min
+  - annotation: jakarta.validation.constraints.Max
+  - annotation: jakarta.validation.constraints.Size
+    jsonCallTpl: JsonConstraints.checkSize({{quote prop}}, {{value}}, {{call}}, {{constraintArgs args}})
+  - annotation: jakarta.validation.constraints.Past
+  - annotation: jakarta.validation.constraints.PastOrPresent
+  - annotation: jakarta.validation.constraints.Pattern
+  - annotation: jakarta.validation.constraints.DecimalMax
+  - annotation: jakarta.validation.constraints.DecimalMin
+  - annotation: jakarta.validation.constraints.Email
+  - annotation: jakarta.validation.constraints.Future
+  - annotation: jakarta.validation.constraints.FutureOrPresent
+  - annotation: jakarta.validation.constraints.Negative
+  - annotation: jakarta.validation.constraints.NegativeOrZero
+  - annotation: jakarta.validation.constraints.Positive
+  - annotation: jakarta.validation.constraints.PositiveOrZero

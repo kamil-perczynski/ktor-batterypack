@@ -1,6 +1,7 @@
 package io.github.ktor_batterypack.validation.reflection
 
 import io.github.ktor_batterypack.validation.ksp.CodegenType
+import io.github.ktor_batterypack.validation.ksp.CodegenAnnotation
 import io.github.ktor_batterypack.validation.ksp.DeclaredMember
 import io.github.ktor_batterypack.validation.ksp.isPrimitive
 import kotlin.reflect.KClass
@@ -32,7 +33,7 @@ data class ReflectionCodegenType(
                 return false
             }
 
-            return isPrimitive(ktype.jvmErasure.qualifiedName!!, kclass.isSubclassOf(Enum::class))
+            return isPrimitive(ktype.jvmErasure.qualifiedName!!)
         }
 
     override val isCollection: Boolean
@@ -41,12 +42,21 @@ data class ReflectionCodegenType(
     override val isMap: Boolean
         get() = kclass.isSubclassOf(Map::class)
 
+    override val isEnum: Boolean
+        get() = kclass.isSubclassOf(Enum::class)
+
     override val declaredMemberProperties: List<DeclaredMember>
         get() {
+            if (isPrimitive) {
+                return emptyList()
+            }
             if (isCollection) {
                 return emptyList()
             }
             if (isMap) {
+                return emptyList()
+            }
+            if (isEnum) {
                 return emptyList()
             }
 
@@ -61,5 +71,14 @@ data class ReflectionCodegenType(
 
             return "$name<${typeParams.joinToString(", ") { it.properName }}>"
         }
+
+    override val annotations: List<CodegenAnnotation>
+        get() = ktype.annotations.map { ReflectionCodegenAnnotation(it) }.toList()
+
+    override val isMarkedNullable: Boolean
+        get() = ktype.isMarkedNullable
+
+    override val enumValues: List<String>
+        get() = kclass.java.enumConstants?.map { it.toString() } ?: emptyList()
 }
 

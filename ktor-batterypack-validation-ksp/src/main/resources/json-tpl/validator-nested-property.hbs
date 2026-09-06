@@ -1,0 +1,30 @@
+{{~#if prop.nullable}}
+        {{~else}}
+        JsonTypeChecks.checkNotNull("{{prop.name}}", {{param.name}}, call)
+        {{~/if}}
+        {{~#if prop.isObject}}
+        JsonTypeChecks.checkObject("{{prop.name}}", {{param.name}}, call)?.let {
+            val itemCall = call.nestedProperty("{{prop.name}}")
+            {{~#with (findValidationMethod paramType=param.codegenType prop=prop)}}
+            {{this}}(it, itemCall)
+            {{~/with}}
+            itemCall.finishObject()
+        }
+        {{~/if}}
+        {{~#if prop.isList}}
+        JsonTypeChecks.checkArray("{{prop.name}}", {{param.name}}, call)?.let {
+            val itemCall = call.nestedProperty("{{prop.name}}")
+            {{~#each prop.constraints}}
+            {{jsonConstraint constraint=this prop='$' call='itemCall'}}
+            {{~/each}}
+            {{~#with (findValidationMethod paramType=param.codegenType prop=prop)}}
+            {{this}}(it, itemCall)
+            {{~/with}}
+            itemCall.finishList()
+        }
+        {{~/if}}
+        {{~#if prop.codegenType.isEnum}}
+        {{~#with (findValidationMethod paramType=param.codegenType prop=prop)}}
+        {{this}}({{param.name}}, call, "{{prop.name}}")
+        {{~/with}}
+        {{~/if}}

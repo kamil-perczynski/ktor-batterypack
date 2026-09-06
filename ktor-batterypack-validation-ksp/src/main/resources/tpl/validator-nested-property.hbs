@@ -1,11 +1,9 @@
-{{~#if prop.nullable}}
-        {{~else}}
-        Constraints.checkNotNull("{{prop.name}}", {{param.name}}.{{prop.name}}, call)
-        {{~/if}}
         {{~#if prop.isObject}}
         {{param.name}}.{{prop.name}}?.let {
             val itemCall = call.nestedProperty("{{prop.name}}")
-            {{validatorMethodName}}(it, itemCall)
+            {{~#with (findValidationMethod paramType=param.codegenType prop=prop)}}
+            {{this}}(it, itemCall)
+            {{~/with}}
             itemCall.finishObject()
         }
         {{~/if}}
@@ -13,9 +11,16 @@
         {{param.name}}.{{prop.name}}?.let {
             val itemCall = call.nestedProperty("{{prop.name}}")
             {{~#each prop.constraints}}
-            Constraints.{{name}}("{{../name}}", it, itemCall)
+            {{constraint constraint=this prop='$' call='itemCall'}}
             {{~/each}}
-            {{validatorMethodName}}(it, itemCall)
+            {{~#with (findValidationMethod paramType=param.codegenType prop=prop)}}
+            {{this}}(it, itemCall)
+            {{~/with}}
             itemCall.finishList()
         }
+        {{~/if}}
+        {{~#if prop.codegenType.isEnum}}
+        {{~#with (findValidationMethod paramType=param.codegenType prop=prop)}}
+        {{this}}({{param.name}}.{{prop.name}}, call)
+        {{~/with}}
         {{~/if}}
