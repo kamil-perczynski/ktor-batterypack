@@ -1,6 +1,6 @@
 ---
 name: alpha-release
-description: Use when the user wants to cut, prepare, or publish an alpha release of ktor-batterypack. Bumps the alpha version from git tags, updates the root build.gradle.kts, creates and pushes a release/<version> branch, then optionally tags the commit to trigger artifact publishing to GitHub Packages. Keywords: alpha release, release, publish artifacts, bump version, tag release.
+description: Use when the user wants to cut, prepare, or publish an alpha release of ktor-batterypack. Bumps the alpha version from git tags, updates the `ktor-batterypack` version in the version catalog (`gradle/libs.versions.toml`), creates and pushes a release/<version> branch, then optionally tags the commit to trigger artifact publishing to GitHub Packages. Keywords: alpha release, release, publish artifacts, bump version, tag release.
 ---
 
 # Alpha Release
@@ -21,22 +21,26 @@ Use the Question tool to ask the user to confirm the proposed next version. Offe
 
 ## Step 3 — Update the version
 
-Edit the root `build.gradle.kts` and change the `version = "..."` line (line 8) to the confirmed version, e.g.:
+Edit `gradle/libs.versions.toml` and change the `ktor-batterypack` entry in the `[versions]` section to the confirmed version, e.g.:
 
-```kotlin
-version = "0.0.9-alpha"
+```toml
+ktor-batterypack = "0.0.9-alpha"
 ```
 
-Only the root file needs changing — subprojects inherit the version via `allprojects { version = rootProject.version }`. Verify with `git diff` that only this one line changed.
+This single catalog entry drives the version everywhere, so no other files need changing:
 
-Additionally, the gradle plugin needs a version change. Edit the `ktor-batterypack-gradle-plugin/build.gradle.kts` 
-and change the `version = "..."` line to the confirmed version as well.
+- Root `build.gradle.kts` reads it via `version = libs.versions.ktorBatterypack`.
+- `ktor-batterypack-gradle-plugin/build.gradle.kts` reads it via `version = libs.versions.ktor.batterypack`.
+- Subprojects inherit it via `allprojects { version = rootProject.version }`.
+- All `ktor-batterypack-*` library/plugin coordinates reference it via `version.ref = "ktor-batterypack"`.
+
+Verify with `git diff` that only this one line changed.
 
 
 ## Step 4 — Create the release branch and commit
 
 1. Create and switch to a new branch: `git checkout -b release/<version>` (e.g. `release/0.0.9-alpha`).
-2. Stage only `build.gradle.kts` and commit with the exact message: `release: <version>` (e.g. `release: 0.0.9-alpha`).
+2. Stage only `gradle/libs.versions.toml` and commit with the exact message: `release: <version>` (e.g. `release: 0.0.9-alpha`).
 
 ## Step 5 — Push the branch
 
@@ -61,5 +65,5 @@ Report the published version, the release branch name, and the tag. Remind the u
 
 - Never push tags without the Step 6 confirmation.
 - Never force-push or reuse an existing tag. If the tag already exists, stop and ask the user.
-- Never commit anything other than the version change in `build.gradle.kts` on the release branch.
+- Never commit anything other than the version change in `gradle/libs.versions.toml` on the release branch.
 - Tags and branch names use the bare version (`0.0.9-alpha`), never prefixed with `v`.
