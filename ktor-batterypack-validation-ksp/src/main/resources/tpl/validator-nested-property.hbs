@@ -11,7 +11,7 @@
         {{param.name}}.{{prop.name}}?.let {
             val itemCall = call.nestedProperty("{{prop.name}}")
             {{~#each prop.constraints}}
-            {{constraint constraint=this prop=null call='itemCall'}}
+            {{constraint constraint=this prop='$' call='itemCall'}}
             {{~/each}}
             {{~#with (findValidationMethod paramType=param.codegenType prop=prop)}}
             {{this}}(it, itemCall)

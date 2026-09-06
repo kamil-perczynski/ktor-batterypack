@@ -17,7 +17,7 @@ interface JsonPersonValidator {
     fun validatePersonIdentification(personIdentification: ObjectNode?, call: ValidationCall) {
         if (personIdentification == null) return
 
-        when (val type = JsonConstraints.checkString("type", personIdentification)) {
+        when (val type = JsonTypeChecks.checkString("type", personIdentification)) {
             ID_DOCUMENT_CHECK.name -> validateIdDocIdentification(personIdentification, call)
             LIVENESS_CHECK.name -> validateLivenessIdentification(personIdentification, call)
             else -> call.propertyError(

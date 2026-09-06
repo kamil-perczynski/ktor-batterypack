@@ -41,14 +41,14 @@ open class KtorBatteriesIT {
             builder.environment { config = MapApplicationConfig("app.profiles" to "test") }
             builder.application {
                 val ktorApp = this
-                configureKtorServer { profiles ->
-                    modules(
+                configureKtorServer { _, koinApp, profiles ->
+                    koinApp.modules(
                         module {
                             single { ktorApp }
                         }
                     )
-                    withConfiguration<TestKtorFrameApp>()
-                    properties(mapOf("app.profiles" to profiles))
+                    koinApp.withConfiguration<TestKtorFrameApp>()
+                    koinApp.properties(mapOf("app.profiles" to profiles))
                 }
             }
 

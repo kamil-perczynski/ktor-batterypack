@@ -11,6 +11,11 @@ class ValidationCall(
     private val nested: MutableMap<String, ConstraintError> = mutableMapOf()
 
     fun propertyError(prop: String, constraintError: SingleConstraintError): ValidationCall {
+        if (prop == "$") {
+            directError(constraintError)
+            return this;
+        }
+
         val errors = properties.computeIfAbsent(prop) { mutableListOf() }
         errors.add(constraintError)
         return this

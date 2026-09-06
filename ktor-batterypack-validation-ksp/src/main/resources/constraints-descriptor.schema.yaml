@@ -1,27 +1,33 @@
 $schema: https://json-schema.org/draft/2020-12/schema
-$id: jakarta-constraints.schema.yaml
-title: Jakarta Constraints Configuration
+$id: constraints-descriptor.schema.yaml
+title: Constraints Descriptor Configuration
 type: object
 additionalProperties: false
 required:
-  - import
-  - jsonImport
+  - imports
+  - jsonImports
   - defaults
   - constraints
 properties:
-  import:
-    type: string
-    description: Fully qualified import for the constraints helper.
-  jsonImport:
-    type: string
-    description: Fully qualified import for the JSON constraints helper.
+  imports:
+    type: array
+    items:
+      type: string
+      description: Fully qualified import for the constraints helper.
+  jsonImports:
+    type: array
+    items:
+      type: string
+      description: Fully qualified import for the JSON constraints helper.
   defaults:
     type: object
     additionalProperties: false
     required:
-      - callTpl
-      - jsonCallTpl
+      - simpleClassName
     properties:
+      simpleClassName:
+        type: string
+        description: Simple class name with the constraint methods
       callTpl:
         type: string
         description: Default call template applied to every constraint.
@@ -45,3 +51,6 @@ properties:
         jsonCallTpl:
           type: string
           description: Overrides the default JSON call template.
+        simpleClassName:
+          type: string
+          description: Simple class name with the constraint methods

@@ -1,0 +1,9 @@
+$schema: ../jakarta-constraints.schema.yaml
+imports:
+  - io.github.kperczynski.libs.ktor.client.EmailConstraints
+jsonImports:
+  - io.github.kperczynski.libs.ktor.client.EmailConstraints
+defaults:
+  simpleClassName: EmailConstraints
+constraints:
+  - annotation: io.github.kperczynski.libs.ktor.client.Email

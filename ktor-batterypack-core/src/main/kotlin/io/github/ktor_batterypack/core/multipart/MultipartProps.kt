@@ -3,6 +3,9 @@ package io.github.ktor_batterypack.core.multipart
 import com.fasterxml.jackson.annotation.JsonPropertyDescription
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
+import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Pattern
+import jakarta.validation.constraints.Size
 
 /**
  * Configuration properties for multipart file uploads.

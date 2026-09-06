@@ -33,7 +33,7 @@ class GeneratedPersonValidatorImpl : PersonValidator {
         Constraints.checkNotNull("identifications", person.identifications, call)
         if (person.identifications != null) {
             val itemCall = call.nestedProperty("identifications")
-            Constraints.checkNotEmpty(person.identifications, itemCall)
+            Constraints.checkNotEmpty("$", person.identifications, itemCall)
             validateIdentifications(person.identifications, itemCall)
             itemCall.finishList()
         }

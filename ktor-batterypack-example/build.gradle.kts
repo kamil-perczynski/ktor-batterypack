@@ -152,6 +152,13 @@ tasks.whenTaskAdded {
     }
 }
 
+ksp {
+    arg(
+        "ktor.validation.constraint.dir",
+        project.layout.projectDirectory.dir("src/main/resources/constraints").toString()
+    )
+}
+
 sourceSets {
     main { kotlin { srcDir("build/generated/src/main/kotlin") } }
 }

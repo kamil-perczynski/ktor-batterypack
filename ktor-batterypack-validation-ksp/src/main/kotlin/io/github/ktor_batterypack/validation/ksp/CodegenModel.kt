@@ -4,6 +4,8 @@ import io.github.ktor_batterypack.validation.codegen.ConstraintsDescriptor
 
 data class CodegenModel(
     val imports: List<String>,
+    val constraintImports: List<String>,
+    val jsonConstraintImports: List<String>,
     val packageName: String,
     val interfaceName: String,
     val fqInterfaceName: String,

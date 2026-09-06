@@ -2,6 +2,7 @@ package io.github.kperczynski.domain.invoice
 
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
+import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.Positive
@@ -12,6 +13,9 @@ import java.time.LocalDate
 data class InvoiceCreate(
     @field:NotBlank
     val settlementNumber: String,
+    @NotBlank
+    @Email
+    val recipientEmail: String,
     val issueDate: LocalDate,
     @field:Positive
     val totalNet: BigDecimal,

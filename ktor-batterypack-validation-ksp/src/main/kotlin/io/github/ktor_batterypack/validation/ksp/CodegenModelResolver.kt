@@ -3,13 +3,14 @@ package io.github.ktor_batterypack.validation.ksp
 import com.google.common.graph.GraphBuilder
 import com.google.common.graph.MutableGraph
 import com.google.common.graph.Traverser
+import io.github.ktor_batterypack.validation.codegen.ConstraintRegistry
 import io.github.ktor_batterypack.validation.ksp.DefaultCodegenNamingConvention.DEFAULT_CODEGEN_NAMING_CONVENTION
 import jakarta.validation.constraints.NotNull
 
 class CodegenModelResolver(
     private val maxDepth: Int = 10,
     private val namingConvention: CodegenNamingConvention = DEFAULT_CODEGEN_NAMING_CONVENTION,
-    private val constraintRegistry: ConstraintRegistry = ConstraintRegistry()
+    private val constraintRegistry: ConstraintRegistry = ConstraintRegistry.default()
 ) {
 
     fun resolve(validatorInterface: ValidatorInterface): CodegenModel {
@@ -51,6 +52,8 @@ class CodegenModelResolver(
 
         return CodegenModel(
             imports = imports.sorted(),
+            constraintImports = constraintRegistry.constraintImports(),
+            jsonConstraintImports = constraintRegistry.jsonConstraintImports(),
             packageName = validatorInterface.fqName.substringBeforeLast("."),
             interfaceName = validatorInterface.name,
             fqInterfaceName = validatorInterface.fqName,

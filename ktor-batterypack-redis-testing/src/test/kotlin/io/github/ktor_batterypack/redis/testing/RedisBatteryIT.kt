@@ -20,14 +20,13 @@ open class RedisBatteryIT {
 
             val builder = ApplicationTestBuilder()
             builder.application {
-                val ktorApp = this
-                configureKtorServer { profiles ->
-                    modules(
+                configureKtorServer { ktorApp, koinApp, _ ->
+                    koinApp.modules(
                         module {
                             single { ktorApp }
                         }
                     )
-                    withConfiguration<TestRedisApp>()
+                    koinApp.withConfiguration<TestRedisApp>()
                 }
             }
 

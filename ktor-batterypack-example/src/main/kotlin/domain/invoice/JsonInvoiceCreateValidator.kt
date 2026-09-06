@@ -2,7 +2,7 @@ package io.github.kperczynski.domain.invoice
 
 import io.github.ktor_batterypack.annotation.JsonValidator
 import io.github.ktor_batterypack.validation.*
-import io.github.ktor_batterypack.validation.JsonConstraints.checkLocalDate
+import io.github.ktor_batterypack.validation.JsonTypeChecks.checkLocalDate
 import tools.jackson.databind.JsonNode
 import tools.jackson.databind.node.ObjectNode
 import tools.jackson.databind.node.StringNode
@@ -39,8 +39,8 @@ interface JsonInvoiceCreateValidator {
     fun validateContractParty(contractParty: ObjectNode?, call: ValidationCall) {
         if (contractParty == null) return
 
-        JsonConstraints.checkNotNull("type", contractParty, call)
-        val type = JsonConstraints.checkString("type", contractParty, call) ?: return
+        JsonTypeChecks.checkNotNull("type", contractParty, call)
+        val type = JsonTypeChecks.checkString("type", contractParty, call) ?: return
 
         when (type) {
             ContractPartyType.SELLER.name -> validateSellerParty(contractParty, call)

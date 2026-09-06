@@ -4,8 +4,13 @@ import com.github.jknack.handlebars.Context
 import com.github.jknack.handlebars.Handlebars
 import com.github.jknack.handlebars.Helper
 import com.github.jknack.handlebars.io.ClassPathTemplateLoader
+import io.github.ktor_batterypack.validation.ksp.DefaultCodegenNamingConvention.DEFAULT_CODEGEN_NAMING_CONVENTION
+import kotlin.to
 
-class ValidatorCodegen {
+private const val DEFAULT_CONSTRAINT_TEMPLATE =
+    "{{simpleClassName}}.{{methodName}}({{quote prop}}, {{value}}, {{call}}{{#with (constraintArgs args)}}, {{this}}{{/with}})"
+
+class ValidatorCodegen(private val namingConvention: CodegenNamingConvention = DEFAULT_CODEGEN_NAMING_CONVENTION) {
 
     fun generateValidatorClass(model: CodegenModel): String {
         val handlebars = Handlebars(ClassPathTemplateLoader("/tpl"))
@@ -43,10 +48,10 @@ class ValidatorCodegen {
 
             if (paramType != null && prop != null && (prop.codegenType.isMap || prop.codegenType.isCollection)) {
                 val methodName =
-                    DefaultCodegenNamingConvention.DEFAULT_CODEGEN_NAMING_CONVENTION.collectionValidationMethodName(
-                        paramType,
-                        prop.name,
-                        prop.codegenType
+                    namingConvention.collectionValidationMethodName(
+                        parentType = paramType,
+                        propertyName = prop.name,
+                        propertyType = prop.codegenType
                     )
 
                 val matchedMethod = graph.methodsGraph.nodes()
@@ -58,10 +63,7 @@ class ValidatorCodegen {
             }
 
             if (prop == null) {
-                val methodName =
-                    DefaultCodegenNamingConvention.DEFAULT_CODEGEN_NAMING_CONVENTION.validationMethodName(
-                        paramType
-                    )
+                val methodName = namingConvention.validationMethodName(paramType)
                 val firstOrNull = graph.methodsGraph.nodes()
                     .filterIsInstance<CodegenMethod>()
                     .filter { it.param.properName == paramType.properName }
@@ -71,10 +73,7 @@ class ValidatorCodegen {
                 return@Helper firstOrNull?.name
             }
 
-            val methodName =
-                DefaultCodegenNamingConvention.DEFAULT_CODEGEN_NAMING_CONVENTION.validationMethodName(
-                    prop.codegenType
-                )
+            val methodName = namingConvention.validationMethodName(prop.codegenType)
 
             val firstOrNull = graph.methodsGraph.nodes()
                 .filterIsInstance<CodegenMethod>()
@@ -107,11 +106,14 @@ class ValidatorCodegen {
             val value = opts.hash<String?>("value") ?: "it"
             val call = opts.hash<String?>("call") ?: "call"
 
-            val tplSrc = paramType.descriptor.jsonCallTpl ?: paramType.descriptor.callTpl
+            val tplSrc = paramType.descriptor.jsonCallTpl
+                ?: paramType.descriptor.callTpl
+                ?: DEFAULT_CONSTRAINT_TEMPLATE
             val tpl = opts.handlebars.compileInline(tplSrc)
 
             val rendered = tpl.apply(
                 mapOf<String, Any>(
+                    "simpleClassName" to (paramType.descriptor.simpleClassName ?: ""),
                     "methodName" to paramType.name,
                     "prop" to prop,
                     "value" to value,
@@ -129,11 +131,12 @@ class ValidatorCodegen {
             val value = opts.hash<String?>("value") ?: "it"
             val call = opts.hash<String?>("call") ?: "call"
 
-            val tplSrc = paramType.descriptor.callTpl
+            val tplSrc = paramType.descriptor.callTpl ?: DEFAULT_CONSTRAINT_TEMPLATE
             val tpl = opts.handlebars.compileInline(tplSrc)
 
             val rendered = tpl.apply(
                 mapOf<String, Any>(
+                    "simpleClassName" to (paramType.descriptor.simpleClassName ?: ""),
                     "methodName" to paramType.name,
                     "prop" to prop,
                     "value" to value,

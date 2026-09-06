@@ -1,9 +1,17 @@
 package io.github.ktor_batterypack.validation
 
 import java.math.BigDecimal
+import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.ZonedDateTime
+import java.time.temporal.Temporal
 
 object Constraints {
+
+    @JvmStatic
+    private val EMAIL_PATTERN = Regex("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")
 
     fun checkNotNull(prop: String, data: Any?, call: ValidationCall) {
         if (data == null) {
@@ -11,9 +19,9 @@ object Constraints {
         }
     }
 
-    fun checkNotEmpty(data: Collection<Any>, call: ValidationCall) {
+    fun checkNotEmpty(prop: String, data: Collection<Any>, call: ValidationCall) {
         if (data.isEmpty()) {
-            call.directError(SingleConstraintError("NotEmpty"))
+            call.propertyError(prop, SingleConstraintError("NotEmpty"))
         }
     }
 
@@ -29,21 +37,47 @@ object Constraints {
         }
     }
 
-    fun checkNotBlank(data: String, call: ValidationCall) {
-        if (data.isBlank()) {
-            call.directError(SingleConstraintError("NotBlank"))
+    fun checkPast(prop: String, date: Temporal, call: ValidationCall) {
+        if (date.compareToNow() >= 0) {
+            call.propertyError(prop, SingleConstraintError("Past"))
         }
     }
 
-    fun checkPast(prop: String, date: LocalDate, call: ValidationCall) {
-        if (!date.isBefore(LocalDate.now())) {
-            call.propertyError(prop, SingleConstraintError("Past"))
+    fun checkPastOrPresent(prop: String, date: Temporal, call: ValidationCall) {
+        if (date.compareToNow() > 0) {
+            call.propertyError(prop, SingleConstraintError("PastOrPresent"))
+        }
+    }
+
+    fun checkFuture(prop: String, date: Temporal, call: ValidationCall) {
+        if (date.compareToNow() <= 0) {
+            call.propertyError(prop, SingleConstraintError("Future"))
+        }
+    }
+
+    fun checkFutureOrPresent(prop: String, date: Temporal, call: ValidationCall) {
+        if (date.compareToNow() < 0) {
+            call.propertyError(prop, SingleConstraintError("FutureOrPresent"))
         }
     }
 
     fun checkPattern(prop: String, str: String, call: ValidationCall, regexp: String) {
         if (!Regex(regexp).matches(str)) {
             call.propertyError(prop, SingleConstraintError("Pattern", "Must match $regexp"))
+        }
+    }
+
+    fun checkEmail(
+        prop: String,
+        str: String,
+        call: ValidationCall,
+        @Suppress("unused") regexp: String
+    ) {
+        if (!EMAIL_PATTERN.matches(str)) {
+            call.propertyError(
+                prop,
+                SingleConstraintError("Email", "Must be a well-formed email address")
+            )
         }
     }
 
@@ -56,41 +90,141 @@ object Constraints {
         }
     }
 
-    // ==========================================
-    // Int Overloads (Zero Boxing, Inlined)
-    // ==========================================
-
     fun checkMin(prop: String, num: Int, call: ValidationCall, value: Int) {
-        if (num < value) call.propertyError(prop, SingleConstraintError("Min", "Must be at least $value"))
+        if (num < value) call.propertyError(
+            prop,
+            SingleConstraintError("Min", "Must be at least $value")
+        )
     }
 
     fun checkMax(prop: String, num: Int, call: ValidationCall, value: Int) {
-        if (num > value) call.propertyError(prop, SingleConstraintError("Max", "Must be at most $value"))
+        if (num > value) call.propertyError(
+            prop,
+            SingleConstraintError("Max", "Must be at most $value")
+        )
     }
 
-    // ==========================================
-    // Long Overloads (Zero Boxing, Inlined)
-    // ==========================================
-
     fun checkMin(prop: String, num: Long, call: ValidationCall, value: Long) {
-        if (num < value) call.propertyError(prop, SingleConstraintError("Min", "Must be at least $value"))
+        if (num < value) call.propertyError(
+            prop,
+            SingleConstraintError("Min", "Must be at least $value")
+        )
     }
 
     fun checkMax(prop: String, num: Long, call: ValidationCall, value: Long) {
-        if (num > value) call.propertyError(prop, SingleConstraintError("Max", "Must be at most $value"))
+        if (num > value) call.propertyError(
+            prop,
+            SingleConstraintError("Max", "Must be at most $value")
+        )
     }
 
     fun checkMin(prop: String, num: Double, call: ValidationCall, value: Long) {
-        if (num < value) call.propertyError(prop, SingleConstraintError("Min", "Must be at least $value"))
+        if (num < value) call.propertyError(
+            prop,
+            SingleConstraintError("Min", "Must be at least $value")
+        )
     }
 
     fun checkMax(prop: String, num: Double, call: ValidationCall, value: Long) {
-        if (num > value) call.propertyError(prop, SingleConstraintError("Max", "Must be at most $value"))
+        if (num > value) call.propertyError(
+            prop,
+            SingleConstraintError("Max", "Must be at most $value")
+        )
     }
 
     fun checkPositive(prop: String, value: BigDecimal, call: ValidationCall) {
         if (value <= BigDecimal.ZERO) {
             call.propertyError(prop, SingleConstraintError("Positive"))
+        }
+    }
+
+    fun checkPositive(prop: String, value: Int, call: ValidationCall) {
+        if (value <= 0) {
+            call.propertyError(prop, SingleConstraintError("Positive"))
+        }
+    }
+
+    fun checkPositive(prop: String, value: Long, call: ValidationCall) {
+        if (value <= 0) {
+            call.propertyError(prop, SingleConstraintError("Positive"))
+        }
+    }
+
+    fun checkPositive(prop: String, value: Double, call: ValidationCall) {
+        if (value <= 0.0) {
+            call.propertyError(prop, SingleConstraintError("Positive"))
+        }
+    }
+
+    fun checkPositiveOrZero(prop: String, value: BigDecimal, call: ValidationCall) {
+        if (value < BigDecimal.ZERO) {
+            call.propertyError(prop, SingleConstraintError("PositiveOrZero"))
+        }
+    }
+
+    fun checkPositiveOrZero(prop: String, value: Int, call: ValidationCall) {
+        if (value < 0) {
+            call.propertyError(prop, SingleConstraintError("PositiveOrZero"))
+        }
+    }
+
+    fun checkPositiveOrZero(prop: String, value: Long, call: ValidationCall) {
+        if (value < 0) {
+            call.propertyError(prop, SingleConstraintError("PositiveOrZero"))
+        }
+    }
+
+    fun checkPositiveOrZero(prop: String, value: Double, call: ValidationCall) {
+        if (value < 0.0) {
+            call.propertyError(prop, SingleConstraintError("PositiveOrZero"))
+        }
+    }
+
+    fun checkNegative(prop: String, value: BigDecimal, call: ValidationCall) {
+        if (value >= BigDecimal.ZERO) {
+            call.propertyError(prop, SingleConstraintError("Negative"))
+        }
+    }
+
+    fun checkNegative(prop: String, value: Int, call: ValidationCall) {
+        if (value >= 0) {
+            call.propertyError(prop, SingleConstraintError("Negative"))
+        }
+    }
+
+    fun checkNegative(prop: String, value: Long, call: ValidationCall) {
+        if (value >= 0) {
+            call.propertyError(prop, SingleConstraintError("Negative"))
+        }
+    }
+
+    fun checkNegative(prop: String, value: Double, call: ValidationCall) {
+        if (value >= 0.0) {
+            call.propertyError(prop, SingleConstraintError("Negative"))
+        }
+    }
+
+    fun checkNegativeOrZero(prop: String, value: BigDecimal, call: ValidationCall) {
+        if (value > BigDecimal.ZERO) {
+            call.propertyError(prop, SingleConstraintError("NegativeOrZero"))
+        }
+    }
+
+    fun checkNegativeOrZero(prop: String, value: Int, call: ValidationCall) {
+        if (value > 0) {
+            call.propertyError(prop, SingleConstraintError("NegativeOrZero"))
+        }
+    }
+
+    fun checkNegativeOrZero(prop: String, value: Long, call: ValidationCall) {
+        if (value > 0) {
+            call.propertyError(prop, SingleConstraintError("NegativeOrZero"))
+        }
+    }
+
+    fun checkNegativeOrZero(prop: String, value: Double, call: ValidationCall) {
+        if (value > 0.0) {
+            call.propertyError(prop, SingleConstraintError("NegativeOrZero"))
         }
     }
 
@@ -106,6 +240,7 @@ object Constraints {
             call.propertyError(prop, SingleConstraintError("Min", "Must be greater than $value"))
         }
     }
+
     fun checkDecimalMax(
         prop: String,
         checkedValue: BigDecimal,
@@ -121,14 +256,20 @@ object Constraints {
 
     fun checkSize(prop: String, data: Collection<*>, call: ValidationCall, max: Int, min: Int) {
         if (data.size !in min..max) {
-            call.propertyError(prop, SingleConstraintError("Size", "Must have size between [$min, $max]"))
+            call.propertyError(
+                prop,
+                SingleConstraintError("Size", "Must have size between [$min, $max]")
+            )
         }
     }
 
-    fun checkSize(data: Collection<*>, call: ValidationCall, max: Int, min: Int) {
-        if (data.size !in min..max) {
-            call.directError(SingleConstraintError("Size", "Must have size between [$min, $max]"))
-        }
-    }
+}
 
+private fun Temporal.compareToNow(): Int = when (this) {
+    is LocalDate -> compareTo(LocalDate.now())
+    is LocalDateTime -> compareTo(LocalDateTime.now())
+    is OffsetDateTime -> compareTo(OffsetDateTime.now())
+    is ZonedDateTime -> compareTo(ZonedDateTime.now())
+    is Instant -> compareTo(Instant.now())
+    else -> throw IllegalArgumentException("Unsupported temporal type: ${this::class.simpleName}")
 }
