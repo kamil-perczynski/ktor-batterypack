@@ -1,5 +1,3 @@
-@file:Suppress("unused")
-
 package {{packageName}}
 
 import io.github.ktor_batterypack.validation.ValidationCall
@@ -21,13 +19,12 @@ import javax.annotation.processing.Generated
 * Do not edit the class manually.
 */
 @Generated
-@Suppress("UNNECESSARY_SAFE_CALL")
 class {{typeName}} : {{interfaceName}} {
 {{#each methods}}
     override fun {{name}}({{param.name}}: JsonNode): ValidationResult<JsonNode> {
         val call = ValidationCall()
-        JsonTypeChecks.checkNotNull({{param.name}}, call)
-        JsonTypeChecks.checkObject({{param.name}}, call)?.let {
+        JsonTypeChecks.checkNotNull("$", {{param.name}}, call)
+        JsonTypeChecks.checkObject("$", {{param.name}}, call)?.let {
         {{~#with (findValidationMethod paramType=param.codegenType)}}
             {{this}}(it, call)
         {{~/with}}
@@ -46,7 +43,7 @@ class {{typeName}} : {{interfaceName}} {
 {{/each}}
 
 {{~#each privateMethods}}
-    {{#if isOverride}}override{{else}}private{{/if}} fun {{name}}({{param.name}}: {{toJsonType param.codegenType}}?, call: ValidationCall{{#if param.codegenType.isEnum}}, prop: String?{{/if}}) {
+    {{#if isOverride}}override{{else}}private{{/if}} fun {{name}}({{param.name}}: {{toJsonType param.codegenType}}?, call: ValidationCall{{#if param.codegenType.isEnum}}, prop: String{{/if}}) {
         if ({{param.name}} == null) return
         {{#each directProperties}}
         {{~>validator-direct-property prop=. param=param}}
@@ -57,37 +54,30 @@ class {{typeName}} : {{interfaceName}} {
         {{~#if param.isList}}
         for (item in {{param.name}}) {
             val itemCall = call.listItem()
-            JsonTypeChecks.checkNotNull(item, itemCall)
-
-            {{~#if param.itemConstraints.size}}
-            item?.let {
+            JsonTypeChecks.checkNotNull("$", item, itemCall)
+            JsonTypeChecks.{{toTypeCheckMethodName param.codegenType.typeParams.0}}("$", item, itemCall)?.let {
             {{~#each param.itemConstraints}}
-                {{jsonConstraint constraint=this prop=../name call='itemCall'}}
+                {{jsonConstraint constraint=this prop='$' call='itemCall'}}
             {{~/each}}
-            }
-            {{~/if}}
 
             {{~#if param.codegenType.typeParams.0.isEnum}}
             {{~#with (findValidationMethod paramType=param.codegenType.typeParams.0)}}
-            {{this}}(item, itemCall, prop=null)
+                {{this}}(item, itemCall, prop="$")
             {{~/with}}
-            {{~else if param.codegenType.typeParams.0.isPrimitive}}
-            JsonTypeChecks.{{toTypeCheckMethodName param.codegenType.typeParams.0}}("$", {{param.name}}, itemCall)
             {{~else}}
-            JsonTypeChecks.checkObject("$", item, itemCall)?.let {
             {{~#with (findValidationMethod paramType=param.codegenType.typeParams.0)}}
                 {{this}}(it, itemCall)
             {{~/with}}
+            {{~/if}}
             }
-            {{/if}}
             itemCall.finishObject()
         }
         {{~else if param.isMap}}
-        for (entry in {{param.name}}.entries) {
+        for (entry in {{param.name}}.properties) {
             val (key, value) = entry
 
             val nested = call.nestedProperty(key)
-            JsonTypeChecks.checkNotNull(value, nested)
+            JsonTypeChecks.checkNotNull("$", value, nested)
 
             {{~#if param.itemConstraints.size}}
             value?.let {

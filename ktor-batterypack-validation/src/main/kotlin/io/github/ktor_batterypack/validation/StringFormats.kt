@@ -19,15 +19,17 @@ object StringFormats {
     private val INSTANT_PATTERN =
         Regex("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?$OFFSET_PATTERN$")
 
-    fun checkUuid(prop: String, value: String, call: ValidationCall): Boolean {
+    @JvmStatic
+    fun checkUuid(prop: String, value: String, call: ValidationCall? = null): Boolean {
         if (!UUID_PATTERN.matches(value)) {
-            call.propertyError(prop, SingleConstraintError("Format", "Must be a valid UUID"))
+            call?.propertyError(prop, SingleConstraintError("Format", "Must be a valid UUID"))
             return false
         }
 
         return true
     }
 
+    @JvmStatic
     fun checkLocalDate(prop: String, value: String, call: ValidationCall? = null): Boolean {
         if (!LOCAL_DATE_PATTERN.matches(value)) {
             call?.propertyError(prop, SingleConstraintError("Format", "Must be a valid local date"))
@@ -36,29 +38,26 @@ object StringFormats {
         return true
     }
 
-    fun checkLocalDateTime(prop: String, value: String, call: ValidationCall) {
+    @JvmStatic
+    fun checkLocalDateTime(prop: String, value: String, call: ValidationCall? = null) {
         if (!LOCAL_DATE_TIME_PATTERN.matches(value)) {
-            call.propertyError(prop, SingleConstraintError("Format", "Must be a valid local date-time"))
+            call?.propertyError(prop, SingleConstraintError("Format", "Must be a valid local date-time"))
         }
     }
 
-    fun checkOffsetDateTime(prop: String, value: String, call: ValidationCall): Boolean {
+    @JvmStatic
+    fun checkOffsetDateTime(prop: String, value: String, call: ValidationCall? = null): Boolean {
         if (!OFFSET_DATE_TIME_PATTERN.matches(value)) {
-            call.propertyError(prop, SingleConstraintError("Format", "Must be a valid offset date-time"))
+            call?.propertyError(prop, SingleConstraintError("Format", "Must be a valid offset date-time"))
             return false
         }
         return true
     }
 
-    fun checkInstant(prop: String, value: String, call: ValidationCall) {
+    @JvmStatic
+    fun checkInstant(prop: String, value: String, call: ValidationCall? = null) {
         if (!INSTANT_PATTERN.matches(value)) {
-            call.propertyError(prop, SingleConstraintError("Format", "Must be a valid instant"))
-        }
-    }
-
-    fun checkEnum(prop: String, value: String, call: ValidationCall, values: Collection<String>) {
-        if (value !in values) {
-            call.propertyError(prop, SingleConstraintError("Format", "Must be one of $values"))
+            call?.propertyError(prop, SingleConstraintError("Format", "Must be a valid instant"))
         }
     }
 

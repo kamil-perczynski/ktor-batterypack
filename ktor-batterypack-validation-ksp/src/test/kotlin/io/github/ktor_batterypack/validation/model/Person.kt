@@ -18,6 +18,9 @@ data class Person(
 
     @field:NotEmpty
     val identifications: List<PersonIdentification>,
+
+    @param:NotEmpty
+    val creditCards: List<@NotBlank @Pattern(regexp = "^\\d{16}$") String> = emptyList()
 )
 
 data class Address(

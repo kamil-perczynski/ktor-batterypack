@@ -69,7 +69,7 @@ data class ReflectionCodegenType(
                 return name
             }
 
-            return "$name<${typeParams.joinToString(", ") { it.properName }}>"
+            return "$name<${typeParams.joinToString(", ") { if (it.isMarkedNullable) it.properName + '?' else it.properName }}>"
         }
 
     override val annotations: List<CodegenAnnotation>

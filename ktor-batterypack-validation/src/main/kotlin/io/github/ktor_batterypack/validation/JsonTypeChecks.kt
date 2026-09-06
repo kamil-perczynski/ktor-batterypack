@@ -8,15 +8,15 @@ import tools.jackson.databind.node.ObjectNode
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.OffsetDateTime
-import java.util.*
+import java.util.UUID
 
 object JsonTypeChecks {
 
     @JvmStatic
-    fun checkEnum(prop: String?, value: String, call: ValidationCall?, allowedValues: Set<String>) {
+    fun checkEnum(prop: String, value: String, call: ValidationCall?, allowedValues: Set<String>) {
         if (!allowedValues.contains(value)) {
             call?.propertyError(
-                prop ?: "$",
+                prop,
                 SingleConstraintError("EnumValues", "Allowed values are: $allowedValues")
             )
         }
@@ -24,7 +24,7 @@ object JsonTypeChecks {
 
     @JvmStatic
     fun checkObject(prop: String, jsonNode: JsonNode, call: ValidationCall? = null): ObjectNode? {
-        val objectNode = jsonNode.get(prop) ?: return null
+        val objectNode = resolveProp(jsonNode, prop) ?: return null
 
         if (objectNode.isNull) return null
 
@@ -37,20 +37,8 @@ object JsonTypeChecks {
     }
 
     @JvmStatic
-    fun checkObject(jsonNode: JsonNode, call: ValidationCall? = null): ObjectNode? {
-        if (jsonNode.isNull) return null
-
-        if (!jsonNode.isObject) {
-            call?.typeMismatch(JsonNodeType.OBJECT, jsonNode.nodeType)
-            return null
-        }
-
-        return jsonNode.asObject()
-    }
-
-    @JvmStatic
     fun checkArray(prop: String, jsonNode: JsonNode, call: ValidationCall? = null): ArrayNode? {
-        val arrayNode = jsonNode.get(prop) ?: return null
+        val arrayNode = resolveProp(jsonNode, prop) ?: return null
         if (!arrayNode.isArray) {
             call?.typeMismatch(prop, JsonNodeType.ARRAY, arrayNode.nodeType)
             return null
@@ -61,7 +49,7 @@ object JsonTypeChecks {
 
     @JvmStatic
     fun checkDouble(prop: String, jsonNode: JsonNode, call: ValidationCall? = null): Double? {
-        val numberNode = jsonNode.get(prop) ?: return null
+        val numberNode = resolveProp(jsonNode, prop) ?: return null
 
         if (numberNode.isNumber) {
             return numberNode.doubleValue()
@@ -76,12 +64,8 @@ object JsonTypeChecks {
     }
 
     @JvmStatic
-    fun checkBigDecimal(
-        prop: String,
-        jsonNode: JsonNode,
-        call: ValidationCall? = null
-    ): BigDecimal? {
-        val numberNode = jsonNode.get(prop) ?: return null
+    fun checkBigDecimal(prop: String, jsonNode: JsonNode, call: ValidationCall? = null): BigDecimal? {
+        val numberNode = resolveProp(jsonNode, prop) ?: return null
 
         if (numberNode.isNumber) {
             return numberNode.asDecimal()
@@ -97,13 +81,13 @@ object JsonTypeChecks {
 
 
     @JvmStatic
-    fun checkString(prop: String?, jsonNode: JsonNode, call: ValidationCall? = null): String? {
-        val stringNode = if (prop != null) jsonNode.get(prop) else jsonNode
+    fun checkString(prop: String, jsonNode: JsonNode, call: ValidationCall? = null): String? {
+        val stringNode = resolveProp(jsonNode, prop)
 
         if (stringNode == null || stringNode.isNull) return null
 
         if (!stringNode.isString) {
-            call?.typeMismatch(prop ?: "$", JsonNodeType.STRING, stringNode.nodeType)
+            call?.typeMismatch(prop, JsonNodeType.STRING, stringNode.nodeType)
             return null
         }
 
@@ -112,7 +96,7 @@ object JsonTypeChecks {
 
     @JvmStatic
     fun checkBoolean(prop: String, jsonNode: JsonNode, call: ValidationCall? = null): Boolean? {
-        val booleanNode = jsonNode.get(prop) ?: return null
+        val booleanNode = resolveProp(jsonNode, prop) ?: return null
         if (!booleanNode.isBoolean) {
             call?.typeMismatch(prop, JsonNodeType.BOOLEAN, booleanNode.nodeType)
             return null
@@ -123,21 +107,12 @@ object JsonTypeChecks {
 
     @JvmStatic
     fun checkNotNull(prop: String, node: JsonNode, call: ValidationCall? = null): JsonNode? {
-        val propertyNode = node.get(prop)
+        val propertyNode = resolveProp(node, prop)
         if (propertyNode == null || propertyNode.isMissingNode || propertyNode.isNull) {
             call?.propertyError(prop, SingleConstraintError("NotNull", "Must not be null"))
             return null
         }
         return propertyNode
-    }
-
-    @JvmStatic
-    fun checkNotNull(node: JsonNode, call: ValidationCall? = null): JsonNode? {
-        if (node.isMissingNode || node.isNull) {
-            call?.directError(SingleConstraintError("NotNull", "Must not be null"))
-            return null
-        }
-        return node
     }
 
     @JvmStatic
@@ -150,7 +125,7 @@ object JsonTypeChecks {
 
     @JvmStatic
     fun checkInt(prop: String, jsonNode: JsonNode, call: ValidationCall? = null): Int? {
-        val numberNode = jsonNode.get(prop) ?: return null
+        val numberNode = resolveProp(jsonNode, prop) ?: return null
 
         if (numberNode.isNumber) {
             return numberNode.intValue()
@@ -165,7 +140,7 @@ object JsonTypeChecks {
     }
 
     @JvmStatic
-    fun checkUuid(prop: String, node: JsonNode, call: ValidationCall): UUID? {
+    fun checkUuid(prop: String, node: JsonNode, call: ValidationCall? = null): UUID? {
         val value = checkString(prop, node, call) ?: return null
         if (!StringFormats.checkUuid(prop, value, call)) return null
 
@@ -173,7 +148,7 @@ object JsonTypeChecks {
     }
 
     @JvmStatic
-    fun checkOffsetDateTime(prop: String, node: ObjectNode, call: ValidationCall): OffsetDateTime? {
+    fun checkOffsetDateTime(prop: String, node: ObjectNode, call: ValidationCall? = null): OffsetDateTime? {
         val value = checkString(prop, node, call) ?: return null
         if (!StringFormats.checkOffsetDateTime(prop, value, call)) return null
 
@@ -181,8 +156,8 @@ object JsonTypeChecks {
     }
 
     @JvmStatic
-    fun checkLong(prop: String, jsonNode: JsonNode, call: ValidationCall?): Long? {
-        val numberNode = jsonNode.get(prop) ?: return null
+    fun checkLong(prop: String, jsonNode: JsonNode, call: ValidationCall? = null): Long? {
+        val numberNode = resolveProp(jsonNode, prop) ?: return null
 
         if (numberNode.isNumber) {
             return numberNode.longValue()
@@ -198,6 +173,10 @@ object JsonTypeChecks {
 
 }
 
+private fun resolveProp(jsonNode: JsonNode, prop: String): JsonNode? {
+    return if (prop == "$") jsonNode else jsonNode.get(prop)
+}
+
 private fun ValidationCall.typeMismatch(
     prop: String,
     expected: JsonNodeType,
@@ -205,15 +184,6 @@ private fun ValidationCall.typeMismatch(
 ) {
     propertyError(
         prop,
-        SingleConstraintError(
-            "Type",
-            "Expected ${expected.name.lowercase()} but was ${actual.name.lowercase()}"
-        )
-    )
-}
-
-private fun ValidationCall.typeMismatch(expected: JsonNodeType, actual: JsonNodeType) {
-    directError(
         SingleConstraintError(
             "Type",
             "Expected ${expected.name.lowercase()} but was ${actual.name.lowercase()}"
