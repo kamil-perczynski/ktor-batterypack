@@ -3,6 +3,7 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.koin.compiler)
+    `java-library`
     `maven-publish`
 }
 
