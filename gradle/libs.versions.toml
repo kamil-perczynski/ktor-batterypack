@@ -16,6 +16,9 @@ micrometer = "1.14.0"
 mockito = "5.2.1"
 testcontainers = "2.0.5"
 kotlinx-coroutines = "1.10.2"
+jakarta-validation = "3.1.1"
+jakarta-ws-rs = "4.0.0"
+jakarta-annotation = "3.0.0"
 
 [libraries]
 assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
@@ -27,6 +30,7 @@ exposed-java-time = { module = "org.jetbrains.exposed:exposed-java-time", versio
 exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
 exposed-json = { module = "org.jetbrains.exposed:exposed-json", version.ref = "exposed" }
 kotlinx-coroutines-reactive = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactive", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 hikari = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
 hoplite-core = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "hoplite" }
 jackson-databind = { module = "tools.jackson.core:jackson-databind", version.ref = "jackson" }
@@ -44,6 +48,9 @@ logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "lo
 micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus", version.ref = "micrometer" }
 postgresql = { module = "org.postgresql:postgresql", version = "42.7.10" }
 testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
+jakarta-validation-api = { module = "jakarta.validation:jakarta.validation-api", version.ref = "jakarta-validation" }
+jakarta-ws-rs-api = { module = "jakarta.ws.rs:jakarta.ws.rs-api", version.ref = "jakarta-ws-rs" }
+jakarta-annotation-api = { module = "jakarta.annotation:jakarta.annotation-api", version.ref = "jakarta-annotation" }
 
 [plugins]
 koin-compiler = { id = "io.insert-koin.compiler.plugin", version.ref = "koin-plugin" }
