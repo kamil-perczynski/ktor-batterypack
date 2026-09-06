@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "io.github.ktor_batterypack"
-version = "0.0.0-SNAPSHOT"
+version = libs.versions.ktor.batterypack.get()
 
 allprojects {
     group = rootProject.group

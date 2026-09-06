@@ -1,11 +1,11 @@
 plugins {
-    kotlin("jvm") version "2.3.20"
+    alias(libs.plugins.kotlin.jvm)
     `java-gradle-plugin`
     `maven-publish`
 }
 
-group = "io.github.kperczynski"
-version = "0.0.0-SNAPSHOT"
+group = "io.github.ktor_batterypack"
+version = libs.versions.ktor.batterypack.get()
 
 repositories {
     mavenCentral()
@@ -38,14 +38,14 @@ tasks.test {
 }
 
 dependencies {
-    implementation("com.google.devtools.ksp:symbol-processing-api:2.3.10")
-    implementation("com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:2.3.10")
-    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.20")
-    implementation("tools.jackson.core:jackson-databind:3.1.3")
-    implementation("tools.jackson.dataformat:jackson-dataformat-yaml:3.1.3")
-    testImplementation(platform("org.junit:junit-bom:5.14.4"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("org.assertj:assertj-core:3.27.7")
+    implementation(libs.ksp.symbol.processing.api)
+    implementation(libs.ksp.gradle.plugin)
+    implementation(libs.kotlin.gradle.plugin)
+    implementation(libs.jackson.databind)
+    implementation(libs.jackson.dataformat.yaml)
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.assertj.core)
     testImplementation(kotlin("test"))
     testImplementation("dev.zacsweers.kctfork:core:0.13.0") {
         exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
