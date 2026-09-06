@@ -44,9 +44,9 @@ kotlin {
 
 dependencies {
     ksp(project(":ktor-batterypack-validation-ksp"))
-    implementation("jakarta.validation:jakarta.validation-api:3.1.1")
-    implementation("jakarta.ws.rs:jakarta.ws.rs-api:4.0.0")
-    implementation("jakarta.annotation:jakarta.annotation-api:3.0.0")
+    implementation(libs.jakarta.validation.api)
+    implementation(libs.jakarta.ws.rs.api)
+    implementation(libs.jakarta.annotation.api)
 
     implementation(project(":ktor-batterypack-annotations"))
     implementation(project(":ktor-batterypack-validation"))
@@ -55,32 +55,11 @@ dependencies {
     implementation(project(":ktor-batterypack-metrics"))
     implementation(project(":ktor-batterypack-redis"))
 
-    implementation(ktorLibs.serialization.jackson3)
-    implementation(ktorLibs.server.config.yaml)
-    implementation(ktorLibs.server.contentNegotiation)
-    implementation(ktorLibs.server.core)
-    implementation(ktorLibs.server.netty)
-    implementation(ktorLibs.server.statusPages)
-
-    implementation(libs.jackson.databind)
-    implementation(libs.jackson.module.kotlin)
-
-    implementation(ktorLibs.client.core)
-    implementation(ktorLibs.client.cio)
-    implementation(ktorLibs.client.contentNegotiation)
-    implementation(ktorLibs.client.logging)
-
     implementation(libs.exposed.core)
     implementation(libs.exposed.java.time)
     implementation(libs.exposed.jdbc)
     implementation(libs.exposed.json)
     implementation(libs.hikari)
-    implementation(libs.hoplite.core)
-    implementation(libs.hoplite.yaml)
-    implementation(libs.koin.annotations)
-    implementation(libs.koin.core)
-    implementation(libs.koin.ktor)
-    implementation(libs.logback.classic)
 
     implementation(libs.postgresql)
 

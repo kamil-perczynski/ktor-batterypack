@@ -7,7 +7,7 @@ plugins {
 }
 
 // Required because Java 24+ (JEP 472) restricts System::load/loadLibrary.
-// Netty loads native libraries from an unnamed module, which triggers warnings
+// `Netty` loads native libraries from an unnamed module, which triggers warnings
 // (and will eventually be blocked) without this flag.
 tasks.withType<JavaExec> {
     jvmArgs("--enable-native-access=ALL-UNNAMED")
@@ -55,6 +55,7 @@ publishing {
 
 dependencies {
     api(ktorLibs.server.core)
+    api(ktorLibs.server.netty)
     api(ktorLibs.server.contentNegotiation)
     api(ktorLibs.server.statusPages)
     api(ktorLibs.serialization.jackson3)
@@ -69,8 +70,16 @@ dependencies {
     api(libs.koin.core)
     api(libs.koin.ktor)
 
-    implementation("jakarta.validation:jakarta.validation-api:3.1.1")
-    implementation(libs.logback.classic)
+    api(ktorLibs.server.config.yaml)
+
+    api(ktorLibs.client.core)
+    api(ktorLibs.client.cio)
+    api(ktorLibs.client.contentNegotiation)
+    api(ktorLibs.client.logging)
+
+    api(libs.logback.classic)
+
+    implementation(libs.jakarta.validation.api)
     implementation(project(":ktor-batterypack-validation"))
 
     testImplementation(platform(libs.junit.bom))

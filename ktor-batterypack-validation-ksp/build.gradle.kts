@@ -9,7 +9,7 @@ repositories {
 dependencies {
     implementation(project(":ktor-batterypack-validation"))
     implementation(project(":ktor-batterypack-annotations"))
-    implementation("jakarta.validation:jakarta.validation-api:3.1.1")
+    implementation(libs.jakarta.validation.api)
     compileOnly("com.google.devtools.ksp:symbol-processing-api:2.3.10")
     implementation("com.google.guava:guava:33.6.0-jre")
     implementation(libs.handlebars)
