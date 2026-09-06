@@ -60,7 +60,7 @@ jakarta-ws-rs-api = { module = "jakarta.ws.rs:jakarta.ws.rs-api", version.ref = 
 jakarta-annotation-api = { module = "jakarta.annotation:jakarta.annotation-api", version.ref = "jakarta-annotation" }
 dotenv-kotlin = { module = "io.github.cdimascio:dotenv-kotlin", version.ref = "dotenv-kotlin" }
 logstash-logback-encoder = { module = "net.logstash.logback:logstash-logback-encoder", version.ref = "logstash-logback-encoder" }
-wiremock-standalone = { module = "org.wiremock:wiremock-standalone", version.ref = "wiremock" }
+wiremock = { module = "org.wiremock:wiremock", version.ref = "wiremock" }
 
 ktor-batterypack-annotations = { module = "io.github.ktor_batterypack:ktor-batterypack-annotations", version.ref = "ktor-batterypack" }
 ktor-batterypack-core = { module = "io.github.ktor_batterypack:ktor-batterypack-core", version.ref = "ktor-batterypack" }
@@ -79,4 +79,4 @@ kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", v
 [plugins]
 koin-compiler = { id = "io.insert-koin.compiler.plugin", version.ref = "koin-plugin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
-ktor-batterypack-gradle-plugin = { id = "ktor-batterypack-gradle-plugin", version.ref = "ktor-batterypack" }
+ktor-batterypack = { id = "ktor-batterypack-gradle-plugin", version.ref = "ktor-batterypack" }

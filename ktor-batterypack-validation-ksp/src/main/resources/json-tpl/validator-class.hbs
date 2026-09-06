@@ -73,9 +73,7 @@ class {{typeName}} : {{interfaceName}} {
             itemCall.finishObject()
         }
         {{~else if param.isMap}}
-        for (entry in {{param.name}}.properties) {
-            val (key, value) = entry
-
+        for ((key, value) in {{param.name}}.properties()) {
             val nested = call.nestedProperty(key)
             JsonTypeChecks.checkNotNull("$", value, nested)
 
