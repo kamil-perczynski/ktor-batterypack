@@ -126,7 +126,8 @@ class PersonValidatorTest {
                     "birthDate" : "1995-01-12",
                     "identifications" : [ {
                       "type" : "ID_DOCUMENT_CHECK"
-                    } ]
+                    } ],
+                    "creditCards" : [ ]
                   },
                   "isInvalid" : false,
                   "isValid" : true

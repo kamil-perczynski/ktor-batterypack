@@ -54,7 +54,7 @@ data class KspCodegenType(private val type: KSType) : CodegenType {
     override val properName: String
         get() {
             if (typeParams.isEmpty()) return name
-            return "$name<${typeParams.joinToString(", ") { it.properName }}>"
+            return "$name<${typeParams.joinToString(", ") { if (it.isMarkedNullable) it.properName + '?' else it.properName }}>"
         }
 
     override val annotations: List<CodegenAnnotation>
@@ -62,7 +62,7 @@ data class KspCodegenType(private val type: KSType) : CodegenType {
 
     override val isMarkedNullable: Boolean
         get() = type.isMarkedNullable
-    
+
     override val enumValues: List<String>
         get() = classDecl.declarations
             .filterIsInstance<KSClassDeclaration>()

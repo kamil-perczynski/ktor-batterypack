@@ -31,6 +31,7 @@ class CodegenModelResolverTest {
                 tuple(true, "validateIdDocIdentification", "IdDocIdentification"),
                 tuple(true, "validateLivenessIdentification", "LivenessIdentification"),
                 tuple(false, "validatePerson", "Person"),
+                tuple(false, "validatePersonCreditCardsList", "List<String>"),
                 tuple(false, "validatePersonIdentificationType", "PersonIdentificationType"),
                 tuple(false, "validatePersonIdentificationsList", "List<PersonIdentification>")
             )
@@ -50,6 +51,7 @@ class CodegenModelResolverTest {
             .extracting({ it.isOverride }, { it.name }, { it.param.type })
             .containsExactly(
                 tuple(false, "validatePerson", "Person"),
+                tuple(false, "validatePersonCreditCardsList", "List<String>"),
                 tuple(false, "validatePersonIdentification", "PersonIdentification"),
                 tuple(false, "validatePersonIdentificationType", "PersonIdentificationType"),
                 tuple(false, "validatePersonIdentificationsList", "List<PersonIdentification>")
@@ -226,8 +228,6 @@ class CodegenModelResolverTest {
 
         assertThat(generatedValidatorClass).isEqualTo(
             """
-                @file:Suppress("unused")
-
                 package io.github.ktor_batterypack.validation.example
 
                 import io.github.ktor_batterypack.validation.ValidationCall
@@ -249,13 +249,12 @@ class CodegenModelResolverTest {
                 * Do not edit the class manually.
                 */
                 @Generated
-                @Suppress("UNNECESSARY_SAFE_CALL")
                 class JsonPersonValidatorImpl : JsonPersonValidator {
 
                     override fun validatePerson(person: JsonNode): ValidationResult<JsonNode> {
                         val call = ValidationCall()
-                        JsonTypeChecks.checkNotNull(person, call)
-                        JsonTypeChecks.checkObject(person, call)?.let {
+                        JsonTypeChecks.checkNotNull("$", person, call)
+                        JsonTypeChecks.checkObject("$", person, call)?.let {
                             validatePerson(it, call)
                         }
                         val errors = call.finishObject()
@@ -338,6 +337,12 @@ class CodegenModelResolverTest {
                             validateAddress(it, itemCall)
                             itemCall.finishObject()
                         }
+                        JsonTypeChecks.checkNotNull("creditCards", person, call)
+                        JsonTypeChecks.checkArray("creditCards", person, call)?.let {
+                            val itemCall = call.nestedProperty("creditCards")
+                            validatePersonCreditCardsList(it, itemCall)
+                            itemCall.finishList()
+                        }
                         JsonTypeChecks.checkNotNull("identifications", person, call)
                         JsonTypeChecks.checkArray("identifications", person, call)?.let {
                             val itemCall = call.nestedProperty("identifications")
@@ -347,7 +352,21 @@ class CodegenModelResolverTest {
                         }
                     }
 
-                    private fun validatePersonIdentificationType(personIdentificationType: JsonNode?, call: ValidationCall, prop: String?) {
+                    private fun validatePersonCreditCardsList(creditCards: ArrayNode?, call: ValidationCall) {
+                        if (creditCards == null) return
+                        
+                        for (item in creditCards) {
+                            val itemCall = call.listItem()
+                            JsonTypeChecks.checkNotNull("$", item, itemCall)
+                            JsonTypeChecks.checkString("$", item, itemCall)?.let {
+                                Constraints.checkNotBlank("$", it, itemCall)
+                                Constraints.checkPattern("$", it, itemCall, regexp="^\\d{16}$")
+                            }
+                            itemCall.finishObject()
+                        }
+                    }
+
+                    private fun validatePersonIdentificationType(personIdentificationType: JsonNode?, call: ValidationCall, prop: String) {
                         if (personIdentificationType == null) return
                         
                         JsonTypeChecks.checkString(prop, personIdentificationType, call)?.let {
@@ -371,11 +390,10 @@ class CodegenModelResolverTest {
                         
                         for (item in identifications) {
                             val itemCall = call.listItem()
-                            JsonTypeChecks.checkNotNull(item, itemCall)
+                            JsonTypeChecks.checkNotNull("$", item, itemCall)
                             JsonTypeChecks.checkObject("$", item, itemCall)?.let {
                                 validatePersonIdentification(it, itemCall)
                             }
-                            
                             itemCall.finishObject()
                         }
                     }
