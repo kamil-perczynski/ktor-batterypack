@@ -58,7 +58,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ktor-batterypack-example
           push: ${{ github.ref == 'refs/heads/main' }}
           tags: >-
             ghcr.io/${{ github.repository }}:${{ env.branch_type }}-${{ env.short_sha }}
