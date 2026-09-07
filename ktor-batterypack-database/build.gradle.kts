@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.koin.compiler)
     `java-library`
-    `maven-publish`
+    id("ktor-batterypack-publishing")
 }
 
 // Required because Java 24+ (JEP 472) restricts System::load/loadLibrary.
@@ -34,24 +34,6 @@ kotlin {
 java {
     withJavadocJar()
     withSourcesJar()
-}
-
-publishing {
-    publications {
-        create<MavenPublication>("maven") {
-            from(components["java"])
-        }
-    }
-    repositories {
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/kamil-perczynski/ktor-batterypack")
-            credentials {
-                username = System.getenv("GITHUB_ACTOR")
-                password = System.getenv("GITHUB_TOKEN")
-            }
-        }
-    }
 }
 
 dependencies {
