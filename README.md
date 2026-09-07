@@ -125,7 +125,7 @@ No manual DI binding is required if the implementation is under `io.github.kperc
 |------|---------|
 | `KtorFrameApplicationServer.kt` | Ktor app wiring (`configureKtorServer`) |
 | `infra/KtorFrameApp.kt` | Root Koin application + module scan |
-| `infra/KtorFrameProps.kt` | Aggregated application config (`AppProps`) |
+| `infra/KtorFrameProps.kt` | Aggregated application config (`ConfigMap`) |
 | `main.kt` | Entry point (`EngineMain`) |
 
 ## CI / Deploy

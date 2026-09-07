@@ -1,4 +1,4 @@
-package io.github.kperczynski.libs.ktor.reflect
+package io.github.ktor_batterypack.metrics.reflect
 
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer

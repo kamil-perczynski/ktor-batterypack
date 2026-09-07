@@ -12,7 +12,11 @@ import io.github.ktor_batterypack.core.ktor.KtorController
 import io.github.ktor_batterypack.core.ktor.KtorProps
 import io.github.ktor_batterypack.core.multipart.MultipartParser
 import io.github.ktor_batterypack.core.multipart.MultipartProps
-import org.koin.core.annotation.*
+import org.koin.core.annotation.ComponentScan
+import org.koin.core.annotation.Configuration
+import org.koin.core.annotation.Module
+import org.koin.core.annotation.Provided
+import org.koin.core.annotation.Singleton
 import tools.jackson.databind.cfg.DateTimeFeature
 import tools.jackson.databind.json.JsonMapper
 import tools.jackson.module.kotlin.KotlinModule

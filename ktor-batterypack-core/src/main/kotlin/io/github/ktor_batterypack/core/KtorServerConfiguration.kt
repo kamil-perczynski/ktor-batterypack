@@ -4,18 +4,18 @@ import io.github.ktor_batterypack.core.di.LifecycleListener
 import io.github.ktor_batterypack.core.ktor.KtorController
 import io.github.ktor_batterypack.core.ktor.KtorExceptionHandler
 import io.github.ktor_batterypack.core.ktor.jacksonSerialization
-import io.ktor.server.application.*
-import io.ktor.server.plugins.contentnegotiation.*
-import io.ktor.server.plugins.statuspages.*
-import io.ktor.server.routing.*
+import io.ktor.server.application.Application
+import io.ktor.server.application.install
+import io.ktor.server.application.log
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.routing.routing
 import org.koin.core.KoinApplication
-import org.koin.dsl.module
 import org.koin.ktor.ext.get
 import org.koin.ktor.plugin.Koin
 import org.koin.ktor.plugin.KoinApplicationStarted
 import org.koin.ktor.plugin.KoinApplicationStopPreparing
 import org.koin.ktor.plugin.koin
-import org.koin.plugin.module.dsl.module
 import tools.jackson.databind.json.JsonMapper
 
 /**
@@ -23,7 +23,7 @@ import tools.jackson.databind.json.JsonMapper
  *
  * @param koinFn Callback to initialize the Koin application with resolved profiles.
  */
-fun Application.configureKtorServer(koinFn: (ktorApp: Application, koinApp: KoinApplication, profiles: String) -> Unit) {
+fun Application.configureKtorServer(koinFn: (ktorApp: Application, koinApp: KoinApplication, profiles: List<String>) -> Unit) {
     monitor.subscribe(KoinApplicationStarted) {
         log.debug("Application has started. Notifying lifecycle listener")
         val lifecycleListener: LifecycleListener = get()
@@ -36,9 +36,8 @@ fun Application.configureKtorServer(koinFn: (ktorApp: Application, koinApp: Koin
         lifecycleListener.onStop()
     }
 
-    val profiles = environment.config.propertyOrNull("app.profiles")?.getString()
-        ?: System.getenv("APP_PROFILES")
-        ?: "local"
+    val profiles = resolveProfiles(this)
+    log.info("Loading application configuration with profiles: $profiles")
 
     install(Koin) {
         koinFn(this@configureKtorServer, this, profiles)
@@ -63,4 +62,12 @@ fun Application.configureKtorServer(koinFn: (ktorApp: Application, koinApp: Koin
             controller.register(this)
         }
     }
+}
+
+private fun resolveProfiles(app: Application): List<String> {
+    val rawProfiles = app.environment.config.propertyOrNull("app.profiles")?.getString()
+        ?: System.getenv("APP_PROFILES")
+        ?: "local"
+    val profiles = rawProfiles.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+    return profiles
 }

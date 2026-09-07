@@ -1,10 +1,7 @@
 package io.github.kperczynski.infra
 
-import com.sksamuel.hoplite.indent
-import io.github.kperczynski.controllers.AppPropsValidator.Companion.appPropsValidator
 import io.github.kperczynski.infra.florin.FlorinModule
 import io.github.ktor_batterypack.core.KtorBatterypackCoreModule
-import io.github.ktor_batterypack.core.config.loadConfig
 import io.github.ktor_batterypack.core.ktor.KtorProps
 import io.github.ktor_batterypack.database.DatabaseProps
 import io.github.ktor_batterypack.database.KtorBatterypackDatabaseModule
@@ -13,12 +10,12 @@ import io.github.ktor_batterypack.redis.KtorBatterypackRedisModule
 import io.github.ktor_batterypack.redis.KtorBatterypackRedisStreamsModule
 import io.github.ktor_batterypack.redis.RedisProps
 import org.jetbrains.exposed.v1.jdbc.Database
-import org.koin.core.annotation.*
-import org.slf4j.LoggerFactory
-import tools.jackson.databind.json.JsonMapper
+import org.koin.core.annotation.ComponentScan
+import org.koin.core.annotation.Configuration
+import org.koin.core.annotation.KoinApplication
+import org.koin.core.annotation.Module
+import org.koin.core.annotation.Singleton
 import javax.sql.DataSource
-
-private val log = LoggerFactory.getLogger(KtorFrameModule::class.java)
 
 @KoinApplication(
     modules = [
@@ -45,34 +42,18 @@ object KtorFrameApp
 class KtorFrameModule {
 
     @Singleton
-    fun appConfig(@Property("app.profiles") profiles: String, jsonMapper: JsonMapper): AppProps {
-        val profileList = profiles.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-        log.info("Loading application configuration with profiles: $profileList")
-        val config = loadConfig<AppProps>(profileList)
-
-        return appPropsValidator.validate(config).fold({ it }, { _, errors ->
-            val json = jsonMapper
-                .writerWithDefaultPrettyPrinter()
-                .writeValueAsString(errors)
-                .indent("  ")
-
-            throw IllegalStateException("Application config is invalid. Check the following errors:\n$json")
-        })
+    fun databaseProps(configMap: ConfigMap): DatabaseProps {
+        return configMap.database
     }
 
     @Singleton
-    fun databaseProps(appProps: AppProps): DatabaseProps {
-        return appProps.database
+    fun redisProps(configMap: ConfigMap): RedisProps {
+        return configMap.redis
     }
 
     @Singleton
-    fun redisProps(appProps: AppProps): RedisProps {
-        return appProps.redis
-    }
-
-    @Singleton
-    fun ktorProps(appProps: AppProps): KtorProps {
-        return appProps.ktor
+    fun ktorProps(configMap: ConfigMap): KtorProps {
+        return configMap.ktor
     }
 
     @Singleton

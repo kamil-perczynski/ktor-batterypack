@@ -8,7 +8,7 @@ import io.github.ktor_batterypack.core.ktor.KtorProps
 /**
  * Root configuration aggregating all application properties.
  */
-data class AppProps(
+data class ConfigMap(
     /** Ktor server configuration */
     val ktor: KtorProps = KtorProps(),
     /** Database connection and pool configuration */

@@ -3,13 +3,14 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.ksp)
     alias(libs.plugins.koin.compiler)
-    id("org.openapi.generator") version "7.25.0"
+    alias(libs.plugins.openapi.generator)
     id("ktor-batterypack-gradle-plugin")
 }
 
 ktorBatterypack {
-    configMetadataClass = "io.github.kperczynski.infra.AppProps"
+    mainClass = "io.github.kperczynski.MainKt"
 }
 
 // Required because Java 24+ (JEP 472) restricts System::load/loadLibrary.
@@ -32,18 +33,13 @@ tasks.test {
     }
 }
 
-tasks.jar {
-    manifest {
-        attributes["Main-Class"] = "io.github.kperczynski.MainKt"
-    }
-}
-
 kotlin {
     jvmToolchain(25)
 }
 
 dependencies {
     ksp(project(":ktor-batterypack-validation-ksp"))
+
     implementation(libs.jakarta.validation.api)
     implementation(libs.jakarta.ws.rs.api)
     implementation(libs.jakarta.annotation.api)
@@ -76,15 +72,12 @@ dependencies {
     testImplementation(libs.testcontainers)
 }
 
-/**
- * https://openapi-generator.tech/docs/generators/kotlin-spring/
- */
 openApiGenerate {
     generatorName.set("kotlin-server")
     library.set("jaxrs-spec")
     generateApiDocumentation.set(false)
     inputSpec.set("$projectDir/src/main/resources/static/schema/api.yaml")
-    outputDir.set("$projectDir/build/generated")
+    outputDir.set("$projectDir/build/generated/openapi")
     apiPackage.set("pl.kperczynski.florin.rest")
     modelPackage.set("pl.kperczynski.florin.rest.dto")
     modelNameSuffix.set("Dto")
@@ -93,9 +86,7 @@ openApiGenerate {
     templateDir.set("$projectDir/src/main/resources/templateDir")
 
     typeMappings.set(
-        mapOf(
-            "double" to "java.math.BigDecimal",
-        )
+        mapOf("double" to "java.math.BigDecimal")
     )
 
     configOptions.set(
@@ -134,7 +125,9 @@ ksp {
 }
 
 sourceSets {
-    main { kotlin { srcDir("build/generated/src/main/kotlin") } }
+    main {
+        kotlin { srcDir("build/generated/openapi/src/main/kotlin") }
+    }
 }
 
 tasks.withType<KotlinCompile> {
