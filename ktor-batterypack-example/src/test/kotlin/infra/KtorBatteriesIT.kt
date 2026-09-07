@@ -1,16 +1,20 @@
 package io.github.kperczynski.infra
 
 import io.github.kperczynski.TestKtorFrameApp
+import io.github.ktor_batterypack.core.config.loadConfig
 import io.github.ktor_batterypack.core.configureKtorServer
 import io.github.ktor_batterypack.database.testing.PostgresTestContainer
 import io.github.ktor_batterypack.redis.testing.RedisTestContainer
-import io.ktor.client.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.plugins.logging.*
-import io.ktor.serialization.jackson3.*
-import io.ktor.server.application.*
-import io.ktor.server.config.*
-import io.ktor.server.testing.*
+import io.ktor.client.HttpClient
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.logging.DEFAULT
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logger
+import io.ktor.client.plugins.logging.Logging
+import io.ktor.serialization.jackson3.jackson
+import io.ktor.server.application.Application
+import io.ktor.server.config.MapApplicationConfig
+import io.ktor.server.testing.ApplicationTestBuilder
 import kotlinx.coroutines.runBlocking
 import org.koin.dsl.module
 import org.koin.plugin.module.dsl.withConfiguration
@@ -45,6 +49,7 @@ open class KtorBatteriesIT {
                     koinApp.modules(
                         module {
                             single { ktorApp }
+                            single { loadConfig<ConfigMap>(profiles) }
                         }
                     )
                     koinApp.withConfiguration<TestKtorFrameApp>()
