@@ -6,6 +6,7 @@ import io.github.ktor_batterypack.redis.bgloops.RedisStreamFetchingLoop
 import io.github.ktor_batterypack.redis.bgloops.StreamMessageProcessor
 import io.github.ktor_batterypack.redis.monitoring.RedisStreamConsumerLagMonitorLoop
 import io.github.ktor_batterypack.redis.monitoring.RedisStreamMetrics
+import io.github.ktor_batterypack.redis.testing.MsgCapturingRedisListener
 import io.github.ktor_batterypack.redis.testing.RedisBatteryIT
 import io.lettuce.core.Consumer
 import io.lettuce.core.RedisClient
@@ -21,7 +22,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.koin.ktor.plugin.koin
 import java.util.UUID
-import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.collections.map
 import kotlin.time.Duration.Companion.milliseconds
 
 class RedisStreamFetcherBatteryIT : RedisBatteryIT() {
@@ -45,10 +46,12 @@ class RedisStreamFetcherBatteryIT : RedisBatteryIT() {
         )
     )
     private val messageProcessor = StreamMessageProcessor(metrics)
-    private val redisStreamFetchingLoop = RedisStreamFetchingLoop(redisClient, messageProcessor, redisProps)
+    private val redisStreamFetchingLoop =
+        RedisStreamFetchingLoop(redisClient, messageProcessor, redisProps)
     private val redisStreamAutoclaimLoop =
         RedisStreamAutoclaimLoop(redisClient, messageProcessor, metrics, redisProps)
-    private val redisStreamConsumerLagMonitorLoop = RedisStreamConsumerLagMonitorLoop(redisClient, metrics, redisProps)
+    private val redisStreamConsumerLagMonitorLoop =
+        RedisStreamConsumerLagMonitorLoop(redisClient, metrics, redisProps)
 
     @BeforeEach
     fun setUp() {
@@ -88,14 +91,18 @@ class RedisStreamFetcherBatteryIT : RedisBatteryIT() {
         assertThat(claimed[0].body["_p"]).isEqualTo(payload)
 
         // when: a new fetcher starts with autoclaim enabled
-        val listener = TestListener(stream)
+        val listener = MsgCapturingRedisListener(stream)
 
         val fetcher = RedisStreamFetcher(
             consumerId = "reclaimer",
             redisClient = redisClient,
             consumerGroup = group,
             autoclaimMinIdleMs = 200,
-            loops = listOf(redisStreamFetchingLoop, redisStreamAutoclaimLoop, redisStreamConsumerLagMonitorLoop),
+            loops = listOf(
+                redisStreamFetchingLoop,
+                redisStreamAutoclaimLoop,
+                redisStreamConsumerLagMonitorLoop
+            ),
             listeners = listOf(listener),
         )
         closer.add { fetcher.close() }
@@ -104,7 +111,8 @@ class RedisStreamFetcherBatteryIT : RedisBatteryIT() {
         delay(250.milliseconds)
 
         // then: the message is reclaimed and delivered
-        assertThat(listener.payloads).containsExactly(payload)
+        assertThat(listener.payloads.map { it.payload })
+            .containsExactly(payload)
         Unit
     }
 
@@ -129,8 +137,12 @@ class RedisStreamFetcherBatteryIT : RedisBatteryIT() {
             redisClient = redisClient,
             consumerGroup = group,
             autoclaimMinIdleMs = 200,
-            loops = listOf(redisStreamFetchingLoop, redisStreamAutoclaimLoop, redisStreamConsumerLagMonitorLoop),
-            listeners = listOf(TestListener(stream)),
+            loops = listOf(
+                redisStreamFetchingLoop,
+                redisStreamAutoclaimLoop,
+                redisStreamConsumerLagMonitorLoop
+            ),
+            listeners = listOf(MsgCapturingRedisListener(stream)),
         )
         closer.add { fetcher.close() }
         fetcher.onInit()
@@ -143,13 +155,4 @@ class RedisStreamFetcherBatteryIT : RedisBatteryIT() {
         Unit
     }
 
-    private class TestListener(private val streamName: String) : RedisStreamListener {
-        val payloads = CopyOnWriteArrayList<String>()
-
-        override fun stream(): String = streamName
-
-        override suspend fun onMessage(payload: String, headers: Map<String, String>) {
-            payloads.add(payload)
-        }
-    }
 }

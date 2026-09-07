@@ -1,6 +1,5 @@
-package io.github.kperczynski
+package io.github.ktor_batterypack.metrics.reflect
 
-import io.github.kperczynski.libs.ktor.reflect.TimingInvocationHandlerFactory
 import io.micrometer.core.annotation.Timed
 import io.micrometer.core.instrument.MeterRegistry
 import org.koin.core.KoinApplication
@@ -11,7 +10,7 @@ import java.lang.reflect.Proxy
 import kotlin.reflect.KClass
 
 /**
- * Wraps every registered bean whose primary interface name ends with "Repo"
+ * Wraps every registered bean annotated with [Timed] annotation
  * in a dynamic proxy that records invocation timing via
  * [TimingInvocationHandlerFactory]. The proxy is bound to the same
  * interface/qualifier pair, overriding the original repository bean.
@@ -21,7 +20,7 @@ import kotlin.reflect.KClass
  * reflection-based proxy dispatch.
  */
 @OptIn(KoinInternalApi::class)
-fun enableTimedRepositories(koinApp: KoinApplication) {
+fun enableTimedMethodsSampling(koinApp: KoinApplication) {
     val koin = koinApp.koin
 
     val overrideModule = module {

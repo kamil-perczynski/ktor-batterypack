@@ -1,12 +1,13 @@
 package io.github.kperczynski.infra.florin
 
-import io.github.kperczynski.infra.AppProps
+import io.github.kperczynski.infra.ConfigMap
 import io.github.kperczynski.infra.client.FlorinClientProps
-import io.github.kperczynski.libs.ktor.client.KtorHttpClientFactory
+import io.github.ktor_batterypack.core.ktor.client.KtorHttpClientFactory
 import io.ktor.client.HttpClient
 import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.Module
 import org.koin.core.annotation.Named
+import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Singleton
 
 @Module
@@ -14,8 +15,8 @@ import org.koin.core.annotation.Singleton
 class FlorinModule {
 
     @Singleton
-    fun florinClientProps(appProps: AppProps): FlorinClientProps {
-        return appProps.florin
+    fun florinClientProps(@Provided configMap: ConfigMap): FlorinClientProps {
+        return configMap.florin
     }
 
     @Singleton

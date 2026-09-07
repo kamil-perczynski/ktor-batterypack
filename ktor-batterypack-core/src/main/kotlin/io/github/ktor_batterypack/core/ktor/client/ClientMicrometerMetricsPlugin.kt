@@ -1,4 +1,4 @@
-package io.github.ktor_batterypack.metrics.client
+package io.github.ktor_batterypack.core.ktor.client
 
 import io.ktor.client.call.HttpClientCall
 import io.ktor.client.network.sockets.ConnectTimeoutException

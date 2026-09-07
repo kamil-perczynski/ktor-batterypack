@@ -138,7 +138,7 @@ Validation uses **Konform** and happens in controllers before service calls.
 |------|---------|
 | `KtorFrameApplicationServer.kt` | Root app wiring (`configureKtorServer`) |
 | `infra/KtorFrameApp.kt` | Root Koin app + `KtorFrameModule` |
-| `infra/KtorFrameProps.kt` | Application config aggregate (`AppProps`) |
+| `infra/KtorFrameProps.kt` | Application config aggregate (`ConfigMap`) |
 | `main.kt` | Entry point (`EngineMain`) |
 | `ktor-batterypack-core/.../KtorServerConfiguration.kt` | Auto-registers controllers, installs Koin/StatusPages/ContentNegotiation |
 | `ktor-batterypack-core/.../KtorBatterypackCoreModule.kt` | Shared beans (Jackson, lifecycle, health) |

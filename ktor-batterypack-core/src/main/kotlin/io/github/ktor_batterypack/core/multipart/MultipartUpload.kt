@@ -1,6 +1,6 @@
 package io.github.ktor_batterypack.core.multipart
 
-import io.ktor.http.*
+import io.ktor.http.ContentType
 
 /**
  * Represents a single file extracted from a multipart request.

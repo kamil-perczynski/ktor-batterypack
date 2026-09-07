@@ -4,12 +4,16 @@ import tools.jackson.databind.JsonNode
 import io.github.kperczynski.domain.plant.model.PlantDto
 import io.github.kperczynski.domain.plant.PlantIdentificationClient
 import io.github.ktor_batterypack.core.multipart.MultipartUpload
-import io.github.ktor_batterypack.metrics.client.pathPattern
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.request.*
-import io.ktor.client.request.forms.*
-import io.ktor.http.*
+import io.github.ktor_batterypack.core.ktor.client.pathPattern
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.request.forms.formData
+import io.ktor.client.request.forms.submitFormWithBinaryData
+import io.ktor.client.request.header
+import io.ktor.http.ContentType
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
 import org.koin.core.annotation.Named
 import org.koin.core.annotation.Singleton
 
