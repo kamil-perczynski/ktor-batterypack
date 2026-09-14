@@ -16,7 +16,7 @@ data class ConfigMap(
     /** Florin HTTP client configuration */
     val florin: FlorinClientProps = FlorinClientProps(),
     /** Redis connection and stream configuration */
-    val redis: RedisProps = RedisProps(),
+    val redis: RedisProps,
 )
 
 

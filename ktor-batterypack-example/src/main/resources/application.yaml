@@ -20,3 +20,7 @@ database:
 florin:
   baseUrl: "https://florin-be.k8s.kperczynski.click"
   timeoutMs: 30000
+
+redis:
+  fetcher:
+    consumerGroup: ktor-example

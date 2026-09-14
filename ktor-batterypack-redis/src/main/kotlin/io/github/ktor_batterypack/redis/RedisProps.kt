@@ -9,7 +9,7 @@ data class RedisProps(
     @param:JsonPropertyDescription("Redis connection URL")
     val url: String = "redis://localhost:6379",
     @param:JsonPropertyDescription("Stream fetcher consumer configuration")
-    val fetcher: FetcherProps = FetcherProps(),
+    val fetcher: FetcherProps,
     @param:JsonPropertyDescription("Stream publisher configuration")
     val publisher: PublisherProps = PublisherProps()
 )
@@ -29,7 +29,7 @@ data class FetcherProps(
     @param:JsonPropertyDescription("Prefix used when creating consumer names")
     val consumerPrefix: String = "Main-",
     @param:JsonPropertyDescription("Name of the Redis consumer group")
-    val consumerGroup: String = "florin",
+    val consumerGroup: String,
     @param:JsonPropertyDescription("Maximum time to wait for new messages when fetching, in milliseconds")
     val fetchingTimeout: Long = 5000L,
     @param:JsonPropertyDescription("Maximum number of messages to fetch in a single batch")
