@@ -34,7 +34,7 @@ jobs:
           echo "branch_type=${branch_type}" >> $GITHUB_ENV
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Build
         run: ./gradlew build
