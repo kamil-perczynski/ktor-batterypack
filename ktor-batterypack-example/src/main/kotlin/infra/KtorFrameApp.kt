@@ -3,18 +3,21 @@ package io.github.kperczynski.infra
 import io.github.kperczynski.infra.florin.FlorinModule
 import io.github.ktor_batterypack.core.KtorBatterypackCoreModule
 import io.github.ktor_batterypack.core.ktor.KtorProps
+import io.github.ktor_batterypack.core.ktor.client.KtorHttpClientFactory
 import io.github.ktor_batterypack.database.DatabaseProps
 import io.github.ktor_batterypack.database.KtorBatterypackDatabaseModule
 import io.github.ktor_batterypack.metrics.KtorBatterypackMetricsModule
 import io.github.ktor_batterypack.redis.KtorBatterypackRedisModule
 import io.github.ktor_batterypack.redis.KtorBatterypackRedisStreamsModule
 import io.github.ktor_batterypack.redis.RedisProps
+import io.micrometer.core.instrument.MeterRegistry
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.KoinApplication
 import org.koin.core.annotation.Module
 import org.koin.core.annotation.Singleton
+import tools.jackson.databind.json.JsonMapper
 import javax.sql.DataSource
 
 @KoinApplication(
@@ -40,6 +43,11 @@ object KtorFrameApp
 @Configuration
 @Suppress("unused")
 class KtorFrameModule {
+
+    @Singleton
+    fun httpClientFactory(jsonMapper: JsonMapper, meterRegistry: MeterRegistry): KtorHttpClientFactory {
+        return KtorHttpClientFactory(meterRegistry, jsonMapper)
+    }
 
     @Singleton
     fun databaseProps(configMap: ConfigMap): DatabaseProps {
