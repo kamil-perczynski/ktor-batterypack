@@ -3,6 +3,8 @@ package io.github.ktor_batterypack.gradle
 import com.google.devtools.ksp.gradle.KspExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.VersionCatalog
+import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Sync
@@ -10,6 +12,7 @@ import org.gradle.api.tasks.bundling.Jar
 import org.gradle.language.jvm.tasks.ProcessResources
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import java.io.File
+import kotlin.jvm.optionals.getOrNull
 
 private const val TASKS_GROUP = "ktor-batterypack"
 
@@ -51,10 +54,21 @@ class KtorBatterypackPlugin : Plugin<Project> {
         val pluginJar =
             project.files(File(KtorBatterypackPlugin::class.java.protectionDomain.codeSource.location.toURI()))
 
+        val catalogs = project.extensions.getByType(VersionCatalogsExtension::class.java)
+
+        val libs = resolveVersionCatalog(catalogs, extension)
+        val jacksonVersion = libs.findVersion("jackson")
+            .orElseThrow {
+                IllegalStateException(
+                    "version 'jackson' not found in version catalog '${libs.name}'"
+                )
+            }
+            .requiredVersion
+
         val jacksonDatabind =
-            project.dependencies.create("tools.jackson.core:jackson-databind:3.1.3")
+            project.dependencies.create("tools.jackson.core:jackson-databind:$jacksonVersion")
         val jacksonDataformatYaml =
-            project.dependencies.create("tools.jackson.dataformat:jackson-dataformat-yaml:3.1.3")
+            project.dependencies.create("tools.jackson.dataformat:jackson-dataformat-yaml:$jacksonVersion")
 
         project.dependencies.add("ksp", pluginJar)
         project.dependencies.add("ksp", jacksonDatabind)
@@ -121,4 +135,20 @@ class KtorBatterypackPlugin : Plugin<Project> {
             task.dependsOn(dockerDist)
         }
     }
+
+}
+
+private fun resolveVersionCatalog(
+    catalogs: VersionCatalogsExtension,
+    extension: KtorBatterypackExtension
+): VersionCatalog {
+    val explicit = extension.versionCatalog
+
+    if (explicit != null) {
+        return catalogs.named(explicit)
+    }
+
+    val preferred = catalogs.find("batterypackLibs").getOrNull()
+
+    return preferred ?: catalogs.named("libs")
 }
