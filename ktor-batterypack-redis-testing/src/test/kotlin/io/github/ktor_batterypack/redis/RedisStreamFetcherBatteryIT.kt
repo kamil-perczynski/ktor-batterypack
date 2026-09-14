@@ -43,6 +43,7 @@ class RedisStreamFetcherBatteryIT : RedisBatteryIT() {
             autoclaimMinIdleMs = 200,
             autoclaimCount = 10,
             lagCheckIntervalMs = 1000,
+            consumerGroup = "RedisStreamFetcherBatteryIT"
         )
     )
     private val messageProcessor = StreamMessageProcessor(metrics)

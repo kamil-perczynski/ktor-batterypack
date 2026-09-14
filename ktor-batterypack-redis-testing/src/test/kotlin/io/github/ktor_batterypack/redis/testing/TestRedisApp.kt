@@ -3,6 +3,7 @@ package io.github.ktor_batterypack.redis.testing
 import io.github.ktor_batterypack.core.KtorBatterypackCoreModule
 import io.github.ktor_batterypack.core.ktor.KtorProps
 import io.github.ktor_batterypack.metrics.KtorBatterypackMetricsModule
+import io.github.ktor_batterypack.redis.FetcherProps
 import io.github.ktor_batterypack.redis.KtorBatterypackRedisModule
 import io.github.ktor_batterypack.redis.KtorBatterypackRedisStreamsModule
 import io.github.ktor_batterypack.redis.RedisProps
@@ -27,7 +28,8 @@ class TestRedisAppModule {
     @Singleton
     fun redisProps(): RedisProps {
         return RedisProps(
-            url = System.getProperty("config.override.redis.url", "redis://localhost:6379")
+            url = System.getProperty("config.override.redis.url", "redis://localhost:6379"),
+            fetcher = FetcherProps(consumerGroup = "TestRedisAppModule"),
         )
     }
 
