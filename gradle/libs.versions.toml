@@ -20,6 +20,7 @@ logback = "1.5.21"
 logstash-logback-encoder = "9.0"
 micrometer = "1.14.0"
 mockito = "5.2.1"
+swagger-ui = "5.32.15"
 testcontainers = "2.0.5"
 wiremock = "3.13.2"
 kotlinx-coroutines = "1.10.2"
@@ -56,6 +57,7 @@ koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus", version.ref = "micrometer" }
 postgresql = { module = "org.postgresql:postgresql", version = "42.7.10" }
+webjars-swagger-ui = { module = "org.webjars:swagger-ui", version.ref = "swagger-ui" }
 testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
 jakarta-validation-api = { module = "jakarta.validation:jakarta.validation-api", version.ref = "jakarta-validation" }
 jakarta-ws-rs-api = { module = "jakarta.ws.rs:jakarta.ws.rs-api", version.ref = "jakarta-ws-rs" }

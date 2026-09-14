@@ -53,7 +53,7 @@ dependencies {
     implementation(project(":ktor-batterypack-redis"))
 
     implementation(ktorLibs.server.webjars)
-    implementation("org.webjars:swagger-ui:5.32.15")
+    implementation(libs.webjars.swagger.ui)
     
     implementation(libs.exposed.core)
     implementation(libs.exposed.dao)
