@@ -3,10 +3,12 @@ package io.github.ktor_batterypack.core
 import io.github.ktor_batterypack.core.di.LifecycleListener
 import io.github.ktor_batterypack.core.ktor.KtorController
 import io.github.ktor_batterypack.core.ktor.KtorExceptionHandler
+import io.github.ktor_batterypack.core.ktor.KtorPlugin
 import io.github.ktor_batterypack.core.ktor.jacksonSerialization
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.application.log
+import io.ktor.server.http.content.staticResources
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.routing.routing
@@ -44,15 +46,11 @@ fun Application.configureKtorServer(koinFn: (ktorApp: Application, koinApp: Koin
     }
 
     val koin = koin()
-    val ktorExceptionHandler: KtorExceptionHandler = koin.get()
-    val jsonMapper: JsonMapper = koin.get()
 
-    install(StatusPages) {
-        ktorExceptionHandler.register(this)
-    }
+    val ktorPlugins = koin.getAll<KtorPlugin>()
 
-    install(ContentNegotiation) {
-        jacksonSerialization(jsonMapper)
+    for (ktorPlugin in ktorPlugins) {
+        ktorPlugin.register(this)
     }
 
     val controllers = koin.getAll<KtorController>()

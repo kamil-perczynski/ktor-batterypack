@@ -56,7 +56,7 @@ dependencies {
     api(ktorLibs.server.config.yaml)
 
     api(ktorLibs.client.core)
-    api(ktorLibs.client.cio)
+    api(ktorLibs.client.java)
     api(ktorLibs.client.contentNegotiation)
     api(ktorLibs.client.logging)
 
