@@ -25,4 +25,12 @@ open class KtorBatterypackExtension {
      */
     var mainClass: String? = null
     var configMetadataClass: String? = null
+
+    /**
+     * Name of the version catalog the plugin reads library versions from.
+     *
+     * When left `null`, the plugin uses a catalog named `batterypackLibs`
+     * if one is present, otherwise it falls back to `libs`.
+     */
+    var versionCatalog: String? = null
 }
