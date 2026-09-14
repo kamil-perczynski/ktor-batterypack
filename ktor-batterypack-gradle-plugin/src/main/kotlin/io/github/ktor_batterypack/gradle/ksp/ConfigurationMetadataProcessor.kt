@@ -37,19 +37,11 @@ class ConfigurationMetadataProcessor(
         extractProperties(classDecl, resolver, "", className, properties, groups)
 
         val metadata = SpringConfigMetadata(properties = properties, groups = groups)
-        val json = MetadataWriter.writeJson(metadata)
         val yaml = MetadataWriter.writeYaml(metadata)
 
         val containingFile = classDecl.containingFile
         if (containingFile != null) {
             val dep = Dependencies(aggregating = false, containingFile)
-
-            val jsonStream = environment.codeGenerator.createNewFileByPath(
-                dependencies = dep,
-                path = "META-INF/spring-configuration-metadata",
-                extensionName = "json"
-            )
-            jsonStream.use { stream -> stream.write(json.toByteArray()) }
 
             val yamlStream = environment.codeGenerator.createNewFileByPath(
                 dependencies = dep,
