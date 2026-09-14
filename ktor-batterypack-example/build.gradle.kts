@@ -11,6 +11,7 @@ plugins {
 
 ktorBatterypack {
     mainClass = "io.github.kperczynski.MainKt"
+    configMetadataClass = "io.github.kperczynski.infra.ConfigMap"
 }
 
 // Required because Java 24+ (JEP 472) restricts System::load/loadLibrary.
@@ -51,6 +52,9 @@ dependencies {
     implementation(project(":ktor-batterypack-metrics"))
     implementation(project(":ktor-batterypack-redis"))
 
+    implementation(ktorLibs.server.webjars)
+    implementation("org.webjars:swagger-ui:5.32.15")
+    
     implementation(libs.exposed.core)
     implementation(libs.exposed.dao)
     implementation(libs.exposed.java.time)
