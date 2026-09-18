@@ -2,10 +2,15 @@ package io.github.kperczynski.infra
 
 import io.github.kperczynski.infra.florin.FlorinModule
 import io.github.ktor_batterypack.core.KtorBatterypackCoreModule
+import io.github.ktor_batterypack.core.di.InitCallback
 import io.github.ktor_batterypack.core.ktor.KtorProps
 import io.github.ktor_batterypack.core.ktor.client.KtorHttpClientFactory
 import io.github.ktor_batterypack.database.DatabaseProps
 import io.github.ktor_batterypack.database.KtorBatterypackDatabaseModule
+import io.github.ktor_batterypack.database.flyway.FlywayMigrations
+import io.github.ktor_batterypack.database.flyway.FlywayProps
+import io.github.ktor_batterypack.database.liquibase.LiquibaseMigrations
+import io.github.ktor_batterypack.database.liquibase.LiquibaseProps
 import io.github.ktor_batterypack.metrics.KtorBatterypackMetricsModule
 import io.github.ktor_batterypack.redis.KtorBatterypackRedisModule
 import io.github.ktor_batterypack.redis.KtorBatterypackRedisStreamsModule
@@ -52,6 +57,16 @@ class KtorFrameModule {
     @Singleton
     fun databaseProps(configMap: ConfigMap): DatabaseProps {
         return configMap.database
+    }
+
+    @Singleton
+    fun liquibaseProps(configMap: ConfigMap): LiquibaseProps {
+        return configMap.liquibase
+    }
+
+    @Singleton(binds = [InitCallback::class])
+    fun liquibaseMigrations(props: LiquibaseProps, dataSource: DataSource): LiquibaseMigrations {
+        return LiquibaseMigrations(props, dataSource)
     }
 
     @Singleton
