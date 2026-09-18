@@ -9,18 +9,6 @@ plugins {
     id("ktor-batterypack-gradle-plugin")
 }
 
-ktorBatterypack {
-    mainClass = "io.github.kperczynski.MainKt"
-    configMetadataClass = "io.github.kperczynski.infra.ConfigMap"
-}
-
-// Required because Java 24+ (JEP 472) restricts System::load/loadLibrary.
-// Netty loads native libraries from an unnamed module, which triggers warnings
-// (and will eventually be blocked) without this flag.
-tasks.withType<JavaExec> {
-    jvmArgs("--enable-native-access=ALL-UNNAMED")
-}
-
 tasks.test {
     useJUnitPlatform()
     // Same JEP 472 workaround for test JVMs (Netty native library loading).
@@ -54,7 +42,7 @@ dependencies {
 
     implementation(ktorLibs.server.webjars)
     implementation(libs.webjars.swagger.ui)
-    
+
     implementation(libs.exposed.core)
     implementation(libs.exposed.dao)
     implementation(libs.exposed.java.time)
@@ -136,4 +124,9 @@ sourceSets {
 
 tasks.withType<KotlinCompile> {
     compilerOptions.freeCompilerArgs.set(listOf("-Xannotation-default-target=param-property"))
+}
+
+ktorBatterypack {
+    mainClass = "io.github.kperczynski.MainKt"
+    configMetadataClass = "io.github.kperczynski.infra.ConfigMap"
 }

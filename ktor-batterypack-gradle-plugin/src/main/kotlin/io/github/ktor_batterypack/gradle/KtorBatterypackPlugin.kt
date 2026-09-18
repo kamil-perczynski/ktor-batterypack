@@ -59,9 +59,7 @@ class KtorBatterypackPlugin : Plugin<Project> {
         val libs = resolveVersionCatalog(catalogs, extension)
         val jacksonVersion = libs.findVersion("jackson")
             .orElseThrow {
-                IllegalStateException(
-                    "version 'jackson' not found in version catalog '${libs.name}'"
-                )
+                IllegalStateException("version 'jackson' not found in version catalog '${libs.name}'")
             }
             .requiredVersion
 

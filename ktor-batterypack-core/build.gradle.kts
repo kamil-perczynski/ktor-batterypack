@@ -38,6 +38,7 @@ java {
 
 dependencies {
     api(ktorLibs.server.core)
+    api(platform(libs.netty.bom))
     api(ktorLibs.server.netty)
     api(ktorLibs.server.contentNegotiation)
     api(ktorLibs.server.statusPages)
@@ -52,6 +53,10 @@ dependencies {
     api(libs.koin.annotations)
     api(libs.koin.core)
     api(libs.koin.ktor)
+
+    constraints {
+        implementation(libs.classgraph)
+    }
 
     api(ktorLibs.server.config.yaml)
 
