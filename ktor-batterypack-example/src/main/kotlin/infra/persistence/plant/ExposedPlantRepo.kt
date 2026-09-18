@@ -8,30 +8,17 @@ import io.github.kperczynski.domain.plant.model.enums.PlantDifficulty
 import io.github.kperczynski.domain.plant.model.enums.PlantStatus
 import io.github.kperczynski.domain.plant.model.enums.SoilMoistureOption
 import io.github.kperczynski.domain.plant.model.enums.YesNoOption
-import io.github.ktor_batterypack.core.di.InitCallback
 import io.github.ktor_batterypack.core.exception.ResourceMissingException
 import io.micrometer.core.annotation.Timed
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.Database
-import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
-import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.koin.core.annotation.Singleton
-import org.slf4j.LoggerFactory
 import java.util.UUID
-
-private val log = LoggerFactory.getLogger(ExposedPlantRepo::class.java)
 
 @Singleton
 @Timed
-class ExposedPlantRepo(private val database: Database) : PlantRepo, InitCallback {
-
-    override fun onInit() {
-        transaction(database) {
-            log.info("Creating 'plants' table if it does not exist...")
-            SchemaUtils.create(PlantTable)
-        }
-    }
+class ExposedPlantRepo(private val database: Database) : PlantRepo {
 
     override suspend fun create(plant: Plant): Plant {
         return suspendTransaction(database) {

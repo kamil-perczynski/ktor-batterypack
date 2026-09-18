@@ -42,6 +42,10 @@ dependencies {
 
     api(libs.hikari)
 
+    compileOnly(libs.aws.rds)
+    compileOnly(libs.flyway.core)
+    compileOnly(libs.liquibase.core)
+
     implementation(libs.exposed.core)
     implementation(libs.exposed.jdbc)
 

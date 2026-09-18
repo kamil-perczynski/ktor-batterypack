@@ -49,6 +49,8 @@ dependencies {
     implementation(libs.exposed.jdbc)
     implementation(libs.exposed.json)
     implementation(libs.hikari)
+    implementation(libs.liquibase.core)
+    runtimeOnly(libs.liquibase.slf4j)
 
     implementation(libs.postgresql)
 

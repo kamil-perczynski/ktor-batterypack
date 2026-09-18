@@ -1,6 +1,7 @@
 package io.github.ktor_batterypack.database
 
 import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariCredentialsProvider
 import com.zaxxer.hikari.HikariDataSource
 import io.github.ktor_batterypack.core.health.ReadinessCheck
 import io.micrometer.core.instrument.MeterRegistry
@@ -8,6 +9,7 @@ import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Module
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Singleton
+import org.koin.core.scope.Scope
 import org.slf4j.LoggerFactory
 import javax.sql.DataSource
 
@@ -18,8 +20,13 @@ private val log = LoggerFactory.getLogger(KtorBatterypackDatabaseModule::class.j
 class KtorBatterypackDatabaseModule {
 
     @Singleton(binds = [DataSource::class])
-    fun dataSource(@Provided props: DatabaseProps, @Provided meterRegistry: MeterRegistry): HikariDataSource {
+    fun dataSource(
+        @Provided props: DatabaseProps,
+        @Provided meterRegistry: MeterRegistry,
+        scope: Scope,
+    ): HikariDataSource {
         log.info("Connected to database at {} with pool size: {}", props.url, props.poolSize)
+        val credentialsProvider = scope.getOrNull<HikariCredentialsProvider>()
 
         val hikariConfig = HikariConfig().apply {
             jdbcUrl = props.url
@@ -27,9 +34,23 @@ class KtorBatterypackDatabaseModule {
             password = props.password
             driverClassName = props.driver
             maximumPoolSize = props.poolSize
-            isAutoCommit = true
-            transactionIsolation = "TRANSACTION_REPEATABLE_READ"
+            minimumIdle = props.minimumIdle ?: props.poolSize
+            isAutoCommit = props.autoCommit
+            transactionIsolation = props.transactionIsolation
+            connectionTimeout = props.connectionTimeoutMs
+            validationTimeout = props.validationTimeoutMs
+            idleTimeout = props.idleTimeoutMs
+            maxLifetime = props.maxLifetimeMs
+            keepaliveTime = props.keepaliveTimeMs
+            leakDetectionThreshold = props.leakDetectionThresholdMs
+            poolName = props.poolName
             metricRegistry = meterRegistry
+            props.dataSourceProperties.forEach { (name, value) -> addDataSourceProperty(name, value) }
+
+            if (credentialsProvider != null) {
+                this.credentialsProvider = credentialsProvider
+            }
+
             validate()
         }
 
@@ -51,5 +72,4 @@ class KtorBatterypackDatabaseModule {
     fun databaseCheck(dataSource: DataSource): DatabaseReadinessCheck {
         return DatabaseReadinessCheck(dataSource)
     }
-
 }
