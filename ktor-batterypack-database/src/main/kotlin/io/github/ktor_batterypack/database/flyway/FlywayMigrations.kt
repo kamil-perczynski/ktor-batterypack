@@ -1,26 +1,26 @@
 package io.github.ktor_batterypack.database.flyway
 
-import io.github.ktor_batterypack.core.di.InitCallback
+import io.github.ktor_batterypack.core.di.BootstrapCallback
 import org.flywaydb.core.Flyway
 import javax.sql.DataSource
 
 /**
  * Runs Flyway migrations against the configured [DataSource] on startup.
  *
- * Implements [InitCallback] so the application lifecycle invokes it once during
+ * Implements [BootstrapCallback] so the application lifecycle invokes it once during
  * startup. Locations, schemas, target version, placeholders and
  * clean-before-migrate behaviour are read from [FlywayProps].
  */
 class FlywayMigrations(
     private val props: FlywayProps,
     private val dataSource: DataSource,
-) : InitCallback {
+) : BootstrapCallback {
 
     /**
      * Builds the Flyway configuration from [FlywayProps], optionally cleans the
      * schema, and applies all pending migrations.
      */
-    override fun onInit() {
+    override fun onBootstrap() {
         val config = Flyway.configure()
             .dataSource(dataSource)
             .locations(*props.locations.split(',').map { it.trim() }.toTypedArray())
