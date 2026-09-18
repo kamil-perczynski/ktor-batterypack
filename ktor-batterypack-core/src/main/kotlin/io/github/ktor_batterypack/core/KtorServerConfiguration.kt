@@ -1,24 +1,12 @@
 package io.github.ktor_batterypack.core
 
 import io.github.ktor_batterypack.core.di.LifecycleListener
-import io.github.ktor_batterypack.core.ktor.KtorController
-import io.github.ktor_batterypack.core.ktor.KtorExceptionHandler
-import io.github.ktor_batterypack.core.ktor.KtorPlugin
-import io.github.ktor_batterypack.core.ktor.jacksonSerialization
-import io.ktor.server.application.Application
-import io.ktor.server.application.install
-import io.ktor.server.application.log
-import io.ktor.server.http.content.staticResources
-import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.server.plugins.statuspages.StatusPages
-import io.ktor.server.routing.routing
+import io.ktor.server.application.*
 import org.koin.core.KoinApplication
 import org.koin.ktor.ext.get
 import org.koin.ktor.plugin.Koin
 import org.koin.ktor.plugin.KoinApplicationStarted
 import org.koin.ktor.plugin.KoinApplicationStopPreparing
-import org.koin.ktor.plugin.koin
-import tools.jackson.databind.json.JsonMapper
 
 /**
  * Configures the Ktor application with Koin, exception handling, content negotiation, and controller routes.
@@ -43,22 +31,7 @@ fun Application.configureKtorServer(koinFn: (ktorApp: Application, koinApp: Koin
 
     install(Koin) {
         koinFn(this@configureKtorServer, this, profiles)
-    }
-
-    val koin = koin()
-
-    val ktorPlugins = koin.getAll<KtorPlugin>()
-
-    for (ktorPlugin in ktorPlugins) {
-        ktorPlugin.register(this)
-    }
-
-    val controllers = koin.getAll<KtorController>()
-    routing {
-        for (controller in controllers) {
-            log.info("Registering routes for controller: {}", controller::class.simpleName)
-            controller.register(this)
-        }
+        koin.get<LifecycleListener>().onBootstrap()
     }
 }
 

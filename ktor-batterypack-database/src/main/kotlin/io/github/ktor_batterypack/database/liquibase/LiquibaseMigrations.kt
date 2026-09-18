@@ -1,6 +1,6 @@
 package io.github.ktor_batterypack.database.liquibase
 
-import io.github.ktor_batterypack.core.di.InitCallback
+import io.github.ktor_batterypack.core.di.BootstrapCallback
 import liquibase.Contexts
 import liquibase.LabelExpression
 import liquibase.Liquibase
@@ -11,7 +11,6 @@ import liquibase.database.DatabaseFactory
 import liquibase.database.jvm.JdbcConnection
 import liquibase.resource.ClassLoaderResourceAccessor
 import liquibase.ui.LoggerUIService
-import liquibase.util.ShowSummaryUtil
 import org.slf4j.LoggerFactory
 import javax.sql.DataSource
 
@@ -20,20 +19,20 @@ private val log = LoggerFactory.getLogger(LiquibaseMigrations::class.java)
 /**
  * Runs Liquibase migrations against the configured [DataSource] on startup.
  *
- * Implements [InitCallback] so the application lifecycle invokes it once during
+ * Implements [BootstrapCallback] so the application lifecycle invokes it once during
  * startup. Changelog location, contexts, labels, schema settings and changelog
  * parameters are read from [LiquibaseProps].
  */
 class LiquibaseMigrations(
     private val props: LiquibaseProps,
     private val dataSource: DataSource,
-) : InitCallback {
+) : BootstrapCallback {
 
     /**
      * Opens a connection, resolves the Liquibase database and applies all
      * pending changesets from the configured changelog.
      */
-    override fun onInit() {
+    override fun onBootstrap() {
         log.info("Running Liquibase migrations from changelog: {}", props.changeLogPath)
         dataSource.connection.use { conn ->
             val database = DatabaseFactory.getInstance()

@@ -1,9 +1,7 @@
 package io.github.ktor_batterypack.core
 
 import io.github.ktor_batterypack.core.di.BannerPrinter
-import io.github.ktor_batterypack.core.di.InitCallback
-import io.github.ktor_batterypack.core.di.KoinLifecycleListener
-import io.github.ktor_batterypack.core.di.LifecycleListener
+import io.github.ktor_batterypack.core.di.BootstrapCallback
 import io.github.ktor_batterypack.core.health.DiskSpaceReadinessCheck
 import io.github.ktor_batterypack.core.health.HealthController
 import io.github.ktor_batterypack.core.health.ReadinessCheck
@@ -37,14 +35,6 @@ class KtorBatterypackCoreModule {
             .build()
     }
 
-    @Singleton(binds = [LifecycleListener::class])
-    fun koinLifecycleListener(
-        closeCallbacks: List<AutoCloseable>,
-        initCallbacks: List<InitCallback>
-    ): KoinLifecycleListener {
-        return KoinLifecycleListener(closeCallbacks, initCallbacks)
-    }
-
     @Singleton(binds = [ReadinessCheck::class])
     fun diskSpaceCheck(): DiskSpaceReadinessCheck {
         return DiskSpaceReadinessCheck()
@@ -70,7 +60,7 @@ class KtorBatterypackCoreModule {
         return MultipartParser(props)
     }
 
-    @Singleton(binds = [InitCallback::class])
+    @Singleton(binds = [BootstrapCallback::class])
     fun bannerPrinter(@Provided ktorProps: KtorProps): BannerPrinter {
         return BannerPrinter(ktorProps.banner)
     }
