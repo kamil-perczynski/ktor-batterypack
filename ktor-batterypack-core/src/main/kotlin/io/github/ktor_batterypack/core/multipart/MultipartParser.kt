@@ -45,7 +45,7 @@ class MultipartParser(private val props: MultipartProps) {
 
                 }
             } finally {
-                part.dispose()
+                part.release()
             }
         }
 

@@ -1,6 +1,7 @@
 package io.github.kperczynski.domain.plant
 
 import io.github.ktor_batterypack.redis.RedisStreamListener
+import io.github.ktor_batterypack.redis.RedisStreamListenerConfig
 import org.koin.core.annotation.Singleton
 import org.slf4j.LoggerFactory
 import tools.jackson.databind.json.JsonMapper
@@ -9,7 +10,7 @@ private val log = LoggerFactory.getLogger(PlantEventsListener::class.java)
 
 @Singleton
 class PlantEventsListener(private val jsonMapper: JsonMapper) : RedisStreamListener {
-    override fun stream(): String = PLANT_EVENTS_TOPIC
+    override fun config(): RedisStreamListenerConfig = RedisStreamListenerConfig(streamId = PLANT_EVENTS_TOPIC)
 
     override suspend fun onMessage(payload: String, headers: Map<String, String>) {
         val event = jsonMapper.readValue(payload, PlantEvent::class.java)

@@ -10,6 +10,7 @@ import io.lettuce.core.XReadArgs
 import io.lettuce.core.api.StatefulRedisConnection
 import org.slf4j.LoggerFactory
 import java.lang.AutoCloseable
+import java.util.UUID
 
 private val log = LoggerFactory.getLogger(RedisStreamFetcher::class.java)
 
@@ -23,11 +24,21 @@ class RedisStreamFetcher(
 ) : InitCallback, AutoCloseable {
 
     private val listenersIdx: Map<String, RedisStreamListener> =
-        listeners.associateBy { it.stream() }
+        listeners.associateBy { it.config().streamId }
 
-    private val streams = listeners.map { it.stream() }.distinct()
+    private val streams = listeners.map { it.config().streamId }.distinct()
 
     private val handles = mutableListOf<LoopHandle>()
+
+    init {
+        if (listenersIdx.size != listeners.size) {
+            log.warn(
+                "{} redis stream listener(s) map to {} stream(s); a later listener silently replaces an earlier one registered for the same stream",
+                listeners.size,
+                listenersIdx.size
+            )
+        }
+    }
 
     override fun onInit() {
         redisClient.connect().use { setupConnection ->
@@ -51,9 +62,7 @@ class RedisStreamFetcher(
         for (stream in streams) {
             try {
                 val raw = try {
-                    connection
-                        .sync()
-                        .xinfoConsumers(stream, consumerGroup)
+                    connection.sync().xinfoConsumers(stream, consumerGroup)
                 } catch (e: Exception) {
                     log.debug(
                         "Failed to fetch consumer info for stream {}: {}, skipping cleanup",
@@ -126,3 +135,6 @@ class RedisStreamFetcher(
         log.info("RedisStreamFetcher: {} closed", consumerId)
     }
 }
+
+fun nextConsumerId(consumerGroup: String): String =
+    "$consumerGroup-${UUID.randomUUID().toString().take(8)}"

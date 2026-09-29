@@ -1,6 +1,7 @@
 package io.github.kperczynski.domain.wallet
 
 import io.github.ktor_batterypack.redis.RedisStreamListener
+import io.github.ktor_batterypack.redis.RedisStreamListenerConfig
 import org.koin.core.annotation.Singleton
 import org.slf4j.LoggerFactory
 import tools.jackson.databind.json.JsonMapper
@@ -14,7 +15,7 @@ class WalletEventsListener(
     private val walletService: WalletService
 ) : RedisStreamListener {
 
-    override fun stream(): String = WALLET_EVENTS_TOPIC
+    override fun config(): RedisStreamListenerConfig = RedisStreamListenerConfig(streamId = WALLET_EVENTS_TOPIC)
 
     override suspend fun onMessage(payload: String, headers: Map<String, String>) {
         val event = jsonMapper.readValue(payload, WalletEvent::class.java)
