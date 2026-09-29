@@ -1,7 +1,6 @@
 package io.github.ktor_batterypack.redis
 
 import io.lettuce.core.XAddArgs
-import io.lettuce.core.api.StatefulRedisConnection
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Singleton
 import org.slf4j.LoggerFactory
@@ -12,10 +11,18 @@ private val log = LoggerFactory.getLogger(RedisStreamPublisher::class.java)
 
 @Singleton
 class RedisStreamPublisher(
-    private val connection: StatefulRedisConnection<String, String>,
+    private val connectionFacade: RedisFacade,
     private val jsonMapper: JsonMapper,
     @Provided private val redisProps: RedisProps,
-) {
+) : AutoCloseable {
+
+    private val redis = connectionFacade.connect()
+
+    override fun close() {
+        if (redis.isOpen) {
+            redis.close()
+        }
+    }
 
     fun publish(
         stream: String,
@@ -25,7 +32,7 @@ class RedisStreamPublisher(
     ) {
         log.debug("Publishing to stream '{}': {}", stream, payload)
 
-        val publisher = connection.async()
+        val publisher = redis.streamAsync
         val eventJson = jsonMapper.writeValueAsString(payload)
 
         val effectiveRetentionMs =

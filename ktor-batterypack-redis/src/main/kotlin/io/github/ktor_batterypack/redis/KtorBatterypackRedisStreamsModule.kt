@@ -1,7 +1,6 @@
 package io.github.ktor_batterypack.redis
 
 import io.github.ktor_batterypack.core.di.InitCallback
-import io.lettuce.core.RedisClient
 import org.koin.core.annotation.Module
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Singleton
@@ -14,7 +13,7 @@ class KtorBatterypackRedisStreamsModule {
 
     @Singleton(binds = [InitCallback::class, AutoCloseable::class])
     fun redisStreamFetchers(
-        redisClient: RedisClient,
+        connectionFacade: RedisFacade,
         @Provided redisProps: RedisProps,
         listeners: List<RedisStreamListener>,
         loops: List<RedisStreamsBackgroundLoop>,
@@ -22,7 +21,7 @@ class KtorBatterypackRedisStreamsModule {
         return RedisStreamFetchers(
             allListeners = listeners,
             redisProps = redisProps,
-            redisClient = redisClient,
+            connectionFacade = connectionFacade,
             loops = loops
         )
     }

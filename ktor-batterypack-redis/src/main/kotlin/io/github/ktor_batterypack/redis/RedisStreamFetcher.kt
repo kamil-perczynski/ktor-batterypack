@@ -4,10 +4,8 @@ import io.github.ktor_batterypack.core.di.InitCallback
 import io.github.ktor_batterypack.redis.bgloops.toXInfoResultDto
 import io.lettuce.core.Consumer
 import io.lettuce.core.RedisBusyException
-import io.lettuce.core.RedisClient
 import io.lettuce.core.XGroupCreateArgs
 import io.lettuce.core.XReadArgs
-import io.lettuce.core.api.StatefulRedisConnection
 import org.slf4j.LoggerFactory
 import java.lang.AutoCloseable
 import java.util.UUID
@@ -16,7 +14,7 @@ private val log = LoggerFactory.getLogger(RedisStreamFetcher::class.java)
 
 class RedisStreamFetcher(
     private val consumerId: String,
-    private val redisClient: RedisClient,
+    private val connectionFacade: RedisFacade,
     private val consumerGroup: String,
     private val autoclaimMinIdleMs: Long,
     private val loops: List<RedisStreamsBackgroundLoop>,
@@ -41,7 +39,7 @@ class RedisStreamFetcher(
     }
 
     override fun onInit() {
-        redisClient.connect().use { setupConnection ->
+        connectionFacade.connect().use { setupConnection ->
             cleanupInactiveConsumers(setupConnection, streams)
             createConsumerGroups(setupConnection, streams)
         }
@@ -56,13 +54,13 @@ class RedisStreamFetcher(
     }
 
     private fun cleanupInactiveConsumers(
-        connection: StatefulRedisConnection<String, String>,
+        redis: RedisConnectionFacade,
         streams: List<String>
     ) {
         for (stream in streams) {
             try {
                 val raw = try {
-                    connection.sync().xinfoConsumers(stream, consumerGroup)
+                    redis.stream.xinfoConsumers(stream, consumerGroup)
                 } catch (e: Exception) {
                     log.debug(
                         "Failed to fetch consumer info for stream {}: {}, skipping cleanup",
@@ -80,8 +78,7 @@ class RedisStreamFetcher(
 
                 for (info in consumers) {
                     if (info.name != consumerId && info.pending == 0L && info.idle > autoclaimMinIdleMs) {
-                        connection
-                            .sync()
+                        redis.stream
                             .xgroupDelconsumer(stream, Consumer.from(consumerGroup, info.name))
                         log.debug("Cleaned up inactive consumer: {} from stream: {}", info.name, stream)
                     }
@@ -98,7 +95,7 @@ class RedisStreamFetcher(
     }
 
     private fun createConsumerGroups(
-        connection: StatefulRedisConnection<String, String>,
+        redis: RedisConnectionFacade,
         streams: List<String>
     ) {
         log.info(
@@ -110,7 +107,7 @@ class RedisStreamFetcher(
 
         for (streamKey in streams) {
             try {
-                connection.sync()
+                redis.stream
                     .xgroupCreate(
                         XReadArgs.StreamOffset.from(streamKey, "0"),
                         consumerGroup,

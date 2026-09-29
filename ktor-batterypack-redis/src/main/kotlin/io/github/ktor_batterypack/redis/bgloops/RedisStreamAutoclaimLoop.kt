@@ -1,14 +1,14 @@
 package io.github.ktor_batterypack.redis.bgloops
 
 import io.github.ktor_batterypack.redis.LoopHandle
+import io.github.ktor_batterypack.redis.RedisFacade
+import io.github.ktor_batterypack.redis.RedisConnectionFacade
 import io.github.ktor_batterypack.redis.RedisProps
 import io.github.ktor_batterypack.redis.RedisStreamListener
 import io.github.ktor_batterypack.redis.RedisStreamsBackgroundLoop
 import io.github.ktor_batterypack.redis.monitoring.RedisStreamMetrics
 import io.lettuce.core.Consumer
-import io.lettuce.core.RedisClient
 import io.lettuce.core.XAutoClaimArgs
-import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.models.stream.ClaimedMessages
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.await
@@ -25,7 +25,7 @@ private val log = LoggerFactory.getLogger(RedisStreamAutoclaimLoop::class.java)
  */
 @Singleton
 class RedisStreamAutoclaimLoop(
-    private val redisClient: RedisClient,
+    private val connectionFacade: RedisFacade,
     private val messageProcessor: StreamMessageProcessor,
     private val metrics: RedisStreamMetrics,
     @Provided private val redisProps: RedisProps,
@@ -36,7 +36,7 @@ class RedisStreamAutoclaimLoop(
         listeners: Map<String, RedisStreamListener>,
         consumerGroup: String,
     ): LoopHandle {
-        val connection = redisClient.connect()
+        val redis = connectionFacade.connect()
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob() + CoroutineName("Autoclaim"))
 
         val autoclaimIntervalMs = redisProps.fetcher.autoclaimIntervalMs
@@ -58,7 +58,7 @@ class RedisStreamAutoclaimLoop(
                             autoclaimMinIdleMs = autoclaimMinIdleMs,
                             autoclaimCount = autoclaimCount,
                             listeners = listeners,
-                            connection = connection
+                            redis = redis
                         )
                     } catch (e: CancellationException) {
                         throw e
@@ -75,9 +75,9 @@ class RedisStreamAutoclaimLoop(
                     scope.cancel()
                     scope.coroutineContext.job.join()
                 }
-                if (connection.isOpen) {
+                if (redis.isOpen) {
                     log.debug("Closing Redis connection for autoclaim loop")
-                    connection.close()
+                    redis.close()
                 }
             }
         }
@@ -90,7 +90,7 @@ class RedisStreamAutoclaimLoop(
         autoclaimMinIdleMs: Long,
         autoclaimCount: Long,
         listeners: Map<String, RedisStreamListener>,
-        connection: StatefulRedisConnection<String, String>,
+        redis: RedisConnectionFacade,
     ) {
         val args = XAutoClaimArgs<String>()
             .consumer(consumer)
@@ -98,8 +98,8 @@ class RedisStreamAutoclaimLoop(
             .startId("0-0")
             .count(autoclaimCount)
 
-        val result: ClaimedMessages<String, String> = connection
-            .async()
+        val result: ClaimedMessages<String, String> = redis
+            .streamAsync
             .xautoclaim(stream, args)
             .await()
 
@@ -115,7 +115,7 @@ class RedisStreamAutoclaimLoop(
             messages = messages,
             listeners = listeners,
             consumerGroup = consumerGroup,
-            connection = connection
+            redis = redis
         )
     }
 }

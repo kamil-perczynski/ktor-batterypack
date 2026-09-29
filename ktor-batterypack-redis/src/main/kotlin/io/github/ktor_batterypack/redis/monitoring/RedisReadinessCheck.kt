@@ -3,16 +3,13 @@ package io.github.ktor_batterypack.redis.monitoring
 import io.github.ktor_batterypack.core.health.HealthCheckResult
 import io.github.ktor_batterypack.core.health.HealthStatus
 import io.github.ktor_batterypack.core.health.ReadinessCheck
-import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import io.lettuce.core.RedisClient
-import io.lettuce.core.api.coroutines
+import io.github.ktor_batterypack.redis.RedisFacade
 
-@OptIn(ExperimentalLettuceCoroutinesApi::class)
-class RedisReadinessCheck(private val redisClient: RedisClient) : ReadinessCheck {
+class RedisReadinessCheck(private val connectionFacade: RedisFacade) : ReadinessCheck {
 
     override suspend fun check(): HealthCheckResult {
-        return redisClient.connect().use { connection ->
-            val pingResult = connection.coroutines().ping()
+        return connectionFacade.connect().use { redis ->
+            val pingResult = redis.ping()
 
             if (pingResult == "PONG") {
                 HealthCheckResult(

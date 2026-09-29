@@ -1,11 +1,11 @@
 package io.github.ktor_batterypack.redis.bgloops
 
 import io.github.ktor_batterypack.redis.LoopHandle
+import io.github.ktor_batterypack.redis.RedisFacade
 import io.github.ktor_batterypack.redis.RedisProps
 import io.github.ktor_batterypack.redis.RedisStreamListener
 import io.github.ktor_batterypack.redis.RedisStreamsBackgroundLoop
 import io.lettuce.core.Consumer
-import io.lettuce.core.RedisClient
 import io.lettuce.core.XReadArgs
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.await
@@ -18,7 +18,7 @@ private val log = LoggerFactory.getLogger(RedisStreamFetchingLoop::class.java)
 
 @Singleton
 class RedisStreamFetchingLoop(
-    private val redisClient: RedisClient,
+    private val connectionFacade: RedisFacade,
     private val messageProcessor: StreamMessageProcessor,
     @Provided private val redisProps: RedisProps,
 ) : RedisStreamsBackgroundLoop {
@@ -28,7 +28,7 @@ class RedisStreamFetchingLoop(
         listeners: Map<String, RedisStreamListener>,
         consumerGroup: String,
     ): LoopHandle {
-        val connection = redisClient.connect()
+        val redis = connectionFacade.connect()
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob() + CoroutineName("StreamFetching"))
 
         val fetchingTimeout = redisProps.fetcher.fetchingTimeout
@@ -41,8 +41,8 @@ class RedisStreamFetchingLoop(
 
             while (isActive) {
                 try {
-                    val messages = connection
-                        .async()
+                    val messages = redis
+                        .streamAsync
                         .xreadgroup(
                             consumer,
                             XReadArgs.Builder.block(fetchingTimeout).count(fetchingCount),
@@ -54,7 +54,7 @@ class RedisStreamFetchingLoop(
                         messages = messages,
                         listeners = listeners,
                         consumerGroup = consumerGroup,
-                        connection = connection
+                        redis = redis
                     )
                 } catch (e: CancellationException) {
                     throw e
@@ -76,9 +76,9 @@ class RedisStreamFetchingLoop(
                     scope.cancel()
                     scope.coroutineContext.job.join()
                 }
-                if (connection.isOpen) {
+                if (redis.isOpen) {
                     log.debug("Closing Redis connection for stream fetching loop")
-                    connection.close()
+                    redis.close()
                 }
             }
         }

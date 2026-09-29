@@ -1,9 +1,9 @@
 package io.github.ktor_batterypack.redis.bgloops
 
+import io.github.ktor_batterypack.redis.RedisConnectionFacade
 import io.github.ktor_batterypack.redis.RedisStreamListener
 import io.github.ktor_batterypack.redis.monitoring.RedisStreamMetrics
 import io.lettuce.core.StreamMessage
-import io.lettuce.core.api.StatefulRedisConnection
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Dispatchers
@@ -25,7 +25,7 @@ class StreamMessageProcessor(private val metrics: RedisStreamMetrics) {
         messages: List<StreamMessage<String, String>>,
         listeners: Map<String, RedisStreamListener>,
         consumerGroup: String,
-        connection: StatefulRedisConnection<String, String>,
+        redis: RedisConnectionFacade,
     ) {
         val grouped = messages.groupBy { it.stream }
 
@@ -33,7 +33,7 @@ class StreamMessageProcessor(private val metrics: RedisStreamMetrics) {
             for ((_, msgs) in grouped) {
                 launch(CoroutineName("Listener")) {
                     for (message in msgs) {
-                        processMessage(message, listeners, consumerGroup, connection)
+                        processMessage(message, listeners, consumerGroup, redis)
                     }
                 }
             }
@@ -44,7 +44,7 @@ class StreamMessageProcessor(private val metrics: RedisStreamMetrics) {
         message: StreamMessage<String, String>,
         listeners: Map<String, RedisStreamListener>,
         consumerGroup: String,
-        connection: StatefulRedisConnection<String, String>,
+        redis: RedisConnectionFacade,
     ) {
         log.debug("Received redis stream message: {}", message)
         val payload = message.body["_p"] ?: ""
@@ -74,8 +74,8 @@ class StreamMessageProcessor(private val metrics: RedisStreamMetrics) {
             )
         } finally {
             withContext(Dispatchers.IO + NonCancellable) {
-                connection
-                    .async()
+                redis
+                    .streamAsync
                     .xack(message.stream, consumerGroup, message.id)
                     .await()
             }

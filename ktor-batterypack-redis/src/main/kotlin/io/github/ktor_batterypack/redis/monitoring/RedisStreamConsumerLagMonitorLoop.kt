@@ -1,11 +1,11 @@
 package io.github.ktor_batterypack.redis.monitoring
 
 import io.github.ktor_batterypack.redis.LoopHandle
+import io.github.ktor_batterypack.redis.RedisFacade
 import io.github.ktor_batterypack.redis.RedisProps
 import io.github.ktor_batterypack.redis.RedisStreamListener
 import io.github.ktor_batterypack.redis.RedisStreamsBackgroundLoop
 import io.github.ktor_batterypack.redis.bgloops.toXInfoResultDto
-import io.lettuce.core.RedisClient
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.await
 import org.koin.core.annotation.Provided
@@ -17,7 +17,7 @@ private val log = LoggerFactory.getLogger(RedisStreamConsumerLagMonitorLoop::cla
 
 @Singleton
 class RedisStreamConsumerLagMonitorLoop(
-    private val redisClient: RedisClient,
+    private val connectionFacade: RedisFacade,
     private val metrics: RedisStreamMetrics,
     @Provided private val redisProps: RedisProps,
 ) : RedisStreamsBackgroundLoop {
@@ -27,7 +27,7 @@ class RedisStreamConsumerLagMonitorLoop(
         listeners: Map<String, RedisStreamListener>,
         consumerGroup: String,
     ): LoopHandle {
-        val connection = redisClient.connect()
+        val redis = connectionFacade.connect()
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob() + CoroutineName("LagMonitor"))
 
         val lagCheckIntervalMs = redisProps.fetcher.lagCheckIntervalMs
@@ -38,7 +38,7 @@ class RedisStreamConsumerLagMonitorLoop(
                 val allConsumers = mutableListOf<StreamConsumerMetrics>()
                 for (stream in streams) {
                     try {
-                        val raw = connection.async()
+                        val raw = redis.streamAsync
                             .xinfoConsumers(stream, consumerGroup)
                             .await() as List<*>
 
@@ -73,9 +73,9 @@ class RedisStreamConsumerLagMonitorLoop(
                     scope.cancel()
                     scope.coroutineContext.job.join()
                 }
-                if (connection.isOpen) {
+                if (redis.isOpen) {
                     log.debug("Closing Redis connection for consumer lag monitor loop")
-                    connection.close()
+                    redis.close()
                 }
             }
         }
