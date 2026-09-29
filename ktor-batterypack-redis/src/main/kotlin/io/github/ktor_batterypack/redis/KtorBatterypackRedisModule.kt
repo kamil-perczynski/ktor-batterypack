@@ -1,10 +1,12 @@
 package io.github.ktor_batterypack.redis
 
 import io.github.ktor_batterypack.core.health.ReadinessCheck
+import io.github.ktor_batterypack.redis.cluster.ClusterRedisFacade
 import io.github.ktor_batterypack.redis.monitoring.RedisReadinessCheck
 import io.github.ktor_batterypack.redis.monitoring.RedisStreamMetrics
+import io.github.ktor_batterypack.redis.standalone.StandaloneRedisFacade
 import io.lettuce.core.RedisClient
-import io.lettuce.core.api.StatefulRedisConnection
+import io.lettuce.core.cluster.RedisClusterClient
 import io.lettuce.core.metrics.MicrometerCommandLatencyRecorder
 import io.lettuce.core.metrics.MicrometerOptions
 import io.lettuce.core.resource.ClientResources
@@ -19,8 +21,8 @@ import org.koin.core.annotation.Singleton
 class KtorBatterypackRedisModule {
 
     @Singleton(binds = [ReadinessCheck::class])
-    fun redisCheck(redisClient: RedisClient): RedisReadinessCheck {
-        return RedisReadinessCheck(redisClient)
+    fun redisCheck(connectionFacade: RedisFacade): RedisReadinessCheck {
+        return RedisReadinessCheck(connectionFacade)
     }
 
     @Singleton
@@ -29,7 +31,10 @@ class KtorBatterypackRedisModule {
     }
 
     @Singleton(binds = [AutoCloseable::class])
-    fun redisClient(@Provided redisProps: RedisProps, meterRegistry: MeterRegistry): RedisClient {
+    fun redisConnectionFacade(
+        @Provided redisProps: RedisProps,
+        meterRegistry: MeterRegistry
+    ): RedisFacade {
         val options = MicrometerOptions.builder()
             .localDistinction(false)
             .build()
@@ -38,12 +43,13 @@ class KtorBatterypackRedisModule {
             .commandLatencyRecorder(MicrometerCommandLatencyRecorder(meterRegistry, options))
             .build()
 
-        return RedisClient.create(resources, redisProps.url)
-    }
+        return when (redisProps.mode) {
+            RedisMode.STANDALONE ->
+                StandaloneRedisFacade(RedisClient.create(resources, redisProps.url))
 
-    @Singleton
-    fun statefulRedisConnection(redisClient: RedisClient): StatefulRedisConnection<String, String> {
-        return redisClient.connect()
+            RedisMode.CLUSTER ->
+                ClusterRedisFacade(RedisClusterClient.create(resources, redisProps.url))
+        }
     }
 
 }

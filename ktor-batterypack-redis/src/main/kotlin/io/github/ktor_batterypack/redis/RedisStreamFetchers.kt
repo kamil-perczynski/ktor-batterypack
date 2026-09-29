@@ -1,7 +1,6 @@
 package io.github.ktor_batterypack.redis
 
 import io.github.ktor_batterypack.core.di.InitCallback
-import io.lettuce.core.RedisClient
 import java.lang.AutoCloseable
 
 /**
@@ -12,7 +11,7 @@ import java.lang.AutoCloseable
 class RedisStreamFetchers(
     allListeners: List<RedisStreamListener>,
     private val redisProps: RedisProps,
-    private val redisClient: RedisClient,
+    private val connectionFacade: RedisFacade,
     private val loops: List<RedisStreamsBackgroundLoop>
 ) : InitCallback, AutoCloseable {
 
@@ -28,7 +27,7 @@ class RedisStreamFetchers(
                 consumerId = nextConsumerId(consumerGroup),
                 listeners = listeners,
                 consumerGroup = consumerGroup,
-                redisClient = redisClient,
+                connectionFacade = connectionFacade,
                 loops = loops,
                 autoclaimMinIdleMs = redisProps.fetcher.autoclaimMinIdleMs
             )

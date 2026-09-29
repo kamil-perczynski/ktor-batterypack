@@ -2,12 +2,19 @@ package io.github.ktor_batterypack.redis
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription
 
+enum class RedisMode {
+    STANDALONE,
+    CLUSTER
+}
+
 /**
  * Redis connection and stream configuration properties.
  */
 data class RedisProps(
     @param:JsonPropertyDescription("Redis connection URL")
     val url: String = "redis://localhost:6379",
+    @param:JsonPropertyDescription("Redis deployment mode")
+    val mode: RedisMode = RedisMode.STANDALONE,
     @param:JsonPropertyDescription("Stream fetcher consumer configuration")
     val fetcher: FetcherProps,
     @param:JsonPropertyDescription("Stream publisher configuration")

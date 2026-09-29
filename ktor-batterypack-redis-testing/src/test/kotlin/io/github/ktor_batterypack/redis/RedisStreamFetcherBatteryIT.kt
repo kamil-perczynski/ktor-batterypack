@@ -9,7 +9,6 @@ import io.github.ktor_batterypack.redis.monitoring.RedisStreamMetrics
 import io.github.ktor_batterypack.redis.testing.MsgCapturingRedisListener
 import io.github.ktor_batterypack.redis.testing.RedisBatteryIT
 import io.lettuce.core.Consumer
-import io.lettuce.core.RedisClient
 import io.lettuce.core.XGroupCreateArgs
 import io.lettuce.core.XReadArgs
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
@@ -27,10 +26,10 @@ import kotlin.time.Duration.Companion.milliseconds
 
 class RedisStreamFetcherBatteryIT : RedisBatteryIT() {
 
-    private val redisClient: RedisClient = application.koin().get()
+    private val connectionFacade: RedisFacade = application.koin().get()
 
-    private val connection = redisClient.connect()
-    private val async get() = connection.async()
+    private val redis = connectionFacade.connect()
+    private val async get() = redis.streamAsync
 
     private val closer = Closer()
 
@@ -48,15 +47,15 @@ class RedisStreamFetcherBatteryIT : RedisBatteryIT() {
     )
     private val messageProcessor = StreamMessageProcessor(metrics)
     private val redisStreamFetchingLoop =
-        RedisStreamFetchingLoop(redisClient, messageProcessor, redisProps)
+        RedisStreamFetchingLoop(connectionFacade, messageProcessor, redisProps)
     private val redisStreamAutoclaimLoop =
-        RedisStreamAutoclaimLoop(redisClient, messageProcessor, metrics, redisProps)
+        RedisStreamAutoclaimLoop(connectionFacade, messageProcessor, metrics, redisProps)
     private val redisStreamConsumerLagMonitorLoop =
-        RedisStreamConsumerLagMonitorLoop(redisClient, metrics, redisProps)
+        RedisStreamConsumerLagMonitorLoop(connectionFacade, metrics, redisProps)
 
     @BeforeEach
     fun setUp() {
-        closer.add { connection.close() }
+        closer.add { redis.close() }
     }
 
     @AfterEach
@@ -96,7 +95,7 @@ class RedisStreamFetcherBatteryIT : RedisBatteryIT() {
 
         val fetcher = RedisStreamFetcher(
             consumerId = "reclaimer",
-            redisClient = redisClient,
+            connectionFacade = connectionFacade,
             consumerGroup = group,
             autoclaimMinIdleMs = 200,
             loops = listOf(
@@ -135,7 +134,7 @@ class RedisStreamFetcherBatteryIT : RedisBatteryIT() {
         // when: a new fetcher starts up
         val fetcher = RedisStreamFetcher(
             consumerId = "new-consumer",
-            redisClient = redisClient,
+            connectionFacade = connectionFacade,
             consumerGroup = group,
             autoclaimMinIdleMs = 200,
             loops = listOf(

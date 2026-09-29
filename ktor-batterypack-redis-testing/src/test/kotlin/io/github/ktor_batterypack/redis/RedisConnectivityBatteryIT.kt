@@ -17,7 +17,8 @@ import java.util.UUID
 
 class RedisConnectivityBatteryIT : RedisBatteryIT() {
 
-    private val redisClient = application.koin().get<RedisClient>()
+    private val redisProps: RedisProps = application.koin().get()
+    private val redisClient = RedisClient.create(redisProps.url)
 
     private lateinit var connection: StatefulRedisConnection<String, String>
 
@@ -28,7 +29,7 @@ class RedisConnectivityBatteryIT : RedisBatteryIT() {
 
     @AfterEach
     fun tearDown() {
-        connection.close()
+        redisClient.shutdown()
     }
 
     @Test
