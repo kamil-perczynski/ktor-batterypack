@@ -1,6 +1,7 @@
 package io.github.ktor_batterypack.redis.testing
 
 import io.github.ktor_batterypack.redis.RedisStreamListener
+import io.github.ktor_batterypack.redis.RedisStreamListenerConfig
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
@@ -11,7 +12,7 @@ open class MsgCapturingRedisListener(private val streamName: String) : RedisStre
     /** All payloads received by this listener, in arrival order. */
     val payloads = CopyOnWriteArrayList<CapturedMsg>()
 
-    override fun stream(): String = streamName
+    override fun config(): RedisStreamListenerConfig = RedisStreamListenerConfig(streamId = streamName)
 
     override suspend fun onMessage(payload: String, headers: Map<String, String>) {
         payloads.add(CapturedMsg(payload, headers))

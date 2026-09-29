@@ -14,6 +14,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.PartData
 import org.koin.core.annotation.Named
 import org.koin.core.annotation.Singleton
 
@@ -22,28 +23,8 @@ class HttpFlorinClient(
     @Named("florin") private val httpClient: HttpClient
 ) : PlantIdentificationClient {
 
-    override suspend fun identify(
-        images: List<MultipartUpload>,
-        tempIdentityId: String
-    ): PlantDto {
-        val formData = formData {
-            images.forEachIndexed { index, upload ->
-                val fieldName = "image${index + 1}"
-
-                val headers = Headers.build {
-                    append(
-                        HttpHeaders.ContentType,
-                        upload.contentType?.toString() ?: ContentType.Image.JPEG.toString()
-                    )
-                    append(
-                        HttpHeaders.ContentDisposition,
-                        "filename=\"${upload.filename}\""
-                    )
-                }
-
-                append(fieldName, upload.bytes, headers)
-            }
-        }
+    override suspend fun identify(images: List<MultipartUpload>, tempIdentityId: String): PlantDto {
+        val formData = toFormData(images)
 
         val response = httpClient.submitFormWithBinaryData("/api/plant-identification", formData) {
             header("X-Temp-Identity-Id", tempIdentityId)
@@ -62,6 +43,28 @@ class HttpFlorinClient(
 
             else ->
                 throw PlantIdentificationException("Unexpected error from plant identification service: ${response.status}")
+        }
+    }
+
+}
+
+private fun toFormData(images: List<MultipartUpload>): List<PartData> {
+    return formData {
+        images.forEachIndexed { index, upload ->
+            val fieldName = "image${index + 1}"
+
+            val headers = Headers.build {
+                append(
+                    HttpHeaders.ContentType,
+                    upload.contentType?.toString() ?: ContentType.Image.JPEG.toString()
+                )
+                append(
+                    HttpHeaders.ContentDisposition,
+                    "filename=\"${upload.filename}\""
+                )
+            }
+
+            append(fieldName, upload.bytes, headers)
         }
     }
 }

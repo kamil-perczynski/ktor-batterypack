@@ -68,6 +68,8 @@ class ExposedPlantRepo(private val database: Database) : PlantRepo {
         suspendTransaction(database) {
             val entity = PlantEntity.findById(plant.id)
                 ?: throw ResourceMissingException(Plant::class.java, plant.id)
+            entity.externalId = plant.externalId
+            entity.createdAt = plant.createdAt
             entity.status = plant.status.name
             entity.identifications = plant.identifications
             entity.displayName = plant.displayName

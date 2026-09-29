@@ -3,7 +3,8 @@ package io.github.kperczynski.infra
 import io.github.kperczynski.domain.wallet.WALLET_EVENTS_TOPIC
 import io.github.kperczynski.domain.wallet.WalletEvent
 import io.github.ktor_batterypack.redis.RedisStreamListener
-import io.github.ktor_batterypack.redis.RedisStreamListenerGroups.Companion.TEST_GROUP
+import io.github.ktor_batterypack.redis.RedisStreamListenerConfig
+import io.github.ktor_batterypack.redis.testing.TEST_CONSUMER_GROUP
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.withTimeoutOrNull
 import org.koin.core.annotation.Singleton
@@ -39,8 +40,7 @@ class WalletEventsMessageCollector(
         return results
     }
 
-    override fun group(): String = TEST_GROUP
-
-    override fun stream(): String = WALLET_EVENTS_TOPIC
+    override fun config(): RedisStreamListenerConfig =
+        RedisStreamListenerConfig(streamId = WALLET_EVENTS_TOPIC, consumerGroup = TEST_CONSUMER_GROUP)
 
 }

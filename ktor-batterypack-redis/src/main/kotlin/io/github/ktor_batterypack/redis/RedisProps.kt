@@ -26,8 +26,6 @@ data class PublisherProps(
  * Configuration for consuming messages from Redis streams.
  */
 data class FetcherProps(
-    @param:JsonPropertyDescription("Prefix used when creating consumer names")
-    val consumerPrefix: String = "Main-",
     @param:JsonPropertyDescription("Name of the Redis consumer group")
     val consumerGroup: String,
     @param:JsonPropertyDescription("Maximum time to wait for new messages when fetching, in milliseconds")
