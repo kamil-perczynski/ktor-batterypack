@@ -1,10 +1,14 @@
 package io.github.kperczynski.infra
 
 import io.github.kperczynski.infra.florin.FlorinModule
+import io.github.kperczynski.infra.oidc.OidcCallbacks
+import io.github.kperczynski.infra.oidc.OidcProps
+import io.github.kperczynski.infra.oidc.OidcProviderFactory
 import io.github.ktor_batterypack.core.KtorBatterypackCoreModule
 import io.github.ktor_batterypack.core.di.BootstrapCallback
 import io.github.ktor_batterypack.core.ktor.KtorProps
 import io.github.ktor_batterypack.core.ktor.client.KtorHttpClientFactory
+import io.ktor.client.HttpClient
 import io.github.ktor_batterypack.database.DatabaseProps
 import io.github.ktor_batterypack.database.KtorBatterypackDatabaseModule
 import io.github.ktor_batterypack.database.liquibase.LiquibaseMigrations
@@ -13,12 +17,16 @@ import io.github.ktor_batterypack.metrics.KtorBatterypackMetricsModule
 import io.github.ktor_batterypack.redis.KtorBatterypackRedisModule
 import io.github.ktor_batterypack.redis.KtorBatterypackRedisStreamsModule
 import io.github.ktor_batterypack.redis.RedisProps
+import io.ktor.server.application.Application
+import io.ktor.server.auth.oidc.OidcProvider
+import io.ktor.utils.io.ExperimentalKtorApi
 import io.micrometer.core.instrument.MeterRegistry
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.KoinApplication
 import org.koin.core.annotation.Module
+import org.koin.core.annotation.Named
 import org.koin.core.annotation.Singleton
 import tools.jackson.databind.json.JsonMapper
 import javax.sql.DataSource
@@ -53,6 +61,16 @@ class KtorFrameModule {
     }
 
     @Singleton
+    @Named("oidc")
+    fun oidcHttpClient(factory: KtorHttpClientFactory, props: OidcProps): HttpClient {
+        return factory.createHttpClient(
+            baseUrl = props.baseUrl,
+            connectTimeoutMs = props.connectTimeoutMs,
+            readTimeoutMs = props.readTimeoutMs
+        )
+    }
+
+    @Singleton
     fun databaseProps(configMap: ConfigMap): DatabaseProps {
         return configMap.database
     }
@@ -60,6 +78,17 @@ class KtorFrameModule {
     @Singleton
     fun liquibaseProps(configMap: ConfigMap): LiquibaseProps {
         return configMap.liquibase
+    }
+
+    @Singleton
+    fun oidcProps(configMap: ConfigMap): OidcProps {
+        return configMap.oidc
+    }
+
+    @OptIn(ExperimentalKtorApi::class)
+    @Singleton
+    fun oidcProvider(oidcProviderFactory: OidcProviderFactory): OidcProvider {
+        return oidcProviderFactory.create()
     }
 
     @Singleton(binds = [BootstrapCallback::class])

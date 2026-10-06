@@ -2,6 +2,7 @@ package io.github.ktor_batterypack.core.ktor
 
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.withContext
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Singleton
 import org.slf4j.LoggerFactory
@@ -18,12 +19,20 @@ class KtorControllersPlugin(
 ) : KtorPlugin {
 
     override fun register(app: Application) {
-        ktorApp.routing {
+        app.intercept(ApplicationCallPipeline.Plugins) {
+            withContext(CurrentApplicationCall(call)) {
+                proceed()
+            }
+        }
+
+        app.routing {
             for (controller in controllers) {
-                log.info("Registering routes for controller: {}", controller::class.simpleName)
+                log.info(
+                    "Registering routes for controller: {}",
+                    controller::class.simpleName
+                )
                 controller.register(this)
             }
         }
     }
-
 }

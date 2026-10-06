@@ -32,6 +32,7 @@ dependencies {
     implementation(libs.jakarta.validation.api)
     implementation(libs.jakarta.ws.rs.api)
     implementation(libs.jakarta.annotation.api)
+    implementation(libs.dotenv.kotlin)
 
     implementation(project(":ktor-batterypack-annotations"))
     implementation(project(":ktor-batterypack-validation"))
@@ -41,6 +42,7 @@ dependencies {
     implementation(project(":ktor-batterypack-redis"))
 
     implementation(ktorLibs.server.webjars)
+    implementation(ktorLibs.server.auth.oidc)
     implementation(libs.webjars.swagger.ui)
 
     implementation(libs.exposed.core)
@@ -125,7 +127,8 @@ sourceSets {
 }
 
 tasks.withType<KotlinCompile> {
-    compilerOptions.freeCompilerArgs.set(listOf("-Xannotation-default-target=param-property"))
+    compilerOptions.freeCompilerArgs.add("-Xannotation-default-target=param-property")
+    compilerOptions.freeCompilerArgs.add("-Xcontext-parameters")
 }
 
 ktorBatterypack {

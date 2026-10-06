@@ -25,3 +25,13 @@ florin:
 redis:
   fetcher:
     consumerGroup: ktor-example
+
+oidc:
+  enabled: true
+  issuer: "https://cognito-idp.eu-north-1.amazonaws.com/eu-north-1_SyYIRtySr"
+  baseUrl: "https://eu-north-1syyirtysr.auth.eu-north-1.amazoncognito.com"
+  clientId: "2srdne4f5vdutrcbuo7p7iucr5"
+  audience:
+    - "http://localhost:8080"
+  stateEncryptionKey: "${OIDC_STATE_ENCRYPTION_KEY:-}"
+  clientSecret: "${COGNITO_CLIENT_SECRET:-}"

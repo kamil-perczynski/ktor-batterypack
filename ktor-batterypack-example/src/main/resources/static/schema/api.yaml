@@ -134,6 +134,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ListAuthMethodsResponse'
+  /userinfo:
+    get:
+      description: Fetch OIDC userinfo from the identity provider.
+      operationId: FetchOidcUserinfo
+      tags:
+        - oidc
+      responses:
+        '200':
+          description: Returns OIDC userinfo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Userinfo'
   /auth/user-info:
     get:
       description: Fetch authenticated user's info and token status.
@@ -1505,6 +1518,60 @@ components:
           x-extra-annotations:
             - "@field:Email"
             - "@field:NotBlank"
+    Userinfo:
+      type: object
+      description: OIDC userinfo response.
+      required:
+        - sub
+        - identities
+      properties:
+        sub:
+          type: string
+          description: User's unique identifier.
+          example: "1234567890"
+        username:
+          type: string
+          description: User's username.
+          example: "john.doe"
+        preferredUsername:
+          type: string
+          description: User's preferred username.
+          example: "john.doe"
+        email:
+          type: string
+          description: User's email address.
+          example: "john.doe@somedomain.com"
+        emailVerified:
+          type: boolean
+          description: Whether the user's email is verified.
+        identities:
+          type: array
+          description: User's linked identities.
+          items:
+            $ref: '#/components/schemas/UserIdentity'
+    UserIdentity:
+      type: object
+      description: OIDC user identity.
+      properties:
+        userId:
+          type: string
+          description: Identity provider user identifier.
+        providerName:
+          type: string
+          description: Name of the identity provider.
+        providerType:
+          type: string
+          description: Type of the identity provider.
+        issuer:
+          type: string
+          description: Issuer of the identity.
+        primary:
+          type: boolean
+          description: Whether this is the primary identity.
+        dateCreated:
+          type: string
+          format: date-time
+          description: When the identity was created.
     PaymentListing:
       type: object
       properties:
