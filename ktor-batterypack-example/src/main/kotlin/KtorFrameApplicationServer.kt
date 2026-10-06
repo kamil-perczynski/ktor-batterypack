@@ -5,7 +5,8 @@ import io.github.kperczynski.infra.KtorFrameApp
 import io.github.ktor_batterypack.core.config.loadConfig
 import io.github.ktor_batterypack.core.configureKtorServer
 import io.github.ktor_batterypack.metrics.reflect.enableTimedMethodsSampling
-import io.ktor.server.application.*
+import io.ktor.server.application.Application
+import io.ktor.server.application.install
 import io.ktor.server.http.content.staticResources
 import io.ktor.server.routing.routing
 import io.ktor.server.webjars.Webjars
@@ -26,7 +27,7 @@ fun Application.configureServer() {
         install(Webjars)
 
         routing {
-            staticResources("/", "static")
+            staticResources(remotePath = "/", basePackage = "static")
         }
     }
 }

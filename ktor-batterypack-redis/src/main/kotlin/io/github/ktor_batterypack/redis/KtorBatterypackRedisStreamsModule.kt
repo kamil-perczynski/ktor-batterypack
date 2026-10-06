@@ -5,9 +5,6 @@ import io.lettuce.core.RedisClient
 import org.koin.core.annotation.Module
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Singleton
-import org.slf4j.LoggerFactory
-
-private val log = LoggerFactory.getLogger(KtorBatterypackRedisStreamsModule::class.java)
 
 @Module(includes = [KtorBatterypackRedisModule::class])
 class KtorBatterypackRedisStreamsModule {

@@ -3,3 +3,5 @@
 build
 .features
 .DS_Store
+.env
+.env.*

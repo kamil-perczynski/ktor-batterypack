@@ -11,6 +11,7 @@ import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.serialization.jackson3.JacksonConverter
 import io.micrometer.core.instrument.MeterRegistry
 import tools.jackson.databind.json.JsonMapper
@@ -50,6 +51,7 @@ class KtorHttpClientFactory(
             install(Logging) {
                 logger = Logger.DEFAULT
                 level = LogLevel.HEADERS
+                sanitizeHeader { it == HttpHeaders.Authorization }
             }
 
             install(HttpTimeout) {
