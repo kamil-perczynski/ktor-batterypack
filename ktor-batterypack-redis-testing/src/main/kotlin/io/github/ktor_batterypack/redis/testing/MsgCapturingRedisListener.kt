@@ -1,7 +1,7 @@
 package io.github.ktor_batterypack.redis.testing
 
-import io.github.ktor_batterypack.redis.RedisStreamListener
-import io.github.ktor_batterypack.redis.RedisStreamListenerConfig
+import io.github.ktor_batterypack.redis_stream.RedisStreamListener
+import io.github.ktor_batterypack.redis_stream.RedisStreamListenerConfig
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**

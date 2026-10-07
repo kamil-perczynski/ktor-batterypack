@@ -1,4 +1,4 @@
-package io.github.ktor_batterypack.redis
+package io.github.ktor_batterypack.redis_stream
 
 /**
  * Handle returned by [RedisStreamsBackgroundLoop.start].

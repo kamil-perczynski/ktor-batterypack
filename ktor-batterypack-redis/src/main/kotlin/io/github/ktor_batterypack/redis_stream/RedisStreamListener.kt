@@ -1,4 +1,4 @@
-package io.github.ktor_batterypack.redis
+package io.github.ktor_batterypack.redis_stream
 
 /**
  * The extension point for subscribing application code to Redis streams. Implement this

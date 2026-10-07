@@ -1,10 +1,10 @@
-package io.github.ktor_batterypack.redis.bgloops
+package io.github.ktor_batterypack.redis_stream.bgloops
 
-import io.github.ktor_batterypack.redis.LoopHandle
 import io.github.ktor_batterypack.redis.RedisProps
-import io.github.ktor_batterypack.redis.RedisStreamListener
-import io.github.ktor_batterypack.redis.RedisStreamsBackgroundLoop
-import io.github.ktor_batterypack.redis.monitoring.RedisStreamMetrics
+import io.github.ktor_batterypack.redis_stream.LoopHandle
+import io.github.ktor_batterypack.redis_stream.RedisStreamListener
+import io.github.ktor_batterypack.redis_stream.RedisStreamsBackgroundLoop
+import io.github.ktor_batterypack.redis_stream.monitoring.RedisStreamMetrics
 import io.lettuce.core.Consumer
 import io.lettuce.core.RedisClient
 import io.lettuce.core.XAutoClaimArgs
@@ -39,9 +39,9 @@ class RedisStreamAutoclaimLoop(
         val connection = redisClient.connect()
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob() + CoroutineName("Autoclaim"))
 
-        val autoclaimIntervalMs = redisProps.fetcher.autoclaimIntervalMs
-        val autoclaimMinIdleMs = redisProps.fetcher.autoclaimMinIdleMs
-        val autoclaimCount = redisProps.fetcher.autoclaimCount
+        val autoclaimIntervalMs = redisProps.streams.fetcher.autoclaimIntervalMs
+        val autoclaimMinIdleMs = redisProps.streams.fetcher.autoclaimMinIdleMs
+        val autoclaimCount = redisProps.streams.fetcher.autoclaimCount
         val streams = listeners.keys.toList()
         val consumer = Consumer.from(consumerGroup, fetcherId)
 

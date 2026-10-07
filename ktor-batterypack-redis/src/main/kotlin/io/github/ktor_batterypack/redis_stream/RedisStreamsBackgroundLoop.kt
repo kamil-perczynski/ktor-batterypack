@@ -1,4 +1,4 @@
-package io.github.ktor_batterypack.redis
+package io.github.ktor_batterypack.redis_stream
 
 /**
  * Contract for a background loop that runs continuously to interact with Redis Streams.

@@ -1,4 +1,4 @@
-package io.github.ktor_batterypack.redis.bgloops
+package io.github.ktor_batterypack.redis_stream.bgloops
 
 /**
  * Data class representing information about a Redis consumer.

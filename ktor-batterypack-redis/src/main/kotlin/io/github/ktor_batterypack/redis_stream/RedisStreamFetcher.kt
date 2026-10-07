@@ -1,7 +1,7 @@
-package io.github.ktor_batterypack.redis
+package io.github.ktor_batterypack.redis_stream
 
 import io.github.ktor_batterypack.core.di.InitCallback
-import io.github.ktor_batterypack.redis.bgloops.toXInfoResultDto
+import io.github.ktor_batterypack.redis_stream.bgloops.toXInfoResultDto
 import io.lettuce.core.Consumer
 import io.lettuce.core.RedisBusyException
 import io.lettuce.core.RedisClient

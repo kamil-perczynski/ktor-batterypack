@@ -1,6 +1,6 @@
 package io.github.kperczynski.domain.plant
 
-import io.github.ktor_batterypack.redis.RedisStreamPublisher
+import io.github.ktor_batterypack.redis_stream.RedisStreamPublisher
 import org.koin.core.annotation.Singleton
 
 const val PLANT_EVENTS_TOPIC = "plant_events"

@@ -2,7 +2,7 @@ package io.github.ktor_batterypack.redis
 
 import io.github.ktor_batterypack.core.health.ReadinessCheck
 import io.github.ktor_batterypack.redis.monitoring.RedisReadinessCheck
-import io.github.ktor_batterypack.redis.monitoring.RedisStreamMetrics
+import io.github.ktor_batterypack.redis_stream.monitoring.RedisStreamMetrics
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.metrics.MicrometerCommandLatencyRecorder

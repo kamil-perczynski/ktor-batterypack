@@ -5,7 +5,7 @@ import io.github.ktor_batterypack.core.KtorBatterypackCoreModule
 import io.github.ktor_batterypack.database.KtorBatterypackDatabaseModule
 import io.github.ktor_batterypack.metrics.KtorBatterypackMetricsModule
 import io.github.ktor_batterypack.redis.KtorBatterypackRedisModule
-import io.github.ktor_batterypack.redis.KtorBatterypackRedisStreamsModule
+import io.github.ktor_batterypack.redis_stream.KtorBatterypackRedisStreamsModule
 import io.github.ktor_batterypack.redis.testing.TestRedisModule
 import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Configuration

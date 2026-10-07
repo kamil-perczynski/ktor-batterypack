@@ -1,10 +1,10 @@
-package io.github.ktor_batterypack.redis.monitoring
+package io.github.ktor_batterypack.redis_stream.monitoring
 
-import io.github.ktor_batterypack.redis.LoopHandle
+import io.github.ktor_batterypack.redis_stream.LoopHandle
 import io.github.ktor_batterypack.redis.RedisProps
-import io.github.ktor_batterypack.redis.RedisStreamListener
-import io.github.ktor_batterypack.redis.RedisStreamsBackgroundLoop
-import io.github.ktor_batterypack.redis.bgloops.toXInfoResultDto
+import io.github.ktor_batterypack.redis_stream.RedisStreamListener
+import io.github.ktor_batterypack.redis_stream.RedisStreamsBackgroundLoop
+import io.github.ktor_batterypack.redis_stream.bgloops.toXInfoResultDto
 import io.lettuce.core.RedisClient
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.await
@@ -30,7 +30,7 @@ class RedisStreamConsumerLagMonitorLoop(
         val connection = redisClient.connect()
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob() + CoroutineName("LagMonitor"))
 
-        val lagCheckIntervalMs = redisProps.fetcher.lagCheckIntervalMs
+        val lagCheckIntervalMs = redisProps.streams.fetcher.lagCheckIntervalMs
         val streams = listeners.keys.toList()
 
         val job = scope.launch {
