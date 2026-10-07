@@ -1,5 +1,6 @@
-package io.github.ktor_batterypack.redis
+package io.github.ktor_batterypack.redis_stream
 
+import io.github.ktor_batterypack.redis.RedisProps
 import io.lettuce.core.XAddArgs
 import io.lettuce.core.api.StatefulRedisConnection
 import org.koin.core.annotation.Provided
@@ -13,7 +14,7 @@ private val log = LoggerFactory.getLogger(RedisStreamPublisher::class.java)
 @Singleton
 class RedisStreamPublisher(
     private val connection: StatefulRedisConnection<String, String>,
-    private val jsonMapper: JsonMapper,
+    @Provided private val jsonMapper: JsonMapper,
     @Provided private val redisProps: RedisProps,
 ) {
 
@@ -29,7 +30,7 @@ class RedisStreamPublisher(
         val eventJson = jsonMapper.writeValueAsString(payload)
 
         val effectiveRetentionMs =
-            retentionDuration?.inWholeMilliseconds ?: redisProps.publisher.retentionMs
+            retentionDuration?.inWholeMilliseconds ?: redisProps.streams.publisher.retentionMs
         val minId = System.currentTimeMillis() - effectiveRetentionMs
 
         val body = mutableMapOf("_p" to eventJson)

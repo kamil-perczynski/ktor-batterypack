@@ -1,9 +1,9 @@
-package io.github.ktor_batterypack.redis.bgloops
+package io.github.ktor_batterypack.redis_stream.bgloops
 
-import io.github.ktor_batterypack.redis.LoopHandle
+import io.github.ktor_batterypack.redis_stream.LoopHandle
 import io.github.ktor_batterypack.redis.RedisProps
-import io.github.ktor_batterypack.redis.RedisStreamListener
-import io.github.ktor_batterypack.redis.RedisStreamsBackgroundLoop
+import io.github.ktor_batterypack.redis_stream.RedisStreamListener
+import io.github.ktor_batterypack.redis_stream.RedisStreamsBackgroundLoop
 import io.lettuce.core.Consumer
 import io.lettuce.core.RedisClient
 import io.lettuce.core.XReadArgs
@@ -31,8 +31,8 @@ class RedisStreamFetchingLoop(
         val connection = redisClient.connect()
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob() + CoroutineName("StreamFetching"))
 
-        val fetchingTimeout = redisProps.fetcher.fetchingTimeout
-        val fetchingCount = redisProps.fetcher.fetchingCount
+        val fetchingTimeout = redisProps.streams.fetcher.fetchingTimeout
+        val fetchingCount = redisProps.streams.fetcher.fetchingCount
         val streams = listeners.keys.toList()
         val consumer = Consumer.from(consumerGroup, fetcherId)
 

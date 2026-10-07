@@ -1,6 +1,7 @@
-package io.github.ktor_batterypack.redis
+package io.github.ktor_batterypack.redis_stream
 
 import io.github.ktor_batterypack.core.di.InitCallback
+import io.github.ktor_batterypack.redis.RedisProps
 import io.lettuce.core.RedisClient
 import java.lang.AutoCloseable
 
@@ -20,7 +21,7 @@ class RedisStreamFetchers(
 
     init {
         val groupedListeners = allListeners.groupBy {
-            it.config().consumerGroup ?: redisProps.fetcher.consumerGroup
+            it.config().consumerGroup ?: redisProps.streams.fetcher.consumerGroup
         }
 
         this.fetchers = groupedListeners.map { (consumerGroup, listeners) ->
@@ -30,7 +31,7 @@ class RedisStreamFetchers(
                 consumerGroup = consumerGroup,
                 redisClient = redisClient,
                 loops = loops,
-                autoclaimMinIdleMs = redisProps.fetcher.autoclaimMinIdleMs
+                autoclaimMinIdleMs = redisProps.streams.fetcher.autoclaimMinIdleMs
             )
         }
     }

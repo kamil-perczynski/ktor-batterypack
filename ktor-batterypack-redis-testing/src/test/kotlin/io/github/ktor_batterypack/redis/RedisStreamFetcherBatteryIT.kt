@@ -1,13 +1,16 @@
 package io.github.ktor_batterypack.redis
 
 import io.github.ktor_batterypack.core.Closer
-import io.github.ktor_batterypack.redis.bgloops.RedisStreamAutoclaimLoop
-import io.github.ktor_batterypack.redis.bgloops.RedisStreamFetchingLoop
-import io.github.ktor_batterypack.redis.bgloops.StreamMessageProcessor
-import io.github.ktor_batterypack.redis.monitoring.RedisStreamConsumerLagMonitorLoop
-import io.github.ktor_batterypack.redis.monitoring.RedisStreamMetrics
+import io.github.ktor_batterypack.redis_stream.bgloops.RedisStreamAutoclaimLoop
+import io.github.ktor_batterypack.redis_stream.bgloops.RedisStreamFetchingLoop
+import io.github.ktor_batterypack.redis_stream.bgloops.StreamMessageProcessor
+import io.github.ktor_batterypack.redis_stream.monitoring.RedisStreamConsumerLagMonitorLoop
+import io.github.ktor_batterypack.redis_stream.monitoring.RedisStreamMetrics
 import io.github.ktor_batterypack.redis.testing.MsgCapturingRedisListener
 import io.github.ktor_batterypack.redis.testing.RedisBatteryIT
+import io.github.ktor_batterypack.redis_stream.FetcherProps
+import io.github.ktor_batterypack.redis_stream.RedisStreamFetcher
+import io.github.ktor_batterypack.redis_stream.RedisStreamProps
 import io.lettuce.core.Consumer
 import io.lettuce.core.RedisClient
 import io.lettuce.core.XGroupCreateArgs
@@ -36,15 +39,17 @@ class RedisStreamFetcherBatteryIT : RedisBatteryIT() {
 
     private val metrics = RedisStreamMetrics(SimpleMeterRegistry())
     private val redisProps = RedisProps(
-        fetcher = FetcherProps(
-            fetchingTimeout = 100,
-            fetchingCount = 10,
-            autoclaimIntervalMs = 100,
-            autoclaimMinIdleMs = 200,
-            autoclaimCount = 10,
-            lagCheckIntervalMs = 1000,
-            consumerGroup = "RedisStreamFetcherBatteryIT"
-        )
+        streams = RedisStreamProps(
+            fetcher = FetcherProps(
+                fetchingTimeout = 100,
+                fetchingCount = 10,
+                autoclaimIntervalMs = 100,
+                autoclaimMinIdleMs = 200,
+                autoclaimCount = 10,
+                lagCheckIntervalMs = 1000,
+                consumerGroup = "RedisStreamFetcherBatteryIT"
+            )
+        ),
     )
     private val messageProcessor = StreamMessageProcessor(metrics)
     private val redisStreamFetchingLoop =

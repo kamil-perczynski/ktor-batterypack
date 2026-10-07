@@ -1,7 +1,7 @@
 package io.github.kperczynski.domain.plant
 
-import io.github.ktor_batterypack.redis.RedisStreamListener
-import io.github.ktor_batterypack.redis.RedisStreamListenerConfig
+import io.github.ktor_batterypack.redis_stream.RedisStreamListener
+import io.github.ktor_batterypack.redis_stream.RedisStreamListenerConfig
 import org.koin.core.annotation.Singleton
 import org.slf4j.LoggerFactory
 import tools.jackson.databind.json.JsonMapper

@@ -1,7 +1,6 @@
 package io.github.kperczynski.infra
 
 import io.github.kperczynski.infra.florin.FlorinModule
-import io.github.kperczynski.infra.oidc.OidcCallbacks
 import io.github.kperczynski.infra.oidc.OidcProps
 import io.github.kperczynski.infra.oidc.OidcProviderFactory
 import io.github.ktor_batterypack.core.KtorBatterypackCoreModule
@@ -15,9 +14,8 @@ import io.github.ktor_batterypack.database.liquibase.LiquibaseMigrations
 import io.github.ktor_batterypack.database.liquibase.LiquibaseProps
 import io.github.ktor_batterypack.metrics.KtorBatterypackMetricsModule
 import io.github.ktor_batterypack.redis.KtorBatterypackRedisModule
-import io.github.ktor_batterypack.redis.KtorBatterypackRedisStreamsModule
+import io.github.ktor_batterypack.redis_stream.KtorBatterypackRedisStreamsModule
 import io.github.ktor_batterypack.redis.RedisProps
-import io.ktor.server.application.Application
 import io.ktor.server.auth.oidc.OidcProvider
 import io.ktor.utils.io.ExperimentalKtorApi
 import io.micrometer.core.instrument.MeterRegistry
