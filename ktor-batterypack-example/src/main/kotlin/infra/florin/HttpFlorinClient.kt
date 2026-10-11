@@ -4,7 +4,7 @@ import tools.jackson.databind.JsonNode
 import io.github.kperczynski.domain.plant.model.PlantDto
 import io.github.kperczynski.domain.plant.PlantIdentificationClient
 import io.github.ktor_batterypack.core.multipart.MultipartUpload
-import io.github.ktor_batterypack.core.ktor.client.pathPattern
+import io.github.ktor_batterypack.metrics.http.client.pathPattern
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.forms.formData

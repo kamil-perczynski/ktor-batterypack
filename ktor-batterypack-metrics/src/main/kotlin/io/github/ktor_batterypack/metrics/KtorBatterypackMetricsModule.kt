@@ -1,7 +1,10 @@
 package io.github.ktor_batterypack.metrics
 
 import io.github.ktor_batterypack.core.ktor.KtorController
-import io.ktor.server.application.*
+import io.github.ktor_batterypack.core.ktor.client.KtorHttpClientPlugin
+import io.github.ktor_batterypack.metrics.http.client.HttpClientMetricsPlugin
+import io.ktor.client.HttpClient
+import io.ktor.server.application.Application
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.prometheusmetrics.PrometheusConfig
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
@@ -19,6 +22,11 @@ class KtorBatterypackMetricsModule {
         // otherwise, a warning is shown
         bootstrapper.forEach { it.init(reg) }
         return reg
+    }
+
+    @Singleton(binds = [KtorHttpClientPlugin::class])
+    fun httpClientMetricsPlugin(meterRegistry: MeterRegistry): KtorHttpClientPlugin {
+        return HttpClientMetricsPlugin(meterRegistry)
     }
 
     @Singleton(binds = [MeterRegistryInit::class])

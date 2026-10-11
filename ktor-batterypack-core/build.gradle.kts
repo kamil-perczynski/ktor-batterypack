@@ -67,8 +67,6 @@ dependencies {
 
     api(libs.logback.classic)
 
-    compileOnly(libs.micrometer.registry.prometheus)
-
     implementation(libs.jakarta.validation.api)
     implementation(project(":ktor-batterypack-validation"))
 

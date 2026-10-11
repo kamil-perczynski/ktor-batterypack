@@ -1,7 +1,7 @@
 package io.github.kperczynski.infra.oidc
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import io.github.ktor_batterypack.core.ktor.client.pathPattern
+import io.github.ktor_batterypack.metrics.http.client.pathPattern
 import io.ktor.client.HttpClient
 import io.ktor.client.request.basicAuth
 import io.ktor.client.request.forms.FormDataContent

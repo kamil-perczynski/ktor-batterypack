@@ -1,3 +1,5 @@
+@file:Suppress("RECEIVER_NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
+
 package io.github.ktor_batterypack.redis
 
 import org.assertj.core.api.Assertions.assertThat
