@@ -18,6 +18,7 @@ dependencyResolutionManagement {
 }
 
 include("ktor-batterypack-annotations")
+include("ktor-batterypack-authz")
 include("ktor-batterypack-core")
 include("ktor-batterypack-database")
 include("ktor-batterypack-metrics")
