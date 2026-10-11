@@ -18,6 +18,8 @@ ktor-batterypack = "0.0.0-SNAPSHOT"
 openapi-generator = "7.25.0"
 hoplite = "2.9.0"
 junit = "5.14.4"
+kafka-clients = "4.3.1"
+confluent = "8.3.2"
 koin = "4.2.1"
 koin-plugin = "1.0.0-RC2"
 kotlin = "2.3.20"
@@ -68,6 +70,10 @@ micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-p
 postgresql = { module = "org.postgresql:postgresql", version = "42.7.10" }
 webjars-swagger-ui = { module = "org.webjars:swagger-ui", version.ref = "swagger-ui" }
 testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
+testcontainers-kafka = { module = "org.testcontainers:testcontainers-kafka", version.ref = "testcontainers" }
+confluent-schema-registry-client = { module = "io.confluent:kafka-schema-registry-client", version.ref = "confluent" }
+confluent-avro-serializer = { module = "io.confluent:kafka-avro-serializer", version.ref = "confluent" }
+kafka-clients = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka-clients" }
 jakarta-validation-api = { module = "jakarta.validation:jakarta.validation-api", version.ref = "jakarta-validation" }
 jakarta-ws-rs-api = { module = "jakarta.ws.rs:jakarta.ws.rs-api", version.ref = "jakarta-ws-rs" }
 jakarta-annotation-api = { module = "jakarta.annotation:jakarta.annotation-api", version.ref = "jakarta-annotation" }
