@@ -1,6 +1,6 @@
 package io.github.ktor_batterypack.core.ktor.client
 
-import io.ktor.client.*
+import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngineFactory
 import io.ktor.client.engine.java.Java
 import io.ktor.client.plugins.HttpTimeout
@@ -13,7 +13,6 @@ import io.ktor.client.plugins.logging.Logging
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.serialization.jackson3.JacksonConverter
-import io.micrometer.core.instrument.MeterRegistry
 import tools.jackson.databind.json.JsonMapper
 
 /**
@@ -26,13 +25,13 @@ import tools.jackson.databind.json.JsonMapper
  * Failures are recorded with an `error` tag and a synthetic status (`TIMEOUT`, `CONNECT_TIMEOUT`,
  * `IO_ERROR`, or `ERROR`).
  *
- * @param meterRegistry registry where client metrics are reported
  * @param jsonMapper shared Jackson mapper used for request/response bodies
+ * @param plugins additional [KtorHttpClientPlugin]s installed on every created client
  * @param engineFactory client engine to use, defaults to [Java]
  */
 class KtorHttpClientFactory(
-    private val meterRegistry: MeterRegistry,
     private val jsonMapper: JsonMapper,
+    private val plugins: List<KtorHttpClientPlugin>,
     private val engineFactory: HttpClientEngineFactory<*> = Java
 ) {
 
@@ -59,12 +58,12 @@ class KtorHttpClientFactory(
                 requestTimeoutMillis = readTimeoutMs
             }
 
-            install(ClientMicrometerMetricsPlugin) {
-                registry = meterRegistry
-            }
-
             defaultRequest {
                 url(baseUrl)
+            }
+
+            for (plugin in plugins) {
+                plugin.register(this)
             }
         }
 }

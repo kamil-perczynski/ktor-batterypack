@@ -7,6 +7,7 @@ import io.github.ktor_batterypack.core.KtorBatterypackCoreModule
 import io.github.ktor_batterypack.core.di.BootstrapCallback
 import io.github.ktor_batterypack.core.ktor.KtorProps
 import io.github.ktor_batterypack.core.ktor.client.KtorHttpClientFactory
+import io.github.ktor_batterypack.core.ktor.client.KtorHttpClientPlugin
 import io.ktor.client.HttpClient
 import io.github.ktor_batterypack.database.DatabaseProps
 import io.github.ktor_batterypack.database.KtorBatterypackDatabaseModule
@@ -54,8 +55,8 @@ object KtorFrameApp
 class KtorFrameModule {
 
     @Singleton
-    fun httpClientFactory(jsonMapper: JsonMapper, meterRegistry: MeterRegistry): KtorHttpClientFactory {
-        return KtorHttpClientFactory(meterRegistry, jsonMapper)
+    fun httpClientFactory(jsonMapper: JsonMapper, plugins: List<KtorHttpClientPlugin>): KtorHttpClientFactory {
+        return KtorHttpClientFactory(jsonMapper, plugins)
     }
 
     @Singleton
