@@ -11,6 +11,9 @@ pluginManagement {
 dependencyResolutionManagement {
     repositories {
         mavenCentral()
+        maven {
+            url = uri("https://packages.confluent.io/maven/")
+        }
     }
     versionCatalogs {
         create("ktorLibs").from("io.ktor:ktor-version-catalog:3.6.0")
@@ -25,6 +28,8 @@ include("ktor-batterypack-metrics")
 include("ktor-batterypack-redis")
 include("ktor-batterypack-redis-testing")
 include("ktor-batterypack-database-testing")
+include("ktor-batterypack-kafka")
+include("ktor-batterypack-kafka-testing")
 include("ktor-batterypack-example")
 include("ktor-batterypack-validation-ksp")
 include("ktor-batterypack-validation")
