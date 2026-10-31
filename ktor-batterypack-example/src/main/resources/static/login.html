@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sign in · ktor-batterypack</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="/ui/app.css">
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script src="https://unpkg.com/mustache@4.2.0/mustache.min.js"></script>
+    <script src="/ui/app.js"></script>
+</head>
+<body>
+<div class="header-placeholder" hx-get="/ui/nav.html" hx-trigger="load" hx-swap="outerHTML"></div>
+
+<main class="auth-shell">
+    <div class="auth-card" hx-get="/auth/user-info" hx-trigger="load" hx-ext="json-view"
+         data-template="tpl-already-signed-in" data-error-template="tpl-sign-in" data-prepare="auth">
+        <div class="skeleton" style="height: 260px"></div>
+    </div>
+</main>
+
+<script type="text/x-mustache" id="tpl-sign-in">
+    <div class="card">
+        <div class="card-body">
+            <span class="brand-mark" style="width: 44px; height: 44px; border-radius: 12px">
+                <svg class="icon" style="width: 22px; height: 22px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+            </span>
+            <div class="stack-sm">
+                <h1 class="page-title" style="font-size: 22px">Sign in to ktor-batterypack</h1>
+                <p class="muted">Continue with your organisation account.</p>
+            </div>
+            <a href="/oidc/cognito/login" class="btn btn-primary btn-lg btn-block">Continue with Cognito</a>
+        </div>
+    </div>
+</script>
+
+<script type="text/x-mustache" id="tpl-already-signed-in">
+    {{#data}}
+    <div class="card">
+        <div class="card-body">
+            <span class="avatar avatar-lg">{{initial}}</span>
+            <div class="stack-sm">
+                <h1 class="page-title" style="font-size: 22px">You're signed in</h1>
+                <p class="muted">{{auth.email}}</p>
+            </div>
+            <div class="row" style="width: 100%">
+                <a href="/auth/sign-out" class="btn btn-lg" style="flex: 1">Sign out</a>
+                <a href="/me.html" class="btn btn-primary btn-lg" style="flex: 1">Profile</a>
+            </div>
+        </div>
+    </div>
+    {{/data}}
+</script>
+</body>
+</html>

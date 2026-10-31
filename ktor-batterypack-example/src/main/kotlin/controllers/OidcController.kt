@@ -6,19 +6,23 @@ import io.github.kperczynski.infra.oidc.IdpHttpClientException
 import io.github.kperczynski.infra.oidc.OidcAuthCookies
 import io.github.kperczynski.infra.oidc.OidcErrorCode
 import io.github.kperczynski.infra.oidc.OidcIdpClient
+import io.github.kperczynski.infra.oidc.OidcProps
 import io.github.kperczynski.infra.oidc.OidcUserinfo
 import io.github.ktor_batterypack.core.exception.ErrorCodeException
 import io.github.ktor_batterypack.core.ktor.KtorController
 import io.github.ktor_batterypack.core.ktor.currentRoutingCall
 import io.ktor.http.*
-import io.ktor.server.auth.*
-import io.ktor.server.auth.oidc.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.utils.io.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.long
+import kotlinx.serialization.json.longOrNull
 import org.koin.core.annotation.Singleton
 import org.slf4j.LoggerFactory
 import pl.kperczynski.florin.rest.AuthApi
@@ -32,13 +36,14 @@ import pl.kperczynski.florin.rest.dto.ForgotPasswordInitRequestDto
 import pl.kperczynski.florin.rest.dto.RegisterUserConfirmRequestDto
 import pl.kperczynski.florin.rest.dto.RegisterUserInitRequestDto
 import tools.jackson.databind.json.JsonMapper
+import java.util.Base64
 
 private val log = LoggerFactory.getLogger(OidcController::class.java)
 
 @Singleton
 class OidcController(
     private val jsonMapper: JsonMapper,
-    private val oidcProvider: OidcProvider,
+    private val props: OidcProps,
     private val idpClient: OidcIdpClient,
     private val authCookies: OidcAuthCookies,
 ) : KtorController, AuthApi {
@@ -46,6 +51,10 @@ class OidcController(
     override fun register(routing: Routing) {
         routing.get("/auth/sign-out") {
             signOut()
+            call.respondRedirect(idpLogoutUrl(props))
+        }
+
+        routing.get("/oidc/cognito/logout") {
             call.respondRedirect("/")
         }
 
@@ -66,7 +75,11 @@ class OidcController(
             authInit(
                 AuthInitParamsParameterDto(
                     extendedScope = call.request.queryParameters["extendedScope"]?.toBoolean(),
-                    provider = call.request.queryParameters["provider"]?.let { AuthProviderDto.valueOf(it) }
+                    provider = call.request.queryParameters["provider"]?.let {
+                        AuthProviderDto.valueOf(
+                            it
+                        )
+                    }
                 )
             )
         }
@@ -104,11 +117,9 @@ class OidcController(
             call.respond(HttpStatusCode.OK, res)
         }
 
-        routing.authenticateWith(oidcProvider.jwtBearer) {
-            get("/auth/user-info") {
-                val authInfo = fetchUserInfo()
-                call.respond(HttpStatusCode.OK, authInfo)
-            }
+        routing.get("/auth/user-info") {
+            val authInfo = fetchUserInfo()
+            call.respond(HttpStatusCode.OK, authInfo)
         }
     }
 
@@ -126,12 +137,12 @@ class OidcController(
 
     override suspend fun fetchUserInfo(): AuthInfoDto {
         val call = currentRoutingCall()
-        val accessToken = call.principal<OidcToken.Access>()
+        val accessToken = authCookies.readAccessToken(call.request)
             ?: throw ErrorCodeException(OidcErrorCode.ACCESS_TOKEN_MISSING)
 
         val refreshToken = authCookies.readRefreshToken(call.request)
-        val userinfo = idpClient.fetchUserinfo(accessToken.value)
-        return toAuthInfo(userinfo, accessToken.claims, refreshToken)
+        val userinfo = idpClient.fetchUserinfo(accessToken)
+        return toAuthInfo(userinfo, decodeAccessTokenClaims(accessToken), props, refreshToken)
     }
 
     override suspend fun forgotPasswordConfirm(forgotPasswordConfirmRequestDto: ForgotPasswordConfirmRequestDto): AckDto {
@@ -185,13 +196,14 @@ class OidcController(
 
 private fun toAuthInfo(
     userInfo: OidcUserinfo,
-    claims: TokenClaims,
+    claims: JsonObject,
+    props: OidcProps,
     refreshToken: String?,
 ): AuthInfoDto {
     val now = System.currentTimeMillis() / 1000
-    val exp = claims.expiresAt
+    val exp = claims["exp"]?.jsonPrimitive?.longOrNull
 
-    val groups = claims.claim("cognito:groups")?.jsonArray
+    val groups = claims[props.groupsClaim]?.jsonArray
         ?.map { it.jsonPrimitive.content }
         ?.toList()
 
@@ -202,11 +214,24 @@ private fun toAuthInfo(
             preferredUsername = userInfo.preferredUsername ?: "",
             email = userInfo.email ?: ""
         ),
-        soonToExpire = exp != null && exp.epochSeconds < now + 300,
-        expired = exp != null && exp.epochSeconds < now,
+        soonToExpire = exp != null && exp < now + 300,
+        expired = exp != null && exp < now,
         refreshPossible = !refreshToken.isNullOrBlank(),
-        privileged = groups?.contains("admins") ?: false
+        privileged = groups?.contains(props.privilegedGroupName) ?: false
     )
+}
+
+private fun idpLogoutUrl(props: OidcProps): String {
+    val url = URLBuilder(props.baseUrl)
+    url.appendPathSegments("logout")
+    url.parameters.append("client_id", props.clientId)
+    url.parameters.append("logout_uri", props.signOutRedirectUri)
+    return url.buildString()
+}
+
+private fun decodeAccessTokenClaims(accessToken: String): JsonObject {
+    val payload = accessToken.split(".")[1]
+    return Json.parseToJsonElement(String(Base64.getUrlDecoder().decode(payload))).jsonObject
 }
 
 

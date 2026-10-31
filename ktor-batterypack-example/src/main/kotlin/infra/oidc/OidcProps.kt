@@ -7,6 +7,7 @@ data class OidcProps(
     val clientId: String,
     val clientSecret: String,
     val baseUrl: String,
+    val signOutRedirectUri: String = "http://localhost:8080/oidc/cognito/logout",
     val connectTimeoutMs: Long = 250L,
     val readTimeoutMs: Long = 1000L,
     val stateEncryptionKey: String? = null,
