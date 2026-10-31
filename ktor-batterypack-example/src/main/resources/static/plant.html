@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Plant · ktor-batterypack</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="/ui/app.css">
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script src="https://unpkg.com/mustache@4.2.0/mustache.min.js"></script>
+    <script src="/ui/app.js"></script>
+</head>
+<body>
+<div class="header-placeholder" hx-get="/ui/nav.html" hx-trigger="load" hx-swap="outerHTML"></div>
+
+<main class="page">
+    <a href="/plants.html" class="back small">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        All plants
+    </a>
+
+    <div hx-get="/api/plants" hx-trigger="load" hx-ext="json-view"
+         data-template="tpl-plant" data-prepare="plant"
+         hx-on::config-request="event.detail.path = '/api/plants/' + encodeURIComponent(queryParam('id') || '')">
+        <div class="stack">
+            <div class="skeleton" style="height: 64px; width: 360px; max-width: 100%"></div>
+            <div class="skeleton" style="height: 240px"></div>
+        </div>
+    </div>
+</main>
+
+<script type="text/x-mustache" id="tpl-plant">
+    {{#data}}
+    <div class="stack" style="gap: 24px">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">{{name}}</h1>
+                <p class="page-subtitle italic">{{subtitle}}{{#variety}} ‘{{variety}}’{{/variety}}</p>
+            </div>
+            <div class="row">
+                <span class="badge badge-dot {{#healthy}}badge-success{{/healthy}}{{^healthy}}badge-warning{{/healthy}}">{{#humanize}}{{healthStatus.condition}}{{/humanize}}</span>
+                {{#toxic}}<span class="badge badge-danger">Toxic</span>{{/toxic}}
+                <span class="badge">{{#humanize}}{{difficulty}}{{/humanize}}</span>
+            </div>
+        </div>
+
+        {{#images.length}}
+        <div class="gallery">
+            {{#images}}<img src="{{url}}" alt="" loading="lazy" onerror="this.remove()">{{/images}}
+        </div>
+        {{/images.length}}
+
+        <div class="grid grid-3">
+            <div class="card">
+                <div class="card-body" style="gap: 10px">
+                    <p class="muted small">Health</p>
+                    <p class="card-title">{{#humanize}}{{healthStatus.condition}}{{/humanize}}{{#healthStatus.cause}} · {{#humanize}}{{healthStatus.cause}}{{/humanize}}{{/healthStatus.cause}}</p>
+                    {{#healthStatus.details}}<p class="muted small">{{healthStatus.details}}</p>{{/healthStatus.details}}
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body" style="gap: 10px">
+                    <p class="muted small">Toxicity</p>
+                    <p class="card-title">{{#humanize}}{{toxicity.level}}{{/humanize}}</p>
+                    {{#toxicity.details}}<p class="muted small">{{toxicity.details}}</p>{{/toxicity.details}}
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body" style="gap: 10px">
+                    <p class="muted small">Overview</p>
+                    <ul class="list">
+                        <li><span>Difficulty</span><span>{{#humanize}}{{difficulty}}{{/humanize}}</span></li>
+                        <li><span>Status</span><span>{{#humanize}}{{status}}{{/humanize}}</span></li>
+                        <li><span>Added</span><span>{{#date}}{{createdAt}}{{/date}}</span></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        {{#careInstructions}}
+        <div class="card">
+            <div class="card-header"><h2 class="card-title">Care instructions</h2></div>
+            <div class="card-body" style="gap: 20px">
+                <div class="grid grid-2" style="gap: 20px">
+                    <div class="stack-sm">
+                        <div class="row"><p class="strong">Light</p><span class="badge">{{#humanize}}{{lighting.type}}{{/humanize}}</span></div>
+                        <p class="muted small">{{lighting.details}}</p>
+                    </div>
+                    <div class="stack-sm">
+                        <div class="row"><p class="strong">Soil</p><span class="badge">{{#humanize}}{{soil.type}}{{/humanize}}</span></div>
+                        <p class="muted small">{{soil.details}}</p>
+                    </div>
+                    <div class="stack-sm">
+                        <p class="strong">Watering</p>
+                        <p class="muted small">{{watering.details}}</p>
+                    </div>
+                    <div class="stack-sm">
+                        <p class="strong">Fertilizing</p>
+                        <p class="muted small">{{fertilizing.details}}</p>
+                    </div>
+                    <div class="stack-sm">
+                        <p class="strong">Repotting</p>
+                        <p class="muted small">Every {{repotting.intervalMonths}} months{{#repottingMonths}}, best in {{repottingMonths}}{{/repottingMonths}}. {{repotting.details}}</p>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Interval</th>
+                            {{#months}}<th>{{.}}</th>{{/months}}
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {{#schedule}}
+                        <tr>
+                            <th>{{label}}</th>
+                            {{#values}}<td>{{.}}</td>{{/values}}
+                        </tr>
+                        {{/schedule}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {{/careInstructions}}
+
+        <div class="grid grid-2">
+            <div class="card">
+                <div class="card-header"><h2 class="card-title">Care history</h2></div>
+                <div class="card-body">
+                    <ul class="list">
+                        <li><span>Last watering</span><span>{{#date}}{{lastWateringDate}}{{/date}}</span></li>
+                        <li><span>Last fertilization</span><span>{{#date}}{{lastFertilizationDate}}{{/date}}</span></li>
+                        <li><span>Last repotting</span><span>{{#date}}{{lastRepottingDate}}{{/date}}</span></li>
+                        <li><span>Last status update</span><span>{{#date}}{{lastStatusUpdateDate}}{{/date}}</span></li>
+                        {{#lastWatered}}<li><span>Last watered</span><span>{{#humanize}}{{lastWatered}}{{/humanize}}</span></li>{{/lastWatered}}
+                        {{#soilMoisture}}<li><span>Soil moisture</span><span>{{#humanize}}{{soilMoisture}}{{/humanize}}</span></li>{{/soilMoisture}}
+                        {{#lightLocation}}<li><span>Light location</span><span>{{#humanize}}{{lightLocation}}{{/humanize}}</span></li>{{/lightLocation}}
+                    </ul>
+                </div>
+            </div>
+
+            {{#identifications.length}}
+            <div class="card">
+                <div class="card-header"><h2 class="card-title">Identification candidates</h2></div>
+                <div class="card-body">
+                    <ul class="candidates">
+                        {{#identifications}}
+                        <li>
+                            <div class="row small">
+                                <span class="strong">{{mostLikelyCommonName}}</span>
+                                <span class="muted italic">{{species}}</span>
+                                <span class="spacer"></span>
+                                <span class="mono">{{#percent}}{{speciesProbability}}{{/percent}}</span>
+                            </div>
+                            <div class="meter"><span style="width: {{#percent}}{{speciesProbability}}{{/percent}}"></span></div>
+                        </li>
+                        {{/identifications}}
+                    </ul>
+                </div>
+            </div>
+            {{/identifications.length}}
+        </div>
+    </div>
+    {{/data}}
+</script>
+</body>
+</html>

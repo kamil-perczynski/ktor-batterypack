@@ -19,6 +19,8 @@ class OidcAuthCookies(private val props: OidcProps) {
         append(call, props.refreshTokenCookieName, "", 0)
     }
 
+    fun readAccessToken(request: ApplicationRequest): String? = request.cookies[props.accessTokenCookieName]
+
     fun readRefreshToken(request: ApplicationRequest): String? = request.cookies[props.refreshTokenCookieName]
 
     private fun append(call: ApplicationCall, name: String, value: String, maxAgeSeconds: Long) {

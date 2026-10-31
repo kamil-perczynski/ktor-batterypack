@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Wallets · ktor-batterypack</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="/ui/app.css">
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script src="https://unpkg.com/mustache@4.2.0/mustache.min.js"></script>
+    <script src="/ui/app.js"></script>
+</head>
+<body>
+<div class="header-placeholder" hx-get="/ui/nav.html" hx-trigger="load" hx-swap="outerHTML"></div>
+
+<main class="page">
+    <div>
+        <h1 class="page-title">Wallets</h1>
+        <p class="page-subtitle">Look up a balance or request a top-up.</p>
+    </div>
+
+    <div class="grid grid-2">
+        <div class="card">
+            <div class="card-header"><h2 class="card-title">Find wallet</h2></div>
+            <div class="card-body">
+                <form id="find-wallet" class="input-group"
+                      hx-get="/api/wallets/"
+                      hx-target="#wallet"
+                      hx-ext="json-view"
+                      data-template="tpl-wallet"
+                      hx-disabled-elt="find button"
+                      hx-on::config-request="event.detail.path = '/api/wallets/' + encodeURIComponent(this.elements.id.value); event.detail.parameters = {}">
+                    <input name="id" type="number" min="0" placeholder="Wallet id" aria-label="Wallet id" required class="input">
+                    <button type="submit" class="btn btn-primary">Find</button>
+                </form>
+                <div id="wallet" class="result" style="margin-top: 0; align-items: stretch"></div>
+            </div>
+        </div>
+
+        <form id="topup-wallet" class="card"
+              hx-get="/api/wallets/topup"
+              hx-target="#topup-result"
+              hx-ext="json-view"
+              data-template="tpl-topup"
+              hx-disabled-elt="find button"
+              hx-on::config-request="for (const key of Object.keys(event.detail.parameters)) { if (event.detail.parameters[key] === '') delete event.detail.parameters[key] }">
+            <div class="card-header"><h2 class="card-title">Request top-up</h2></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="field">
+                        <label class="label" for="topup-wallet-id">Wallet id</label>
+                        <input id="topup-wallet-id" name="walletId" type="number" min="0" placeholder="Optional" class="input">
+                    </div>
+                    <div class="field">
+                        <label class="label" for="topup-user-id">User id</label>
+                        <input id="topup-user-id" name="userId" type="number" min="0" placeholder="Optional" class="input">
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label" for="topup-amount">Amount</label>
+                    <input id="topup-amount" name="amount" type="number" step="0.01" min="0.01" placeholder="0.00" required class="input">
+                    <p class="hint">Provide a wallet id, a user id, or both. A user id alone creates a new wallet.</p>
+                </div>
+                <div id="topup-result" class="result" style="margin-top: 0; align-items: stretch"></div>
+            </div>
+            <div class="card-footer">
+                <button type="submit" class="btn btn-primary">Request top-up</button>
+            </div>
+        </form>
+    </div>
+</main>
+
+<script>
+    function useWallet(id) {
+        document.querySelector("#topup-wallet [name=walletId]").value = id;
+        document.querySelector("#topup-wallet [name=amount]").focus();
+    }
+
+    function showWallet(id) {
+        const form = document.getElementById("find-wallet");
+        form.elements.id.value = id;
+        htmx.trigger(form, "submit");
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const id = queryParam("id");
+        if (id) {
+            showWallet(id);
+        }
+        const userId = queryParam("userId");
+        if (userId) {
+            document.querySelector("#topup-wallet [name=userId]").value = userId;
+            document.querySelector("#topup-wallet [name=amount]").focus();
+        }
+    });
+</script>
+
+<script type="text/x-mustache" id="tpl-wallet">
+    {{#data}}
+    <div class="stat">
+        <div class="row">
+            <span class="stat-label">Wallet #{{id}}</span>
+            <span class="spacer"></span>
+            <a class="link small" href="/users.html?id={{userId}}">User #{{userId}}</a>
+        </div>
+        <p class="stat-value">{{#money}}{{balance}}{{/money}}</p>
+        <div class="row">
+            <button type="button" class="btn btn-sm" onclick="useWallet('{{id}}')">Top up</button>
+            <button type="button" class="btn btn-sm btn-ghost" onclick="showWallet('{{id}}')">Refresh</button>
+        </div>
+    </div>
+    {{/data}}
+</script>
+
+<script type="text/x-mustache" id="tpl-topup">
+    {{#data}}
+    <div class="alert alert-success">
+        <div class="alert-body">
+            <p class="alert-title">Top-up requested</p>
+            <p>Wallet #{{id}} · user #{{userId}} · current balance {{#money}}{{balance}}{{/money}}</p>
+        </div>
+        <button type="button" class="btn btn-sm" onclick="showWallet('{{id}}')">Check balance</button>
+    </div>
+    {{/data}}
+</script>
+</body>
+</html>

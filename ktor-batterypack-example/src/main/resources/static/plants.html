@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Plants · ktor-batterypack</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="/ui/app.css">
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script src="https://unpkg.com/mustache@4.2.0/mustache.min.js"></script>
+    <script src="/ui/app.js"></script>
+</head>
+<body>
+<div class="header-placeholder" hx-get="/ui/nav.html" hx-trigger="load" hx-swap="outerHTML"></div>
+
+<main class="page">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Plants</h1>
+            <p class="page-subtitle">Everything you have identified so far.</p>
+        </div>
+        <div class="row">
+            <button class="btn btn-ghost"
+                    hx-get="/api/plants" hx-target="#plants" hx-ext="json-view"
+                    data-template="tpl-plants" data-prepare="plants">
+                Reload
+            </button>
+            <a href="/identify.html" class="btn btn-primary">Identify a plant</a>
+        </div>
+    </div>
+
+    <div id="plants" hx-get="/api/plants" hx-trigger="load" hx-ext="json-view"
+         data-template="tpl-plants" data-prepare="plants">
+        <div class="grid grid-3">
+            <div class="skeleton" style="height: 320px"></div>
+            <div class="skeleton" style="height: 320px"></div>
+            <div class="skeleton" style="height: 320px"></div>
+        </div>
+    </div>
+</main>
+
+<script type="text/x-mustache" id="tpl-plants">
+    {{#data}}
+    {{#items.length}}
+    <div class="grid grid-3">
+        {{#items}}
+        <a href="/plant.html?id={{id}}" class="card card-link">
+            <div class="plant-cover">{{#cover}}<img src="{{cover}}" alt="{{name}}" loading="lazy" onerror="this.remove()">{{/cover}}</div>
+            <div class="card-body" style="gap: 12px">
+                <div>
+                    <h2 class="card-title">{{name}}</h2>
+                    <p class="muted small italic">{{subtitle}}{{#variety}} ‘{{variety}}’{{/variety}}</p>
+                </div>
+                <div class="row">
+                    <span class="badge badge-dot {{#healthy}}badge-success{{/healthy}}{{^healthy}}badge-warning{{/healthy}}">{{#humanize}}{{healthStatus.condition}}{{/humanize}}</span>
+                    <span class="badge">{{#humanize}}{{difficulty}}{{/humanize}}</span>
+                    {{#toxic}}<span class="badge badge-danger">Toxic</span>{{/toxic}}
+                </div>
+                <p class="faint tiny">Added {{#date}}{{createdAt}}{{/date}}</p>
+            </div>
+        </a>
+        {{/items}}
+    </div>
+    {{/items.length}}
+    {{^items.length}}
+    <div class="card">
+        <div class="empty">
+            <span class="icon-tile">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+            </span>
+            <div class="stack-sm">
+                <p class="card-title">No plants yet</p>
+                <p class="muted">Identify your first plant from a photo.</p>
+            </div>
+            <a href="/identify.html" class="btn btn-primary">Identify a plant</a>
+        </div>
+    </div>
+    {{/items.length}}
+    {{/data}}
+</script>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ktor-batterypack</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="/ui/app.css">
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script src="https://unpkg.com/mustache@4.2.0/mustache.min.js"></script>
+    <script src="/ui/app.js"></script>
+</head>
+<body>
+<div class="header-placeholder" hx-get="/ui/nav.html" hx-trigger="load" hx-swap="outerHTML"></div>
+
+<main class="page">
+    <section class="hero">
+        <span class="eyebrow">ktor-batterypack example</span>
+        <h1 class="hero-title">Plant care, wallets and users.<br><span class="muted">One small app.</span></h1>
+        <p class="hero-subtitle">Identify plants from photos, follow their care schedule, and manage the users and wallets behind them.</p>
+        <div hx-get="/auth/user-info" hx-trigger="load" hx-ext="json-view"
+             data-template="tpl-home-auth" data-error-template="tpl-home-anon" data-prepare="auth">
+            <div class="skeleton" style="width: 240px; height: 36px"></div>
+        </div>
+    </section>
+
+    <section class="grid grid-4">
+        <a href="/plants.html" class="card card-link feature">
+            <div class="card-body">
+                <div class="row">
+                    <span class="icon-tile">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+                    </span>
+                    <span class="spacer"></span>
+                    <svg class="icon arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </div>
+                <div class="stack-sm">
+                    <h2 class="card-title">Plants</h2>
+                    <p class="muted small">Health, toxicity and care schedule for every plant.</p>
+                </div>
+            </div>
+        </a>
+        <a href="/identify.html" class="card card-link feature">
+            <div class="card-body">
+                <div class="row">
+                    <span class="icon-tile">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                    </span>
+                    <span class="spacer"></span>
+                    <svg class="icon arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </div>
+                <div class="stack-sm">
+                    <h2 class="card-title">Identify</h2>
+                    <p class="muted small">Upload up to three photos to recognise a species.</p>
+                </div>
+            </div>
+        </a>
+        <a href="/wallets.html" class="card card-link feature">
+            <div class="card-body">
+                <div class="row">
+                    <span class="icon-tile">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg>
+                    </span>
+                    <span class="spacer"></span>
+                    <svg class="icon arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </div>
+                <div class="stack-sm">
+                    <h2 class="card-title">Wallets</h2>
+                    <p class="muted small">Check a balance and request a top-up.</p>
+                </div>
+            </div>
+        </a>
+        <a href="/users.html" class="card card-link feature">
+            <div class="card-body">
+                <div class="row">
+                    <span class="icon-tile">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </span>
+                    <span class="spacer"></span>
+                    <svg class="icon arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </div>
+                <div class="stack-sm">
+                    <h2 class="card-title">Users</h2>
+                    <p class="muted small">Create, look up, edit and delete users.</p>
+                </div>
+            </div>
+        </a>
+    </section>
+</main>
+
+<script type="text/x-mustache" id="tpl-home-auth">
+    {{#data}}
+    <div class="row">
+        <a href="/plants.html" class="btn btn-primary btn-lg">Open plants</a>
+        <a href="/me.html" class="btn btn-lg">
+            <span class="avatar avatar-sm" style="width: 22px; height: 22px; font-size: 11px">{{initial}}</span>
+            {{displayName}}
+        </a>
+    </div>
+    {{/data}}
+</script>
+
+<script type="text/x-mustache" id="tpl-home-anon">
+    <div class="row">
+        <a href="/login.html" class="btn btn-primary btn-lg">Sign in</a>
+        <a href="/plants.html" class="btn btn-lg">Browse plants</a>
+    </div>
+</script>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Users · ktor-batterypack</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="/ui/app.css">
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script src="https://unpkg.com/mustache@4.2.0/mustache.min.js"></script>
+    <script src="/ui/app.js"></script>
+</head>
+<body>
+<div class="header-placeholder" hx-get="/ui/nav.html" hx-trigger="load" hx-swap="outerHTML"></div>
+
+<main class="page">
+    <div>
+        <h1 class="page-title">Users</h1>
+        <p class="page-subtitle">Create, look up, edit and delete users.</p>
+    </div>
+
+    <div class="grid grid-2">
+        <div class="card">
+            <div class="card-header"><h2 class="card-title">Find user</h2></div>
+            <div class="card-body">
+                <form id="find-user" class="input-group"
+                      hx-get="/users/"
+                      hx-target="#user"
+                      hx-ext="json-view"
+                      data-template="tpl-user"
+                      hx-disabled-elt="find button"
+                      hx-on::config-request="event.detail.path = '/users/' + encodeURIComponent(this.elements.id.value); event.detail.parameters = {}">
+                    <input name="id" type="number" min="0" placeholder="User id" aria-label="User id" required class="input">
+                    <button type="submit" class="btn btn-primary">Find</button>
+                </form>
+                <div id="user" class="result" style="margin-top: 0; align-items: stretch"></div>
+            </div>
+        </div>
+
+        <form class="card"
+              hx-post="/users"
+              hx-target="#created-user"
+              hx-ext="json-view"
+              data-json-body
+              data-template="tpl-user-created"
+              hx-disabled-elt="find button"
+              hx-on::after-request="if (event.detail.successful) this.reset()">
+            <div class="card-header"><h2 class="card-title">Create user</h2></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="field">
+                        <label class="label" for="create-name">Name</label>
+                        <input id="create-name" name="name" type="text" minlength="2" maxlength="64" placeholder="Jane Doe" required class="input">
+                    </div>
+                    <div class="field">
+                        <label class="label" for="create-age">Age</label>
+                        <input id="create-age" name="age" type="number" min="1" max="99" placeholder="30" required class="input">
+                    </div>
+                </div>
+                <div id="created-user" class="result" style="margin-top: 0; align-items: stretch"></div>
+            </div>
+            <div class="card-footer">
+                <button type="submit" class="btn btn-primary">Create user</button>
+            </div>
+        </form>
+    </div>
+</main>
+
+<script>
+    let userFlash = null;
+
+    function showUser(id, flash) {
+        userFlash = flash || null;
+        const form = document.getElementById("find-user");
+        form.elements.id.value = id;
+        htmx.trigger(form, "submit");
+    }
+
+    function userDeleted(id) {
+        document.getElementById("user").innerHTML =
+            '<div class="alert alert-warning"><div class="alert-body"><p class="alert-title">User #' + escapeHtml(id) + " deleted</p></div></div>";
+    }
+
+    document.addEventListener("htmx:afterSwap", function (event) {
+        if (event.detail.target.id === "user" && userFlash) {
+            const result = document.getElementById("user-action-result");
+            if (result) {
+                result.innerHTML = '<div class="alert alert-success"><p class="alert-title">' + escapeHtml(userFlash) + "</p></div>";
+            }
+            userFlash = null;
+        }
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const id = queryParam("id");
+        if (id) {
+            showUser(id);
+        }
+    });
+</script>
+
+<script type="text/x-mustache" id="tpl-user">
+    {{#data}}
+    <div class="stack">
+        <div class="row">
+            <span class="avatar">{{name.0}}</span>
+            <div class="spacer">
+                <p class="strong">{{name}}</p>
+                <p class="muted small">User #{{id}} · {{age}} years old</p>
+            </div>
+            <a href="/wallets.html?userId={{id}}" class="btn btn-sm">Top up wallet</a>
+        </div>
+
+        <details class="disclosure">
+            <summary>Edit user</summary>
+            <form class="disclosure-body"
+                  hx-put="/users/{{id}}"
+                  hx-target="#user-action-result"
+                  hx-ext="json-view"
+                  data-json-body
+                  hx-disabled-elt="find button"
+                  hx-on::after-request="if (event.detail.successful) showUser('{{id}}', 'Changes saved')">
+                <div class="form-grid">
+                    <div class="field">
+                        <label class="label" for="edit-name">Name</label>
+                        <input id="edit-name" name="name" type="text" minlength="2" value="{{name}}" required class="input">
+                    </div>
+                    <div class="field">
+                        <label class="label" for="edit-age">Age</label>
+                        <input id="edit-age" name="age" type="number" min="1" max="99" value="{{age}}" required class="input">
+                    </div>
+                </div>
+                <div class="row">
+                    <button type="submit" class="btn btn-primary btn-sm">Save changes</button>
+                    <span class="spacer"></span>
+                    <button type="button" class="btn btn-danger btn-sm"
+                            hx-delete="/users/{{id}}"
+                            hx-params="none"
+                            hx-confirm="Delete user #{{id}}?"
+                            hx-target="#user-action-result"
+                            hx-ext="json-view"
+                            hx-on::after-request="if (event.detail.successful) userDeleted('{{id}}')">
+                        Delete user
+                    </button>
+                </div>
+            </form>
+        </details>
+
+        <div id="user-action-result" class="result" style="margin-top: 0; align-items: stretch"></div>
+    </div>
+    {{/data}}
+</script>
+
+<script type="text/x-mustache" id="tpl-user-created">
+    {{#data}}
+    <div class="alert alert-success">
+        <div class="alert-body">
+            <p class="alert-title">User created</p>
+            <p>#{{id}} · {{name}}, {{age}}</p>
+        </div>
+        <button type="button" class="btn btn-sm" onclick="showUser('{{id}}')">Open</button>
+    </div>
+    {{/data}}
+</script>
+</body>
+</html>

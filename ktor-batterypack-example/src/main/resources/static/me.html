@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Profile · ktor-batterypack</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="/ui/app.css">
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script src="https://unpkg.com/mustache@4.2.0/mustache.min.js"></script>
+    <script src="/ui/app.js"></script>
+</head>
+<body>
+<div class="header-placeholder" hx-get="/ui/nav.html" hx-trigger="load" hx-swap="outerHTML"></div>
+
+<main class="page page-narrow">
+    <div>
+        <h1 class="page-title">Profile</h1>
+        <p class="page-subtitle">Your identity and session.</p>
+    </div>
+    <div hx-get="/auth/user-info" hx-trigger="load" hx-ext="json-view"
+         data-template="tpl-profile" data-error-template="tpl-profile-anon" data-prepare="auth">
+        <div class="skeleton" style="height: 320px"></div>
+    </div>
+</main>
+
+<script type="text/x-mustache" id="tpl-profile">
+    {{#data}}
+    <div class="card">
+        <div class="card-header">
+            <span class="avatar avatar-lg">{{initial}}</span>
+            <div class="spacer">
+                <p class="card-title">{{displayName}}</p>
+                <p class="muted small">{{auth.email}}</p>
+            </div>
+            <div class="row">
+                {{#privileged}}<span class="badge badge-info">Admin</span>{{/privileged}}
+                {{#expired}}<span class="badge badge-dot badge-danger">Expired</span>{{/expired}}
+                {{^expired}}
+                {{#soonToExpire}}<span class="badge badge-dot badge-warning">Expiring soon</span>{{/soonToExpire}}
+                {{^soonToExpire}}<span class="badge badge-dot badge-success">Active</span>{{/soonToExpire}}
+                {{/expired}}
+            </div>
+        </div>
+        <div class="card-body">
+            <dl class="kv">
+                <dt>Username</dt>
+                <dd>{{auth.username}}</dd>
+                <dt>Preferred username</dt>
+                <dd>{{auth.preferredUsername}}</dd>
+                <dt>Email</dt>
+                <dd>{{auth.email}}</dd>
+                <dt>Subject</dt>
+                <dd class="mono">{{auth.sub}}</dd>
+            </dl>
+            <div id="refresh-result" class="result" style="margin-top: 0"></div>
+        </div>
+        <div class="card-footer">
+            {{#refreshPossible}}
+            <button class="btn"
+                    hx-get="/auth/refresh-auth"
+                    hx-ext="json-view"
+                    data-template="tpl-refreshed"
+                    hx-target="#refresh-result"
+                    hx-on::after-request="if (event.detail.successful) window.location.reload()">
+                Refresh session
+            </button>
+            {{/refreshPossible}}
+            <a class="btn btn-danger" href="/auth/sign-out">Sign out</a>
+        </div>
+    </div>
+    {{/data}}
+</script>
+
+<script type="text/x-mustache" id="tpl-refreshed">
+    <div class="alert alert-success"><p class="alert-title">Session refreshed</p></div>
+</script>
+
+<script type="text/x-mustache" id="tpl-profile-anon">
+    <div class="card">
+        <div class="empty">
+            <p class="card-title">You are not signed in</p>
+            <p class="muted">Sign in to see your profile.</p>
+            <a href="/login.html" class="btn btn-primary">Sign in</a>
+        </div>
+    </div>
+</script>
+</body>
+</html>

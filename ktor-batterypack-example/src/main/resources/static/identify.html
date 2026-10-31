@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Identify · ktor-batterypack</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="/ui/app.css">
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script src="https://unpkg.com/mustache@4.2.0/mustache.min.js"></script>
+    <script src="/ui/app.js"></script>
+</head>
+<body>
+<div class="header-placeholder" hx-get="/ui/nav.html" hx-trigger="load" hx-swap="outerHTML"></div>
+
+<main class="page page-narrow">
+    <div>
+        <h1 class="page-title">Identify a plant</h1>
+        <p class="page-subtitle">Upload up to three photos. Leaves, stem and the whole plant work best.</p>
+    </div>
+
+    <form class="card"
+          hx-post="/api/plant-identification"
+          hx-encoding="multipart/form-data"
+          hx-target="#identify-result"
+          hx-ext="json-view"
+          data-template="tpl-identified"
+          data-prepare="plant"
+          hx-disabled-elt="find button"
+          hx-on::config-request="event.detail.path = '/api/plant-identification?tempIdentityId=' + crypto.randomUUID()">
+        <div class="card-body">
+            <div class="field">
+                <label class="label" for="images">Photos</label>
+                <input id="images" type="file" name="images" accept="image/*" multiple required class="dropzone">
+                <p class="hint">JPEG, PNG or WebP, up to 3 files.</p>
+            </div>
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary">Identify</button>
+        </div>
+    </form>
+
+    <div id="identify-result"></div>
+</main>
+
+<script type="text/x-mustache" id="tpl-identified">
+    {{#data}}
+    <div class="card" style="overflow: hidden">
+        {{#cover}}<div class="plant-cover"><img src="{{cover}}" alt="{{name}}" onerror="this.remove()"></div>{{/cover}}
+        <div class="card-body">
+            <div class="row">
+                <div class="spacer">
+                    <h2 class="card-title" style="font-size: 18px">{{name}}</h2>
+                    <p class="muted small italic">{{subtitle}}{{#variety}} ‘{{variety}}’{{/variety}}</p>
+                </div>
+                <span class="badge badge-dot badge-success">Saved</span>
+            </div>
+            <ul class="candidates">
+                {{#identifications}}
+                <li>
+                    <div class="row small">
+                        <span class="strong">{{mostLikelyCommonName}}</span>
+                        <span class="muted italic">{{species}}</span>
+                        <span class="spacer"></span>
+                        <span class="mono">{{#percent}}{{speciesProbability}}{{/percent}}</span>
+                    </div>
+                    <div class="meter"><span style="width: {{#percent}}{{speciesProbability}}{{/percent}}"></span></div>
+                </li>
+                {{/identifications}}
+            </ul>
+        </div>
+        <div class="card-footer">
+            <a href="/plants.html" class="btn btn-ghost">All plants</a>
+            <a href="/plant.html?id={{id}}" class="btn btn-primary">Open plant</a>
+        </div>
+    </div>
+    {{/data}}
+    {{^data}}
+    <div class="alert alert-danger">
+        <div class="alert-body">
+            <p class="alert-title">Could not identify this plant</p>
+            <p>Try different photos.</p>
+        </div>
+    </div>
+    {{/data}}
+</script>
+</body>
+</html>

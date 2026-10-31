@@ -1,0 +1,27 @@
+<header class="header">
+    <div class="header-inner">
+        <a href="/" class="brand">
+            <span class="brand-mark">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+            </span>
+            <span class="brand-name">ktor-batterypack</span>
+        </a>
+        <nav class="nav">
+            <a data-nav href="/plants.html">Plants</a>
+            <a data-nav href="/identify.html">Identify</a>
+            <a data-nav href="/wallets.html">Wallets</a>
+            <a data-nav href="/users.html">Users</a>
+            <a href="/swagger-ui.html">API docs</a>
+        </nav>
+        <div class="header-actions">
+            <button type="button" class="btn btn-ghost btn-icon" onclick="toggleTheme()" aria-label="Toggle theme">
+                <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                <svg class="icon icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+            </button>
+            <div hx-get="/auth/user-info" hx-trigger="load" hx-swap="outerHTML" hx-ext="json-view"
+                 data-template="tpl-nav-auth" data-error-template="tpl-nav-anon" data-prepare="auth">
+                <span class="skeleton skeleton-avatar"></span>
+            </div>
+        </div>
+    </div>
+</header>
