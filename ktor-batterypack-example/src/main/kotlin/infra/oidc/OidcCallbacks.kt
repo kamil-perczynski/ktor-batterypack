@@ -12,10 +12,7 @@ import java.time.Duration
 import kotlin.time.toJavaInstant
 
 @Singleton
-class OidcCallbacks(
-    private val props: OidcProps,
-    private val authCookies: OidcAuthCookies,
-) {
+class OidcCallbacks(private val authCookies: OidcAuthCookies) {
     suspend fun onAuthenticated(call: RoutingCall, oidcId: OidcToken.Id) {
         authCookies.write(call, oidcId.accessToken, oidcId.refreshToken, toMaxAge(oidcId.claims))
         call.respondRedirect("/")
