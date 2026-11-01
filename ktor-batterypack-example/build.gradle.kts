@@ -114,11 +114,18 @@ tasks.whenTaskAdded {
     }
 }
 
+class ConstraintDirArgumentProvider(
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    val constraintDir: File
+) : CommandLineArgumentProvider {
+    override fun asArguments(): Iterable<String> {
+        return listOf("ktor.validation.constraint.dir=${constraintDir.absolutePath}")
+    }
+}
+
 ksp {
-    arg(
-        "ktor.validation.constraint.dir",
-        project.layout.projectDirectory.dir("src/main/resources/constraints").toString()
-    )
+    arg(ConstraintDirArgumentProvider(layout.projectDirectory.dir("src/main/resources/constraints").asFile))
 }
 
 sourceSets {

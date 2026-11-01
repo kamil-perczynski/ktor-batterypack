@@ -1,29 +1,82 @@
 package io.github.ktor_batterypack.validation.codegen
 
+import io.github.ktor_batterypack.validation.ksp.CodegenAnnotation
+import io.github.ktor_batterypack.validation.reflection.toReflectionCodegenType
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import tools.jackson.dataformat.yaml.YAMLMapper
-import tools.jackson.module.kotlin.KotlinModule
+import kotlin.reflect.typeOf
 
 class ConstraintsDescriptorTest {
 
-    @Test
-    fun name() {
-        val yamlBytes = ConstraintsDescriptor::class.java
-            .getResourceAsStream("/constraints/jakarta-contraints.yaml")!!
-            .readAllBytes()
-
-        val yamlMapper = YAMLMapper.builder()
-            .addModule(KotlinModule.Builder().build())
-            .build()
-
-        val descriptor = yamlMapper.readValue(yamlBytes, ConstraintsDescriptor::class.java)
-
-        val constraints = descriptor.constraints.map {
-            it.copy(
-                callTpl = it.callTpl ?: descriptor.defaults.callTpl,
-                jsonCallTpl = it.jsonCallTpl ?: descriptor.defaults.jsonCallTpl,
-            )
-        }
-        println(constraints)
+    companion object {
+        private val JAKARTA_CONSTRAINTS = listOf(
+            "NotBlank",
+            "NotEmpty",
+            "Min",
+            "Max",
+            "Size",
+            "Past",
+            "PastOrPresent",
+            "Pattern",
+            "DecimalMax",
+            "DecimalMin",
+            "Email",
+            "Future",
+            "FutureOrPresent",
+            "Negative",
+            "NegativeOrZero",
+            "Positive",
+            "PositiveOrZero",
+        )
     }
+
+    @Test
+    fun `jakarta descriptor declares every supported jakarta constraint`() {
+        val descriptor = JakartaConstraintsSource().loadConstraintDescriptor(YAMLMapper.builder().build())
+
+        assertThat(descriptor.imports).containsExactly("io.github.ktor_batterypack.validation.Constraints")
+        assertThat(descriptor.jsonImports).containsExactly(
+            "io.github.ktor_batterypack.validation.Constraints",
+            "io.github.ktor_batterypack.validation.JsonConstraints",
+        )
+        assertThat(descriptor.defaults.simpleClassName).isEqualTo("Constraints")
+        assertThat(descriptor.constraints.map { constraint -> constraint.annotation })
+            .containsExactlyInAnyOrderElementsOf(JAKARTA_CONSTRAINTS.map { name -> "jakarta.validation.constraints.$name" })
+    }
+
+    @Test
+    fun `registry applies descriptor defaults and keeps per constraint overrides`() {
+        val annotations = JAKARTA_CONSTRAINTS.map { name ->
+            StubAnnotation(name, "jakarta.validation.constraints.$name")
+        }
+
+        val constraints = ConstraintRegistry.default().toConstraints(toReflectionCodegenType(typeOf<String>()), annotations)
+
+        assertThat(constraints.keys).containsExactlyInAnyOrderElementsOf(JAKARTA_CONSTRAINTS)
+        assertThat(constraints.values.map { constraint -> constraint.descriptor.simpleClassName }).containsOnly("Constraints")
+        assertThat(constraints.getValue("NotBlank").name).isEqualTo("checkNotBlank")
+        assertThat(constraints.getValue("NotEmpty").descriptor.jsonCallTpl)
+            .isEqualTo("JsonConstraints.checkNotEmpty({{quote prop}}, {{value}}, {{call}})")
+        assertThat(constraints.getValue("Size").descriptor.jsonCallTpl)
+            .isEqualTo("JsonConstraints.checkSize({{quote prop}}, {{value}}, {{call}}, {{constraintArgs args}})")
+        assertThat(constraints.filterKeys { name -> name != "NotEmpty" && name != "Size" }.values.map { constraint -> constraint.descriptor.jsonCallTpl })
+            .containsOnlyNulls()
+    }
+
+    @Test
+    fun `registry ignores annotations without a descriptor`() {
+        val annotations = listOf(StubAnnotation("Deprecated", "kotlin.Deprecated"))
+
+        val constraints = ConstraintRegistry.default().toConstraints(toReflectionCodegenType(typeOf<String>()), annotations)
+
+        assertThat(constraints).isEmpty()
+    }
+
+    private data class StubAnnotation(
+        override val name: String,
+        override val fqName: String,
+        override val args: Map<String, Any> = emptyMap(),
+    ) : CodegenAnnotation
+
 }

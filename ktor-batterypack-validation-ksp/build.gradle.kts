@@ -20,6 +20,8 @@ dependencies {
     implementation(libs.jackson.module.kotlin)
     testImplementation(kotlin("test"))
     testImplementation(libs.assertj.core)
+    testImplementation(libs.kctfork.core)
+    testImplementation(libs.kctfork.ksp)
 }
 
 kotlin {
@@ -29,6 +31,10 @@ kotlin {
 java {
     withJavadocJar()
     withSourcesJar()
+}
+
+tasks.compileTestKotlin {
+    compilerOptions.optIn.add("org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi")
 }
 
 tasks.test {

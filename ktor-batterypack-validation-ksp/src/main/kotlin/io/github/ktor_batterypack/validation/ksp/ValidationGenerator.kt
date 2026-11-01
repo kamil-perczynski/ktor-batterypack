@@ -7,13 +7,16 @@ import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSFile
 import io.github.ktor_batterypack.validation.codegen.ConstraintDescriptionSource
 import io.github.ktor_batterypack.validation.codegen.ConstraintRegistry
 import io.github.ktor_batterypack.validation.codegen.JakartaConstraintsSource
 import io.github.ktor_batterypack.validation.codegen.YamlFileConstraintsSource
 import io.github.ktor_batterypack.validation.ksp.DefaultCodegenNamingConvention.DEFAULT_CODEGEN_NAMING_CONVENTION
+import io.github.ktor_batterypack.validation.symbol.KspCodegenType
 import io.github.ktor_batterypack.validation.symbol.KspValidatorInterface
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 
 class ValidationGenerator(private val environment: SymbolProcessorEnvironment) : SymbolProcessor {
@@ -79,7 +82,7 @@ class ValidationGenerator(private val environment: SymbolProcessorEnvironment) :
         val source = genFn(model)
 
         val sourceFile = classDecl.containingFile ?: return
-        val dependencies = Dependencies(aggregating = false, sourceFile)
+        val dependencies = Dependencies(aggregating = false, *collectSourceFiles(sourceFile, model))
 
         environment.codeGenerator
             .createNewFile(
@@ -89,7 +92,7 @@ class ValidationGenerator(private val environment: SymbolProcessorEnvironment) :
             )
             .use { stream -> stream.write(source.toByteArray()) }
 
-        environment.logger.warn("Generated ${model.fqTypeName}")
+        environment.logger.info("Generated ${model.fqTypeName}")
     }
 }
 
@@ -102,7 +105,34 @@ class ValidationGeneratorProvider : SymbolProcessorProvider {
 private fun loadConstraintDescriptorDir(constraintDescriptorDir: String?): List<ConstraintDescriptionSource> {
     if (constraintDescriptorDir == null) return emptyList()
 
-    return Files.list(Paths.get(constraintDescriptorDir))
-        .map { YamlFileConstraintsSource(it) }
-        .toList()
+    return Files.list(Paths.get(constraintDescriptorDir)).use { paths ->
+        paths
+            .filter { path -> Files.isRegularFile(path) && isYamlFile(path) }
+            .sorted()
+            .map { path -> YamlFileConstraintsSource(path) }
+            .toList()
+    }
+}
+
+private fun isYamlFile(path: Path): Boolean {
+    val fileName = path.fileName.toString()
+    return fileName.endsWith(".yaml") || fileName.endsWith(".yml")
+}
+
+private fun collectSourceFiles(interfaceFile: KSFile, model: CodegenModel): Array<KSFile> {
+    val files = linkedSetOf(interfaceFile)
+    model.methods.forEach { method -> collectSourceFiles(method.codegenType, files) }
+    for (method in model.privateMethods) {
+        collectSourceFiles(method.codegenType, files)
+        method.directProperties.forEach { property -> collectSourceFiles(property.codegenType, files) }
+        method.nestedProperties.forEach { property -> collectSourceFiles(property.codegenType, files) }
+    }
+    return files.toTypedArray()
+}
+
+private fun collectSourceFiles(type: CodegenType, files: MutableSet<KSFile>) {
+    if (type is KspCodegenType) {
+        type.containingFile?.let { file -> files.add(file) }
+    }
+    type.typeParams.forEach { typeParam -> collectSourceFiles(typeParam, files) }
 }
