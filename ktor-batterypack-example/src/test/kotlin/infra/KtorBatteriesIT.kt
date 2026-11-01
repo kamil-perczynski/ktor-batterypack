@@ -13,17 +13,33 @@ import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.serialization.jackson3.jackson
 import io.ktor.server.application.Application
+import io.ktor.server.auth.oidc.OpenIdTestKeys
 import io.ktor.server.config.MapApplicationConfig
 import io.ktor.server.testing.ApplicationTestBuilder
+import io.ktor.utils.io.ExperimentalKtorApi
 import kotlinx.coroutines.runBlocking
 import org.koin.dsl.module
+import org.koin.ktor.plugin.koin
 import org.koin.plugin.module.dsl.withConfiguration
 import tools.jackson.databind.DeserializationFeature
 import tools.jackson.databind.SerializationFeature
 import tools.jackson.databind.cfg.DateTimeFeature
 import tools.jackson.module.kotlin.KotlinModule
 
+const val ACCESS_TOKEN_COOKIE = "access_token"
+const val ADMINS = "admins"
+const val EDITORS = "editors"
+const val READERS = "readers"
+
+@OptIn(ExperimentalKtorApi::class)
 open class KtorBatteriesIT {
+
+    fun accessToken(vararg groups: String): String {
+        return openIdTestKeys.accessToken {
+            subject = "test-user"
+            claim("cognito:groups", groups.toList())
+        }
+    }
 
     companion object {
         private val container: PostgresTestContainer = PostgresTestContainer()
@@ -31,6 +47,7 @@ open class KtorBatteriesIT {
 
         internal var application: Application
         internal var httpClient: HttpClient
+        internal var openIdTestKeys: OpenIdTestKeys
 
         init {
             container.start()
@@ -75,6 +92,8 @@ open class KtorBatteriesIT {
             runBlocking {
                 builder.startApplication()
             }
+
+            openIdTestKeys = application.koin().get()
         }
     }
 
