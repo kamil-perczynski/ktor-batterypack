@@ -19,7 +19,7 @@ The stable framework design of the `ktor-batterypack-*` module family. Treat eve
 | `ktor-batterypack-metrics` | Micrometer/Prometheus registry, controllers, `@Timed` proxies |
 | `ktor-batterypack-redis` | Lettuce client + Redis streams (publisher/listener/background loops) |
 | `ktor-batterypack-kafka` | Empty `@Module` + `@ComponentScan` shell for future concerns |
-| `ktor-batterypack-authz` | Annotation-free authz classes (`Auth`, `JwtAuth` + `JwtAuthFactory`, RBAC `PermissionChecker`, 403 `AuthzExceptionHandler`) wired by the self-contained `KtorBatterypackAuthzModule` (no `@ComponentScan`, requires `@Provided AuthzProps`) |
+| `ktor-batterypack-authz` | Annotation-free authz classes (`Auth`, `JwtAuth` + `JwtAuthFactory` (needs `ktor-server-auth-oidc`, declared `compileOnly` so apps opt in), RBAC `PermissionChecker`, 403 `AuthzExceptionHandler`) wired by the self-contained `KtorBatterypackAuthzModule` (no `@ComponentScan`, requires `@Provided AuthzProps`) |
 | `ktor-batterypack-{database,redis,kafka}-testing` | Testcontainers helpers for tests |
 | `ktor-batterypack-gradle-plugin` | `dockerDist`, `bootstrapDockerfile`, config-metadata generation |
 | `ktor-batterypack-example` | Reference application (ports & adapters); its feature wiring MAY change |
