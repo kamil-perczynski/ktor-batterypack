@@ -1,17 +1,21 @@
 package io.github.ktor_batterypack.validation
 
 import java.math.BigDecimal
+import java.math.BigInteger
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZonedDateTime
 import java.time.temporal.Temporal
+import java.util.concurrent.ConcurrentHashMap
 
 object Constraints {
 
     @JvmStatic
     private val EMAIL_PATTERN = Regex("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")
+
+    private val PATTERN_CACHE = ConcurrentHashMap<String, Regex>()
 
     @JvmStatic
     fun checkNotNull(prop: String, data: Any?, call: ValidationCall) {
@@ -71,7 +75,8 @@ object Constraints {
 
     @JvmStatic
     fun checkPattern(prop: String, str: String, call: ValidationCall, regexp: String) {
-        if (!Regex(regexp).matches(str)) {
+        val pattern = PATTERN_CACHE.computeIfAbsent(regexp) { Regex(it) }
+        if (!pattern.matches(str)) {
             call.propertyError(prop, SingleConstraintError("Pattern", "Must match $regexp"))
         }
     }
@@ -267,12 +272,49 @@ object Constraints {
         checkedValue: BigDecimal,
         call: ValidationCall,
         value: String,
-        inclusive: Boolean
+        inclusive: Boolean = true
     ) {
         val comparison = checkedValue.compareTo(value.toBigDecimal())
-        if (comparison == -1 || (comparison == 0 && inclusive)) {
-            call.propertyError(prop, SingleConstraintError("Min", "Must be greater than $value"))
+        if (comparison < 0 || (comparison == 0 && !inclusive)) {
+            decimalMinError(prop, call, value, inclusive)
         }
+    }
+
+    @JvmStatic
+    fun checkDecimalMin(prop: String, checkedValue: BigInteger, call: ValidationCall, value: String, inclusive: Boolean = true) {
+        checkDecimalMin(prop, checkedValue.toBigDecimal(), call, value, inclusive)
+    }
+
+    @JvmStatic
+    fun checkDecimalMin(prop: String, checkedValue: Int, call: ValidationCall, value: String, inclusive: Boolean = true) {
+        checkDecimalMin(prop, checkedValue.toBigDecimal(), call, value, inclusive)
+    }
+
+    @JvmStatic
+    fun checkDecimalMin(prop: String, checkedValue: Long, call: ValidationCall, value: String, inclusive: Boolean = true) {
+        checkDecimalMin(prop, checkedValue.toBigDecimal(), call, value, inclusive)
+    }
+
+    @JvmStatic
+    fun checkDecimalMin(prop: String, checkedValue: Double, call: ValidationCall, value: String, inclusive: Boolean = true) {
+        if (checkedValue.isNaN() || checkedValue == Double.NEGATIVE_INFINITY) {
+            decimalMinError(prop, call, value, inclusive)
+            return
+        }
+        if (checkedValue == Double.POSITIVE_INFINITY) {
+            return
+        }
+        checkDecimalMin(prop, checkedValue.toBigDecimal(), call, value, inclusive)
+    }
+
+    @JvmStatic
+    fun checkDecimalMin(prop: String, checkedValue: String, call: ValidationCall, value: String, inclusive: Boolean = true) {
+        val number = checkedValue.toBigDecimalOrNull()
+        if (number == null) {
+            decimalMinError(prop, call, value, inclusive)
+            return
+        }
+        checkDecimalMin(prop, number, call, value, inclusive)
     }
 
     @JvmStatic
@@ -281,12 +323,49 @@ object Constraints {
         checkedValue: BigDecimal,
         call: ValidationCall,
         value: String,
-        inclusive: Boolean
+        inclusive: Boolean = true
     ) {
         val comparison = checkedValue.compareTo(value.toBigDecimal())
-        if (comparison == 1 || (comparison == 0 && inclusive)) {
-            call.propertyError(prop, SingleConstraintError("Max", "Must be greater than $value"))
+        if (comparison > 0 || (comparison == 0 && !inclusive)) {
+            decimalMaxError(prop, call, value, inclusive)
         }
+    }
+
+    @JvmStatic
+    fun checkDecimalMax(prop: String, checkedValue: BigInteger, call: ValidationCall, value: String, inclusive: Boolean = true) {
+        checkDecimalMax(prop, checkedValue.toBigDecimal(), call, value, inclusive)
+    }
+
+    @JvmStatic
+    fun checkDecimalMax(prop: String, checkedValue: Int, call: ValidationCall, value: String, inclusive: Boolean = true) {
+        checkDecimalMax(prop, checkedValue.toBigDecimal(), call, value, inclusive)
+    }
+
+    @JvmStatic
+    fun checkDecimalMax(prop: String, checkedValue: Long, call: ValidationCall, value: String, inclusive: Boolean = true) {
+        checkDecimalMax(prop, checkedValue.toBigDecimal(), call, value, inclusive)
+    }
+
+    @JvmStatic
+    fun checkDecimalMax(prop: String, checkedValue: Double, call: ValidationCall, value: String, inclusive: Boolean = true) {
+        if (checkedValue.isNaN() || checkedValue == Double.POSITIVE_INFINITY) {
+            decimalMaxError(prop, call, value, inclusive)
+            return
+        }
+        if (checkedValue == Double.NEGATIVE_INFINITY) {
+            return
+        }
+        checkDecimalMax(prop, checkedValue.toBigDecimal(), call, value, inclusive)
+    }
+
+    @JvmStatic
+    fun checkDecimalMax(prop: String, checkedValue: String, call: ValidationCall, value: String, inclusive: Boolean = true) {
+        val number = checkedValue.toBigDecimalOrNull()
+        if (number == null) {
+            decimalMaxError(prop, call, value, inclusive)
+            return
+        }
+        checkDecimalMax(prop, number, call, value, inclusive)
     }
 
     @JvmStatic
@@ -299,6 +378,16 @@ object Constraints {
         }
     }
 
+}
+
+private fun decimalMinError(prop: String, call: ValidationCall, value: String, inclusive: Boolean) {
+    val bound = if (inclusive) "greater than or equal to" else "greater than"
+    call.propertyError(prop, SingleConstraintError("DecimalMin", "Must be $bound $value"))
+}
+
+private fun decimalMaxError(prop: String, call: ValidationCall, value: String, inclusive: Boolean) {
+    val bound = if (inclusive) "less than or equal to" else "less than"
+    call.propertyError(prop, SingleConstraintError("DecimalMax", "Must be $bound $value"))
 }
 
 private fun Temporal.compareToNow(): Int = when (this) {

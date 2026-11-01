@@ -12,6 +12,7 @@ dependencies {
     implementation(libs.jackson.databind)
     implementation(libs.jackson.module.kotlin)
     testImplementation(kotlin("test"))
+    testImplementation(libs.assertj.core)
 }
 
 kotlin {

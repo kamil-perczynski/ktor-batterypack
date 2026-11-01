@@ -68,14 +68,14 @@ class ValidationCallTest {
                   "createdAt" : [ {
                     "constraint" : "NotNull"
                   } ],
+                  "lastModified" : [ {
+                    "constraint" : "NotBlank"
+                  } ],
                   "address" : {
                     "addressLine2" : [ {
                       "constraint" : "Empty Address"
                     } ]
                   },
-                  "lastModified" : [ {
-                    "constraint" : "NotBlank"
-                  } ],
                   "identifications" : {
                     "errors" : [ {
                       "constraint" : "NotNull"
