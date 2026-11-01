@@ -5,6 +5,7 @@ import com.google.devtools.ksp.symbol.KSValueParameter
 import io.github.ktor_batterypack.validation.ksp.CodegenType
 import io.github.ktor_batterypack.validation.ksp.CodegenAnnotation
 import io.github.ktor_batterypack.validation.ksp.DeclaredMember
+import io.github.ktor_batterypack.validation.ksp.mergeAnnotationSites
 
 class KspDeclaredMember(
     private val prop: KSPropertyDeclaration,
@@ -16,10 +17,11 @@ class KspDeclaredMember(
         val getterAnnotations = prop.getter?.annotations ?: emptySequence()
         val parameterAnnotations = constructorParameter?.annotations ?: emptySequence()
 
-        (prop.annotations + getterAnnotations + parameterAnnotations)
-            .map { annotation -> KspCodegenAnnotation(annotation) }
-            .distinctBy { annotation -> annotation.fqName }
-            .toList()
+        mergeAnnotationSites(
+            listOf(prop.annotations, getterAnnotations, parameterAnnotations).map { site ->
+                site.map { annotation -> KspCodegenAnnotation(annotation) }.toList()
+            }
+        )
     }
 
     override val name: String

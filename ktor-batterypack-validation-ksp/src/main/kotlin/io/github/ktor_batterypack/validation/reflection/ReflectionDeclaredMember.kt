@@ -3,6 +3,7 @@ package io.github.ktor_batterypack.validation.reflection
 import io.github.ktor_batterypack.validation.ksp.CodegenType
 import io.github.ktor_batterypack.validation.ksp.CodegenAnnotation
 import io.github.ktor_batterypack.validation.ksp.DeclaredMember
+import io.github.ktor_batterypack.validation.ksp.mergeAnnotationSites
 import kotlin.reflect.KParameter
 import kotlin.reflect.KProperty
 import kotlin.reflect.jvm.javaField
@@ -14,15 +15,14 @@ data class ReflectionDeclaredMember(
 ) : DeclaredMember {
 
     override val annotations: List<CodegenAnnotation> =
-        listOf(
-            prop.javaField?.annotations?.toList() ?: emptyList(),
-            prop.annotations,
-            prop.getter.annotations,
-            constructorParameter?.annotations ?: emptyList(),
+        mergeAnnotationSites(
+            listOf(
+                prop.javaField?.annotations?.toList() ?: emptyList(),
+                prop.annotations,
+                prop.getter.annotations,
+                constructorParameter?.annotations ?: emptyList(),
+            ).map { site -> site.map { annotation -> ReflectionCodegenAnnotation(annotation) } }
         )
-            .flatten()
-            .map { annotation -> ReflectionCodegenAnnotation(annotation) }
-            .distinctBy { annotation -> annotation.fqName }
 
     override val name: String
         get() = prop.name

@@ -12,35 +12,29 @@ enum class DefaultCodegenNamingConvention : CodegenNamingConvention {
         return "${ifaceType.fqName}Impl"
     }
 
-    override fun itemValidatorMethodName(type: CodegenType): String? {
-        return when {
-            type.isCollection ->
-                if (!type.typeParams.first().isPrimitive)
-                    validationMethodName(type.typeParams.first())
-                else ""
-
-            type.isMap ->
-                if (!type.typeParams[1].isPrimitive)
-                    validationMethodName(type.typeParams[1])
-                else ""
-
-            else -> null
-        }
+    override fun collectionValidationMethodName(
+        parentType: CodegenType,
+        property: DeclaredMember,
+        typeNames: CodegenTypeNames
+    ): String {
+        return collectionValidationMethodName(parentType, property.name, property.type, typeNames)
     }
 
-    override fun collectionValidationMethodName(parentType: CodegenType, property: DeclaredMember): String {
-        return "validate${parentType.name}${property.name.replaceFirstChar { it.uppercase() }}${property.type.name}"
-    }
-
-    override fun collectionValidationMethodName(parentType: CodegenType, propertyName: String, propertyType: CodegenType): String {
-        return "validate${parentType.name}${propertyName.replaceFirstChar { it.uppercase() }}${propertyType.name}"
+    override fun collectionValidationMethodName(
+        parentType: CodegenType,
+        propertyName: String,
+        propertyType: CodegenType,
+        typeNames: CodegenTypeNames
+    ): String {
+        val parentSegment = typeNames.methodNameSegment(parentType)
+        return "validate$parentSegment${propertyName.replaceFirstChar { it.uppercase() }}${propertyType.name}"
     }
 
     override fun paramName(type: CodegenType): String {
         return type.name.replaceFirstChar { it.lowercase() }
     }
 
-    override fun validationMethodName(type: CodegenType): String {
-        return "validate${type.name.replaceFirstChar { it.uppercase() }}"
+    override fun validationMethodName(type: CodegenType, typeNames: CodegenTypeNames): String {
+        return "validate${typeNames.methodNameSegment(type)}"
     }
 }

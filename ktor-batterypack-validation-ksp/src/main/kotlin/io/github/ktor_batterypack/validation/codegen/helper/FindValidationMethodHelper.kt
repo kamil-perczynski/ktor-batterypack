@@ -7,6 +7,7 @@ import io.github.ktor_batterypack.validation.ksp.CodegenModel
 import io.github.ktor_batterypack.validation.ksp.CodegenNamingConvention
 import io.github.ktor_batterypack.validation.ksp.CodegenType
 import io.github.ktor_batterypack.validation.ksp.NestedProperty
+import io.github.ktor_batterypack.validation.ksp.qualifiedTypeName
 
 class FindValidationMethodHelper(private val namingConvention: CodegenNamingConvention) : Helper<Any> {
 
@@ -25,7 +26,8 @@ class FindValidationMethodHelper(private val namingConvention: CodegenNamingConv
                 namingConvention.collectionValidationMethodName(
                     parentType = paramType,
                     propertyName = prop.name,
-                    propertyType = prop.codegenType
+                    propertyType = prop.codegenType,
+                    typeNames = graph.typeNames
                 )
 
             val matchedMethod = graph.methodsGraph.nodes()
@@ -36,22 +38,13 @@ class FindValidationMethodHelper(private val namingConvention: CodegenNamingConv
             return matchedMethod?.name ?: ""
         }
 
-        if (prop == null) {
-            val methodName = namingConvention.validationMethodName(paramType)
-            val firstOrNull = graph.methodsGraph.nodes()
-                .filterIsInstance<CodegenMethod>()
-                .filter { it.param.properName == paramType.properName }
-                .filter { it.name == methodName }
-                .firstOrNull()
-
-            return firstOrNull?.name ?: ""
-        }
-
-        val methodName = namingConvention.validationMethodName(prop.codegenType)
+        val validatedType = if (prop == null) paramType else prop.codegenType
+        val methodName = namingConvention.validationMethodName(validatedType, graph.typeNames)
+        val typeKey = qualifiedTypeName(validatedType)
 
         val firstOrNull = graph.methodsGraph.nodes()
             .filterIsInstance<CodegenMethod>()
-            .filter { it.param.properName == prop.codegenType.properName }
+            .filter { qualifiedTypeName(it.param) == typeKey }
             .filter { it.name == methodName }
             .firstOrNull()
 

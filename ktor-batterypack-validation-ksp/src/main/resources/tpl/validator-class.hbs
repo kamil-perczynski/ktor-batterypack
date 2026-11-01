@@ -21,10 +21,12 @@ import javax.annotation.processing.Generated
 */
 @Generated
 @Suppress("UNNECESSARY_SAFE_CALL")
-class {{typeName}} : {{interfaceName}} {
+class {{typeName}}(
+    private val clock: java.time.Clock = java.time.Clock.systemDefaultZone()
+) : {{interfaceName}} {
 {{#each methods}}
     override fun {{name}}({{param.name}}: {{param.type}}): ValidationResult<{{param.type}}> {
-        val call = ValidationCall()
+        val call = ValidationCall(clock = clock)
         {{~#with (findValidationMethod paramType=param.codegenType)}}
         {{this}}({{param.name}}, call)
         {{~/with}}
@@ -67,7 +69,7 @@ class {{typeName}} : {{interfaceName}} {
             {{~#with (findValidationMethod paramType=param.codegenType.typeParams.0)}}
             {{this}}(item, itemCall)
             {{~/with}}
-            itemCall.finishObject()
+            {{#if param.codegenType.typeParams.0.isCollection}}itemCall.finishList(){{else}}itemCall.finishObject(){{/if}}
         }
         {{~else if param.isMap}}
         for (entry in {{param.name}}.entries) {
@@ -89,7 +91,7 @@ class {{typeName}} : {{interfaceName}} {
             {{~#with (findValidationMethod paramType=param.codegenType.typeParams.1)}}
             {{this}}(value, nested)
             {{~/with}}
-            nested.finishObject()
+            {{#if param.codegenType.typeParams.1.isCollection}}nested.finishList(){{else}}nested.finishObject(){{/if}}
         }
         {{~else}}
         {{~#each nestedProperties~}}

@@ -39,7 +39,7 @@ class ProcessorDiagnosticsCompileTest {
         }
 
         private val invalidResult: JvmCompilationResult by lazy {
-            compiler.compile(listOf(ADDRESS_A, ADDRESS_B, INVALID_MODEL))
+            compiler.compile(listOf(INVALID_MODEL))
         }
 
         private val VALID_MODEL = SourceFile.kotlin(
@@ -126,28 +126,6 @@ class ProcessorDiagnosticsCompileTest {
             """
         )
 
-        private val ADDRESS_A = SourceFile.kotlin(
-            "AddressA.kt",
-            """
-            package fixture.diag.a
-
-            import jakarta.validation.constraints.NotBlank
-
-            data class Address(@field:NotBlank val street: String)
-            """
-        )
-
-        private val ADDRESS_B = SourceFile.kotlin(
-            "AddressB.kt",
-            """
-            package fixture.diag.b
-
-            import jakarta.validation.constraints.NotBlank
-
-            data class Address(@field:NotBlank val city: String)
-            """
-        )
-
         private val INVALID_MODEL = SourceFile.kotlin(
             "Invalid.kt",
             """
@@ -161,18 +139,16 @@ class ProcessorDiagnosticsCompileTest {
             import jakarta.validation.constraints.NotBlank
             import jakarta.validation.constraints.Past
             import java.net.URI
-            import java.time.LocalTime
+            import java.time.Duration
             import tools.jackson.databind.JsonNode
 
             data class Box<T>(val value: T)
-
-            data class Shipment(val from: fixture.diag.a.Address, val to: fixture.diag.b.Address)
 
             data class Profile(
                 @field:NotBlank
                 val age: Int,
                 @field:Past
-                val wakeUp: LocalTime,
+                val cooldown: Duration,
                 val extras: List<*>,
             )
 
@@ -193,11 +169,6 @@ class ProcessorDiagnosticsCompileTest {
             @Validator
             interface ProfileValidator {
                 fun validateProfile(profile: Profile): ValidationResult<Profile>
-            }
-
-            @Validator
-            interface ShipmentValidator {
-                fun validateShipment(shipment: Shipment): ValidationResult<Shipment>
             }
 
             @JsonValidator
@@ -295,15 +266,7 @@ class ProcessorDiagnosticsCompileTest {
         assertThat(invalidResult.exitCode).isEqualTo(ExitCode.COMPILATION_ERROR)
         assertThat(invalidResult.messages).contains(
             "Constraint @NotBlank cannot be applied to property `Profile.age` of type `kotlin.Int`. Supported types: kotlin.String",
-            "Constraint @Past cannot be applied to property `Profile.wakeUp` of type `java.time.LocalTime`"
-        )
-    }
-
-    @Test
-    fun `types sharing a simple name are reported`() {
-        assertThat(invalidResult.exitCode).isEqualTo(ExitCode.COMPILATION_ERROR)
-        assertThat(invalidResult.messages).contains(
-            "Types `fixture.diag.a.Address` and `fixture.diag.b.Address` share the simple name `Address`"
+            "Constraint @Past cannot be applied to property `Profile.cooldown` of type `java.time.Duration`"
         )
     }
 

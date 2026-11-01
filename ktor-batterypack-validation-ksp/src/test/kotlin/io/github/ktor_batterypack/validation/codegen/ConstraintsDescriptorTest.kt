@@ -58,9 +58,11 @@ class ConstraintsDescriptorTest {
             StubAnnotation(name, "jakarta.validation.constraints.$name")
         }
 
-        val constraints = ConstraintRegistry.default().toConstraints(toReflectionCodegenType(typeOf<String>()), annotations)
+        val constraints = ConstraintRegistry.default()
+            .toConstraints(toReflectionCodegenType(typeOf<String>()), annotations)
+            .associateBy { constraint -> constraint.name.removePrefix("check") }
 
-        assertThat(constraints.keys).containsExactlyInAnyOrderElementsOf(JAKARTA_CONSTRAINTS)
+        assertThat(constraints.keys).containsExactlyElementsOf(JAKARTA_CONSTRAINTS)
         assertThat(constraints.values.map { constraint -> constraint.descriptor.simpleClassName }).containsOnly("Constraints")
         assertThat(constraints.getValue("NotBlank").name).isEqualTo("checkNotBlank")
         assertThat(constraints.getValue("NotEmpty").descriptor.jsonCallTpl)
@@ -69,6 +71,73 @@ class ConstraintsDescriptorTest {
             .isEqualTo("JsonConstraints.checkSize({{quote prop}}, {{value}}, {{call}}, {{constraintArgs args}})")
         assertThat(constraints.filterKeys { name -> name != "NotEmpty" && name != "Size" }.values.map { constraint -> constraint.descriptor.jsonCallTpl })
             .containsOnlyNulls()
+    }
+
+    @Test
+    fun `registry keeps repeated constraints in declaration order`() {
+        val annotations = listOf(
+            StubAnnotation("Pattern", "jakarta.validation.constraints.Pattern", mapOf("regexp" to "^a")),
+            StubAnnotation("NotBlank", "jakarta.validation.constraints.NotBlank"),
+            StubAnnotation("Pattern", "jakarta.validation.constraints.Pattern", mapOf("regexp" to "z$")),
+        )
+
+        val constraints = ConstraintRegistry.default().toConstraints(toReflectionCodegenType(typeOf<String>()), annotations)
+
+        assertThat(constraints.map { constraint -> constraint.name to constraint.args })
+            .containsExactly(
+                "checkPattern" to mapOf("regexp" to "^a"),
+                "checkNotBlank" to emptyMap(),
+                "checkPattern" to mapOf("regexp" to "z$"),
+            )
+    }
+
+    @Test
+    fun `registry unwraps repeatable constraint containers`() {
+        val container = StubAnnotation(
+            "List",
+            "jakarta.validation.constraints.Pattern.List",
+            mapOf(
+                "value" to listOf(
+                    StubAnnotation("Pattern", "jakarta.validation.constraints.Pattern", mapOf("regexp" to "^a")),
+                    StubAnnotation("Pattern", "jakarta.validation.constraints.Pattern", mapOf("regexp" to "z$")),
+                )
+            )
+        )
+
+        val constraints = ConstraintRegistry.default().toConstraints(toReflectionCodegenType(typeOf<String>()), listOf(container))
+
+        assertThat(constraints.map { constraint -> constraint.args })
+            .containsExactly(mapOf("regexp" to "^a"), mapOf("regexp" to "z$"))
+    }
+
+    @Test
+    fun `registry keeps constraints sharing a simple name apart`() {
+        val customDescriptor = """
+            imports: [com.example.EmailRules]
+            jsonImports: [com.example.EmailRules]
+            defaults:
+              simpleClassName: EmailRules
+            constraints:
+              - annotation: com.example.Email
+                methodName: checkCorporateEmail
+        """.trimIndent()
+        val registry = ConstraintRegistry(
+            listOf(
+                JakartaConstraintsSource(),
+                ConstraintDescriptionSource { yamlMapper ->
+                    yamlMapper.readValue(customDescriptor, ConstraintsDescriptor::class.java)
+                }
+            )
+        )
+        val annotations = listOf(
+            StubAnnotation("Email", "jakarta.validation.constraints.Email"),
+            StubAnnotation("Email", "com.example.Email"),
+        )
+
+        val constraints = registry.toConstraints(toReflectionCodegenType(typeOf<String>()), annotations)
+
+        assertThat(constraints.map { constraint -> "${constraint.descriptor.simpleClassName}.${constraint.name}" })
+            .containsExactly("Constraints.checkEmail", "EmailRules.checkCorporateEmail")
     }
 
     @Test
@@ -118,9 +187,15 @@ class ConstraintsDescriptorTest {
             "kotlin.String" -> listOf(String::class.java)
             "kotlin.collections.Collection" -> listOf(Collection::class.java, Array<Any>::class.java)
             "kotlin.collections.Map" -> listOf(Map::class.java)
-            "java.time.LocalDate", "java.time.LocalDateTime", "java.time.OffsetDateTime",
-            "java.time.ZonedDateTime", "java.time.Instant" -> listOf(Temporal::class.java)
-            else -> listOf(Class.forName(supportedType))
+            else -> listOf(toReferenceClass(supportedType))
+        }
+    }
+
+    private fun toReferenceClass(supportedType: String): Class<*> {
+        val jvmClass = Class.forName(supportedType)
+        return when {
+            Temporal::class.java.isAssignableFrom(jvmClass) -> Temporal::class.java
+            else -> jvmClass
         }
     }
 

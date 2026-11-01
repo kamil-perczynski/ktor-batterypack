@@ -8,17 +8,20 @@ interface CodegenNamingConvention {
     /** Fully qualified name of the generated validator implementation class, e.g. `com.example.PersonValidatorImpl`. */
     fun ifaceFqTypeName(ifaceType: ValidatorInterface): String
 
-    /** Name of the validator method for items of a collection/map parameter, or `null` for non-container types. */
-    fun itemValidatorMethodName(type: CodegenType): String?
-
-    fun validationMethodName(type: CodegenType): String
+    fun validationMethodName(type: CodegenType, typeNames: CodegenTypeNames): String
 
     fun paramName(type: CodegenType): String
 
-    fun collectionValidationMethodName(parentType: CodegenType, property: DeclaredMember): String
+    fun collectionValidationMethodName(
+        parentType: CodegenType,
+        property: DeclaredMember,
+        typeNames: CodegenTypeNames
+    ): String
+
     fun collectionValidationMethodName(
         parentType: CodegenType,
         propertyName: String,
-        propertyType: CodegenType
+        propertyType: CodegenType,
+        typeNames: CodegenTypeNames
     ): String
 }

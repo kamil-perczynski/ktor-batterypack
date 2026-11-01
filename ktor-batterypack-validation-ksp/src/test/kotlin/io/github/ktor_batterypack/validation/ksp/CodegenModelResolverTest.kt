@@ -139,10 +139,12 @@ class CodegenModelResolverTest {
                 */
                 @Generated
                 @Suppress("UNNECESSARY_SAFE_CALL")
-                class AppPropsValidatorImpl : AppPropsValidator {
+                class AppPropsValidatorImpl(
+                    private val clock: java.time.Clock = java.time.Clock.systemDefaultZone()
+                ) : AppPropsValidator {
 
                     override fun validateAppProps(appProps: AppProps): ValidationResult<AppProps> {
-                        val call = ValidationCall()
+                        val call = ValidationCall(clock = clock)
                         validateAppProps(appProps, call)
                         val errors = call.finishObject()
 
@@ -250,10 +252,12 @@ class CodegenModelResolverTest {
                 * Do not edit the class manually.
                 */
                 @Generated
-                class JsonPersonValidatorImpl : JsonPersonValidator {
+                class JsonPersonValidatorImpl(
+                    private val clock: java.time.Clock = java.time.Clock.systemDefaultZone()
+                ) : JsonPersonValidator {
 
                     override fun validatePerson(person: JsonNode): ValidationResult<JsonNode> {
-                        val call = ValidationCall()
+                        val call = ValidationCall(clock = clock)
                         JsonTypeChecks.checkNotNull("$", person, call)
                         JsonTypeChecks.checkObject("$", person, call)?.let {
                             validatePerson(it, call)

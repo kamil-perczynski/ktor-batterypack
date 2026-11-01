@@ -54,6 +54,9 @@ properties:
         simpleClassName:
           type: string
           description: Simple class name with the constraint methods
+        methodName:
+          type: string
+          description: Name of the constraint method. Defaults to check followed by the annotation simple name.
         rejectsNull:
           type: boolean
           description: When true, a null or missing value violates the constraint and is reported as NotNull.

@@ -13,7 +13,8 @@ data class CodegenModel(
     val fqTypeName: String,
     val methods: List<PublicValidationMethod>,
     val privateMethods: List<PrivateValidationMethod>,
-    val methodsGraph: MethodsGraph
+    val methodsGraph: MethodsGraph,
+    val typeNames: CodegenTypeNames
 )
 
 data class PublicValidationMethod(
@@ -33,7 +34,7 @@ data class NestedProperty(
     val type: String,
     val isList: Boolean,
     val isObject: Boolean,
-    val constraints: Map<String, ConstraintMethod> = emptyMap(),
+    val constraints: List<ConstraintMethod> = emptyList(),
 )
 
 data class DirectProperties(
@@ -44,7 +45,7 @@ data class DirectProperties(
     val nullable: Boolean,
     val required: Boolean,
     val jsonIgnored: Boolean,
-    val constraints: Map<String, ConstraintMethod>
+    val constraints: List<ConstraintMethod>
 )
 
 data class PrivateValidationMethod(
@@ -65,7 +66,7 @@ data class ValidationParameter(
     val isList: Boolean = false,
     val isObject: Boolean = false,
     val isMap: Boolean,
-    val itemConstraints: Map<String, ConstraintMethod> = emptyMap(),
+    val itemConstraints: List<ConstraintMethod> = emptyList(),
     val itemNullable: Boolean = false,
     val itemRequired: Boolean = false,
 )

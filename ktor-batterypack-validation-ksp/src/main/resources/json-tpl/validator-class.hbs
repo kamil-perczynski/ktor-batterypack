@@ -19,10 +19,12 @@ import javax.annotation.processing.Generated
 * Do not edit the class manually.
 */
 @Generated
-class {{typeName}} : {{interfaceName}} {
+class {{typeName}}(
+    private val clock: java.time.Clock = java.time.Clock.systemDefaultZone()
+) : {{interfaceName}} {
 {{#each methods}}
     override fun {{name}}({{param.name}}: JsonNode): ValidationResult<JsonNode> {
-        val call = ValidationCall()
+        val call = ValidationCall(clock = clock)
         JsonTypeChecks.checkNotNull("$", {{param.name}}, call)
         JsonTypeChecks.checkObject("$", {{param.name}}, call)?.let {
         {{~#with (findValidationMethod paramType=param.codegenType)}}
@@ -72,7 +74,7 @@ class {{typeName}} : {{interfaceName}} {
             {{~/with}}
             {{~/if}}
             }
-            itemCall.finishObject()
+            {{#if param.codegenType.typeParams.0.isCollection}}itemCall.finishList(){{else}}itemCall.finishObject(){{/if}}
         }
         {{~else if param.isMap}}
         for ((key, value) in {{param.name}}.properties()) {
@@ -95,7 +97,7 @@ class {{typeName}} : {{interfaceName}} {
             {{~/with}}
             {{~/if}}
             }
-            nested.finishObject()
+            {{#if param.codegenType.typeParams.1.isCollection}}nested.finishList(){{else}}nested.finishObject(){{/if}}
         }
         {{~else if param.codegenType.isEnum}}
         JsonTypeChecks.checkString(prop, {{param.name}}, call)?.let {

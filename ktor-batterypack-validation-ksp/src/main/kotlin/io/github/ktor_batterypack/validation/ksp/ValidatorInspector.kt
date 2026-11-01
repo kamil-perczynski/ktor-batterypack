@@ -24,12 +24,11 @@ class ValidatorInspector(
     fun inspect(validatorInterface: ValidatorInterface, jsonMode: Boolean): List<CodegenDiagnostic> {
         val implementedOverrides = validatorInterface.memberFunctions
             .filter { function -> function.hasImplementation && MemberFnShape.of(function) == MemberFnShape.VALIDATE_CALL }
-        val inspection = Inspection(jsonMode, implementedOverrides)
+        val inspection = Inspection(jsonMode, implementedOverrides, CodegenTypeNames.of(validatorInterface))
 
         for (function in validatorInterface.memberFunctions) {
             inspectFunction(inspection, function)
         }
-        inspectNameCollisions(inspection, validatorInterface)
 
         return inspection.diagnostics
     }
@@ -78,7 +77,7 @@ class ValidatorInspector(
 
     private fun inspectResultSignature(inspection: Inspection, function: MemberFn, modelType: CodegenType) {
         val expectedFqName = if (inspection.jsonMode) JSON_NODE_FQ_NAME else modelType.fqName
-        val expectedName = if (inspection.jsonMode) "JsonNode" else modelType.properName
+        val expectedName = if (inspection.jsonMode) "JsonNode" else inspection.typeNames.sourceName(modelType)
         val resultType = function.returnType?.typeParams?.firstOrNull()
 
         if (function.paramType.fqName != expectedFqName || resultType?.fqName != expectedFqName) {
@@ -91,7 +90,7 @@ class ValidatorInspector(
     }
 
     private fun inspectCallSignature(inspection: Inspection, function: MemberFn, modelType: CodegenType) {
-        val expectedName = namingConvention.validationMethodName(modelType)
+        val expectedName = namingConvention.validationMethodName(modelType, inspection.typeNames)
         if (function.name != expectedName) {
             inspection.error(
                 "Function `${function.name}` overrides the validation of `${modelType.name}` and must be named `$expectedName`",
@@ -125,9 +124,6 @@ class ValidatorInspector(
         }
 
         if (type.isEnum) {
-            if (!type.isPrimitive) {
-                inspection.recordNamedType(type)
-            }
             return
         }
 
@@ -145,13 +141,12 @@ class ValidatorInspector(
     }
 
     private fun inspectObject(inspection: Inspection, type: CodegenType) {
-        if (!inspection.visited.add("${type.fqName}|${type.properName}")) {
+        if (!inspection.visited.add(qualifiedTypeName(type))) {
             return
         }
         if (isImplementedByUser(inspection, type)) {
             return
         }
-        inspection.recordNamedType(type)
 
         for (property in type.declaredMemberProperties) {
             if (inspection.jsonMode && property.isJsonIgnored) {
@@ -174,7 +169,7 @@ class ValidatorInspector(
         location: String,
         symbol: Any?
     ) {
-        for (annotation in annotations) {
+        for (annotation in constraintRegistry.unwrapContainerAnnotations(annotations)) {
             val descriptor = constraintRegistry.findDescriptor(annotation.fqName)
             if (descriptor == null) {
                 if (isConstraintAnnotation(annotation)) {
@@ -199,27 +194,14 @@ class ValidatorInspector(
         }
     }
 
-    private fun inspectNameCollisions(inspection: Inspection, validatorInterface: ValidatorInterface) {
-        for ((simpleName, fqNames) in inspection.namedTypes) {
-            if (fqNames.size < 2) {
-                continue
-            }
-            inspection.error(
-                "Types ${fqNames.joinToString(" and ") { fqName -> "`$fqName`" }} share the simple name `$simpleName` " +
-                    "and would generate clashing validation methods in ${validatorInterface.name}. Rename one of them",
-                validatorInterface.symbol
-            )
-        }
-    }
-
     private fun isImplementedByUser(inspection: Inspection, type: CodegenType): Boolean {
-        val methodName = namingConvention.validationMethodName(type)
+        val methodName = namingConvention.validationMethodName(type, inspection.typeNames)
+        val typeKey = qualifiedTypeName(type)
         return inspection.implementedOverrides.any { function ->
             val paramType = function.validationParamType ?: function.paramType
             function.isPublic
                 && function.name == methodName
-                && paramType.fqName == type.fqName
-                && paramType.properName == type.properName
+                && qualifiedTypeName(paramType) == typeKey
         }
     }
 
@@ -242,10 +224,13 @@ class ValidatorInspector(
         return value.replaceFirstChar { char -> char.uppercase() }
     }
 
-    private class Inspection(val jsonMode: Boolean, val implementedOverrides: List<MemberFn>) {
+    private class Inspection(
+        val jsonMode: Boolean,
+        val implementedOverrides: List<MemberFn>,
+        val typeNames: CodegenTypeNames
+    ) {
         val diagnostics = mutableListOf<CodegenDiagnostic>()
         val visited = mutableSetOf<String>()
-        val namedTypes = sortedMapOf<String, MutableSet<String>>()
 
         fun error(message: String, symbol: Any?) {
             report(Severity.ERROR, message, symbol)
@@ -253,10 +238,6 @@ class ValidatorInspector(
 
         fun report(severity: Severity, message: String, symbol: Any?) {
             diagnostics.add(CodegenDiagnostic(severity, message, symbol))
-        }
-
-        fun recordNamedType(type: CodegenType) {
-            namedTypes.getOrPut(type.name) { sortedSetOf() }.add(type.fqName)
         }
     }
 }
