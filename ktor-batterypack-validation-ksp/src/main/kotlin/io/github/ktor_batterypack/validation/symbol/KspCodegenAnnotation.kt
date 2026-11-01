@@ -31,7 +31,7 @@ class KspCodegenAnnotation(private val annotation: KSAnnotation) : CodegenAnnota
         get() = annotation.arguments
             .filter { arg ->
                 val argName = arg.name?.asString() ?: ""
-                argName !in IGNORED_JARARTA_PARAMS && arg.value != null
+                argName !in IGNORED_JAKARTA_PARAMS && arg.value != null
             }
             .associate { arg ->
                 val key = arg.name!!.asString()
@@ -70,6 +70,6 @@ class KspCodegenAnnotation(private val annotation: KSAnnotation) : CodegenAnnota
     }
 
     companion object {
-        private val IGNORED_JARARTA_PARAMS = setOf("message", "payload", "groups", "flags")
+        private val IGNORED_JAKARTA_PARAMS = setOf("message", "payload", "groups", "flags")
     }
 }

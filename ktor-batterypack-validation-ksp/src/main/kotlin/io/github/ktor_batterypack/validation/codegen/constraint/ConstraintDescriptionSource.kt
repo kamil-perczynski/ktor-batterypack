@@ -1,4 +1,4 @@
-package io.github.ktor_batterypack.validation.codegen
+package io.github.ktor_batterypack.validation.codegen.constraint
 
 import tools.jackson.dataformat.yaml.YAMLMapper
 import java.io.InputStream

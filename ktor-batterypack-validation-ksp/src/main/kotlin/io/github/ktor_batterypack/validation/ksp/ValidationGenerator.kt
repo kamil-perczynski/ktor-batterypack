@@ -9,10 +9,10 @@ import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.KSNode
-import io.github.ktor_batterypack.validation.codegen.ConstraintDescriptionSource
-import io.github.ktor_batterypack.validation.codegen.ConstraintRegistry
-import io.github.ktor_batterypack.validation.codegen.JakartaConstraintsSource
-import io.github.ktor_batterypack.validation.codegen.YamlFileConstraintsSource
+import io.github.ktor_batterypack.validation.codegen.constraint.ConstraintDescriptionSource
+import io.github.ktor_batterypack.validation.codegen.constraint.ConstraintRegistry
+import io.github.ktor_batterypack.validation.codegen.constraint.JakartaConstraintsSource
+import io.github.ktor_batterypack.validation.codegen.constraint.YamlFileConstraintsSource
 import io.github.ktor_batterypack.validation.codegen.emit.ValidatorEmitter
 import io.github.ktor_batterypack.validation.symbol.KspCodegenType
 import io.github.ktor_batterypack.validation.symbol.KspValidatorInterface

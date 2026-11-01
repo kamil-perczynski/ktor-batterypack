@@ -1,4 +1,4 @@
-package io.github.ktor_batterypack.validation.codegen
+package io.github.ktor_batterypack.validation.codegen.constraint
 
 import com.fasterxml.jackson.annotation.JsonProperty
 
