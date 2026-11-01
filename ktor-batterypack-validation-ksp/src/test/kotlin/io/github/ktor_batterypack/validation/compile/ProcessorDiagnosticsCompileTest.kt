@@ -23,12 +23,8 @@ class ProcessorDiagnosticsCompileTest {
             Files.writeString(
                 constraintDir.resolve("tagged-constraints.yaml"),
                 """
-                imports:
-                  - fixture.diag.TaggedConstraints
-                jsonImports:
-                  - fixture.diag.TaggedConstraints
                 defaults:
-                  simpleClassName: TaggedConstraints
+                  className: fixture.diag.TaggedConstraints
                 constraints:
                   - annotation: fixture.diag.Tagged
                     supportedTypes:
@@ -230,11 +226,8 @@ class ProcessorDiagnosticsCompileTest {
     fun `custom constraint arguments render as kotlin literals`() {
         assertThat(validResult.exitCode).withFailMessage(validResult.messages).isEqualTo(ExitCode.OK)
         assertThat(compiler.generatedSource(validResult, "AccountValidatorImpl.kt")).contains(
-            "mode=fixture.diag.Mode.STRICT",
-            "type=kotlin.String::class",
-            "marker='$'",
-            "weight=1.5f",
-            "label=\"cost: \\\$amount\""
+            "TaggedConstraints.checkTagged(\"code\", it, call, mode = Mode.STRICT, type = String::class, marker = '$', " +
+                "weight = 1.5f, label = \"cost: \\\$amount\")"
         )
 
         val errors = jsonMapper.readTree(compiler.errorsJson(compiler.invokeStatic(validResult, "fixture.diag.Scenarios", "invalid")))

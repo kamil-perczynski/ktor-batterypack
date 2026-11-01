@@ -11,6 +11,8 @@ import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeAlias
 import com.google.devtools.ksp.symbol.Origin
 import com.google.devtools.ksp.symbol.Variance
+import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.ksp.toTypeName
 import io.github.ktor_batterypack.validation.ksp.CodegenAnnotation
 import io.github.ktor_batterypack.validation.ksp.CodegenType
 import io.github.ktor_batterypack.validation.ksp.DeclaredMember
@@ -37,6 +39,9 @@ class KspCodegenType(
 
     override val fqName: String
         get() = type.declaration.qualifiedName?.asString() ?: name
+
+    override val typeName: TypeName
+        get() = type.toTypeName()
 
     override val isResolved: Boolean
         get() {
@@ -97,12 +102,6 @@ class KspCodegenType(
                     KspDeclaredMember(property, parameter, hasPrimaryConstructor = primaryConstructor != null)
                 }
                 .toList()
-        }
-
-    override val properName: String
-        get() {
-            if (typeParams.isEmpty()) return name
-            return "$name<${typeParams.joinToString(", ") { if (it.isMarkedNullable) it.properName + '?' else it.properName }}>"
         }
 
     override val annotations: List<CodegenAnnotation>

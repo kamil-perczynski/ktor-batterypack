@@ -1,5 +1,7 @@
 package io.github.ktor_batterypack.validation.reflection
 
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.asClassName
 import io.github.ktor_batterypack.validation.ksp.AnnotationValue
 import io.github.ktor_batterypack.validation.ksp.CodegenAnnotation
 import kotlin.reflect.KClass
@@ -10,6 +12,8 @@ class ReflectionCodegenAnnotation(private val annotation: Annotation) : CodegenA
         get() = annotation.annotationClass.simpleName!!
     override val fqName: String
         get() = annotation.annotationClass.qualifiedName!!
+    override val className: ClassName
+        get() = annotation.annotationClass.asClassName()
 
     override val args: Map<String, Any>
         get() {
@@ -23,9 +27,9 @@ class ReflectionCodegenAnnotation(private val annotation: Annotation) : CodegenA
 
     private fun unwrapValue(value: Any): Any {
         return when (value) {
-            is Enum<*> -> AnnotationValue.EnumEntry("${value.declaringJavaClass.kotlin.qualifiedName}.${value.name}")
-            is KClass<*> -> AnnotationValue.ClassReference(value.qualifiedName!!)
-            is Class<*> -> AnnotationValue.ClassReference(value.kotlin.qualifiedName!!)
+            is Enum<*> -> AnnotationValue.EnumEntry(value.declaringJavaClass.kotlin.asClassName(), value.name)
+            is KClass<*> -> AnnotationValue.ClassReference(value.asClassName())
+            is Class<*> -> AnnotationValue.ClassReference(value.kotlin.asClassName())
             is Annotation -> ReflectionCodegenAnnotation(value)
             is Array<*> -> value.filterNotNull().map { item -> unwrapValue(item) }
             is IntArray -> value.toList()

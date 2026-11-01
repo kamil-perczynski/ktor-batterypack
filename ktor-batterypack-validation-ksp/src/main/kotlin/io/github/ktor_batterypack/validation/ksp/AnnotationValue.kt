@@ -1,18 +1,18 @@
 package io.github.ktor_batterypack.validation.ksp
 
+import com.squareup.kotlinpoet.ClassName
+
 sealed interface AnnotationValue {
 
-    val fqName: String
-
-    data class EnumEntry(override val fqName: String) : AnnotationValue {
+    data class EnumEntry(val enumClassName: ClassName, val entryName: String) : AnnotationValue {
         override fun toString(): String {
-            return fqName
+            return "${enumClassName.canonicalName}.$entryName"
         }
     }
 
-    data class ClassReference(override val fqName: String) : AnnotationValue {
+    data class ClassReference(val className: ClassName) : AnnotationValue {
         override fun toString(): String {
-            return fqName
+            return className.canonicalName
         }
     }
 }

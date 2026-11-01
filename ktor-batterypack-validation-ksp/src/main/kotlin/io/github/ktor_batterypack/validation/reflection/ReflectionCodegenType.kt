@@ -1,5 +1,7 @@
 package io.github.ktor_batterypack.validation.reflection
 
+import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.asTypeName
 import io.github.ktor_batterypack.validation.ksp.CodegenType
 import io.github.ktor_batterypack.validation.ksp.CodegenAnnotation
 import io.github.ktor_batterypack.validation.ksp.DeclaredMember
@@ -23,6 +25,9 @@ data class ReflectionCodegenType(
 
     override val fqName: String
         get() = kclass.qualifiedName!!
+
+    override val typeName: TypeName
+        get() = ktype.asTypeName()
 
     override val isResolved: Boolean
         get() = ktype.classifier is KClass<*> && ktype.arguments.none { argument -> argument.type == null }
@@ -76,15 +81,6 @@ data class ReflectionCodegenType(
                     val parameter = primaryConstructor?.parameters?.find { parameter -> parameter.name == property.name }
                     ReflectionDeclaredMember(property, parameter, hasPrimaryConstructor = primaryConstructor != null)
                 }
-        }
-
-    override val properName: String
-        get() {
-            if (typeParams.isEmpty()) {
-                return name
-            }
-
-            return "$name<${typeParams.joinToString(", ") { if (it.isMarkedNullable) it.properName + '?' else it.properName }}>"
         }
 
     override val annotations: List<CodegenAnnotation>

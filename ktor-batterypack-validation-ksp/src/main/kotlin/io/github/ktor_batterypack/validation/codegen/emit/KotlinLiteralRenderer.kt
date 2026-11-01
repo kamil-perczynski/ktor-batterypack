@@ -1,24 +1,32 @@
-package io.github.ktor_batterypack.validation.codegen.helper
+package io.github.ktor_batterypack.validation.codegen.emit
 
+import com.squareup.kotlinpoet.CodeBlock
+import com.squareup.kotlinpoet.joinToCode
 import io.github.ktor_batterypack.validation.ksp.AnnotationValue
 import io.github.ktor_batterypack.validation.ksp.CodegenAnnotation
 
 object KotlinLiteralRenderer {
 
-    fun render(value: Any?): String {
+    fun render(value: Any?): CodeBlock {
         return when (value) {
-            null -> "null"
-            is String -> '"' + escape(value, '"') + '"'
-            is Char -> "'" + escape(value.toString(), '\'') + "'"
-            is Long -> renderLong(value)
-            is Float -> renderFloat(value)
-            is Double -> renderDouble(value)
-            is AnnotationValue.EnumEntry -> value.fqName
-            is AnnotationValue.ClassReference -> "${value.fqName}::class"
+            null -> CodeBlock.of("null")
+            is String -> CodeBlock.of("%L", '"' + escape(value, '"') + '"')
+            is Char -> CodeBlock.of("%L", "'" + escape(value.toString(), '\'') + "'")
+            is Long -> CodeBlock.of("%L", renderLong(value))
+            is Float -> CodeBlock.of("%L", renderFloat(value))
+            is Double -> CodeBlock.of("%L", renderDouble(value))
+            is AnnotationValue.EnumEntry -> CodeBlock.of("%T.%N", value.enumClassName, value.entryName)
+            is AnnotationValue.ClassReference -> CodeBlock.of("%T::class", value.className)
             is CodegenAnnotation -> renderAnnotation(value)
-            is List<*> -> value.joinToString(", ", "arrayOf(", ")") { item -> render(item) }
-            else -> value.toString()
+            is List<*> -> CodeBlock.of("arrayOf(%L)", value.map { item -> render(item) }.joinToCode(", "))
+            else -> CodeBlock.of("%L", value.toString())
         }
+    }
+
+    fun renderArgs(args: Map<String, Any>): CodeBlock {
+        return args.entries
+            .map { (name, value) -> CodeBlock.of("%N = %L", name, render(value)) }
+            .joinToCode(", ")
     }
 
     private fun renderLong(value: Long): String {
@@ -46,10 +54,8 @@ object KotlinLiteralRenderer {
         }
     }
 
-    private fun renderAnnotation(annotation: CodegenAnnotation): String {
-        return annotation.args.entries.joinToString(", ", "${annotation.fqName}(", ")") { (name, value) ->
-            "$name = ${render(value)}"
-        }
+    private fun renderAnnotation(annotation: CodegenAnnotation): CodeBlock {
+        return CodeBlock.of("%T(%L)", annotation.className, renderArgs(annotation.args))
     }
 
     private fun escape(value: String, quote: Char): String {
@@ -61,6 +67,8 @@ object KotlinLiteralRenderer {
                 '\n' -> builder.append("\\n")
                 '\r' -> builder.append("\\r")
                 '\t' -> builder.append("\\t")
+                '·' -> builder.append("\\u00B7")
+                '♢' -> builder.append("\\u2662")
                 quote -> builder.append('\\').append(quote)
                 else -> builder.append(char)
             }

@@ -51,7 +51,7 @@ The type part of a validation function name is the simple name followed by the n
 `List<Address>` is validated by `validateListAddress`. When one validator reaches different classes with the same
 simple name, each one is prefixed with the shortest distinguishing package segments: `com.example.billing.Address`
 and `com.example.shipping.Address` are validated by `validateBillingAddress` and `validateShippingAddress`.
-Generated code refers to these classes by their fully qualified names.
+Generated code imports these classes under aliases built the same way, such as `BillingAddress`.
 
 Implementing `fun validateAddress(address: Address?, call: ValidationCall)` yourself replaces the generated
 validation of `Address`. In JSON mode, annotate it with `@ValidationParamType(Address::class)` and accept an
@@ -67,6 +67,8 @@ validation of their type. Other implemented functions are ignored, so interfaces
 - Typealiases are expanded, so `typealias Email = String` behaves like `String`.
 - JSON validators read scalar values as `String`, `Int`, `Long`, `Float`, `Double`, `Boolean`, `BigDecimal`, `UUID`,
   `LocalDate`, `LocalDateTime`, `LocalTime`, `OffsetDateTime` and `Instant`, plus enums.
+- JSON validators report enum values that match no entry as `EnumValues`. Typed validators accept any entry, unless you
+  implement a validation function for the enum such as `fun validateKind(kind: Kind?, call: ValidationCall)`.
 
 ## Build diagnostics
 
@@ -175,12 +177,8 @@ Point `ktor.validation.constraint.dir` at a directory of constraint descriptor Y
 (schema: `constraints-descriptor.schema.yaml`):
 
 ```yaml
-imports:
-  - com.example.EvenConstraints
-jsonImports:
-  - com.example.EvenConstraints
 defaults:
-  simpleClassName: EvenConstraints
+  className: com.example.EvenConstraints
 constraints:
   - annotation: com.example.Even
   - annotation: com.example.Present
@@ -188,15 +186,23 @@ constraints:
     supportedTypes:
       - kotlin.String
       - kotlin.collections.Collection
+  - annotation: com.example.Iban
+    className: com.example.BankConstraints
+    json:
+      className: com.example.JsonBankConstraints
 ```
 
 By default a constraint is called as `EvenConstraints.checkEven(prop, value, call, <annotation args>)`, and only when
 the value is present. Annotation arguments are passed as named arguments, rendered as Kotlin literals: strings, chars,
 numbers, enum entries, `KClass` references, arrays (as `arrayOf(...)`) and nested annotations are supported.
 Set `rejectsNull: true` to make the property required; a missing value is then reported as `NotNull`.
-Set `methodName` to call another method than `check` + the annotation's simple name, for example when a custom
-`com.example.Email` sits next to `jakarta.validation.constraints.Email`. Constraints are matched by their fully
+Set `className` to call a constraint on another class or object than `defaults.className`; class names must be fully
+qualified. Set `methodName` to call another method than `check` + the annotation's simple name, for example when a
+custom `com.example.Email` sits next to `jakarta.validation.constraints.Email`. Constraints are matched by their fully
 qualified annotation name, so both apply.
+
+JSON validators call the same method unless `json.className` or `json.methodName` points them elsewhere, for example
+to an overload that accepts the `ArrayNode` or `ObjectNode` of a list or map property.
 
 `supportedTypes` lists the fully qualified Kotlin types the constraint may annotate; the build fails when it is
 applied to any other type. `kotlin.collections.Collection` matches any collection or `Array`, and

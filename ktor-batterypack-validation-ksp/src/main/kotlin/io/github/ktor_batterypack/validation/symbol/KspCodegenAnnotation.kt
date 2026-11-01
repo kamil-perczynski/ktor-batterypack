@@ -5,6 +5,8 @@ import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSType
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.ksp.toClassName
 import io.github.ktor_batterypack.validation.ksp.AnnotationValue
 import io.github.ktor_batterypack.validation.ksp.CodegenAnnotation
 
@@ -21,6 +23,9 @@ class KspCodegenAnnotation(private val annotation: KSAnnotation) : CodegenAnnota
 
     override val fqName: String
         get() = resolvedDeclaration.qualifiedName?.asString() ?: name
+
+    override val className: ClassName
+        get() = toClassName(resolvedDeclaration)
 
     override val args: Map<String, Any>
         get() = annotation.arguments
@@ -50,11 +55,18 @@ class KspCodegenAnnotation(private val annotation: KSAnnotation) : CodegenAnnota
     }
 
     private fun toAnnotationValue(declaration: KSDeclaration): AnnotationValue {
-        val qualifiedName = declaration.qualifiedName?.asString() ?: declaration.simpleName.asString()
-        if (declaration is KSClassDeclaration && declaration.classKind == ClassKind.ENUM_ENTRY) {
-            return AnnotationValue.EnumEntry(qualifiedName)
+        val enumClass = declaration.parentDeclaration
+        if (declaration is KSClassDeclaration && declaration.classKind == ClassKind.ENUM_ENTRY && enumClass != null) {
+            return AnnotationValue.EnumEntry(toClassName(enumClass), declaration.simpleName.asString())
         }
-        return AnnotationValue.ClassReference(qualifiedName)
+        return AnnotationValue.ClassReference(toClassName(declaration))
+    }
+
+    private fun toClassName(declaration: KSDeclaration): ClassName {
+        if (declaration is KSClassDeclaration) {
+            return declaration.toClassName()
+        }
+        return ClassName.bestGuess(declaration.qualifiedName?.asString() ?: declaration.simpleName.asString())
     }
 
     companion object {

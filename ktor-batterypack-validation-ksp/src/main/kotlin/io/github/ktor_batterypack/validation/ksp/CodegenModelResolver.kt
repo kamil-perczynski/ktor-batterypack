@@ -1,21 +1,14 @@
 package io.github.ktor_batterypack.validation.ksp
 
-import com.google.common.graph.GraphBuilder
-import com.google.common.graph.MutableGraph
-import com.google.common.graph.Traverser
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.TypeName
+import io.github.ktor_batterypack.validation.codegen.ConstraintCall
 import io.github.ktor_batterypack.validation.codegen.ConstraintRegistry
 import io.github.ktor_batterypack.validation.ksp.DefaultCodegenNamingConvention.DEFAULT_CODEGEN_NAMING_CONVENTION
 
-private const val MAX_TYPE_GRAPH_PASSES = 1000
+private const val MAX_TYPE_METHODS = 1000
 
 private val JSON_NODE_PACKAGE_PREFIXES = listOf("tools.jackson.databind.", "com.fasterxml.jackson.databind.")
-
-private val TEMPLATE_IMPORTS = listOf(
-    "io.github.ktor_batterypack.validation.ValidationResult",
-    "io.github.ktor_batterypack.validation.SingleConstraintError",
-    "io.github.ktor_batterypack.validation.ValidationCall",
-    "javax.annotation.processing.Generated",
-)
 
 class CodegenModelResolver(
     private val namingConvention: CodegenNamingConvention = DEFAULT_CODEGEN_NAMING_CONVENTION,
@@ -23,293 +16,213 @@ class CodegenModelResolver(
     private val jsonNamingStrategy: JsonNamingStrategy = JsonNamingStrategy.IDENTITY
 ) {
 
-    fun resolve(validatorInterface: ValidatorInterface): CodegenModel {
-        val graph = GraphBuilder.directed().build<CodegenNode>()
-        val typeNames = CodegenTypeNames.of(validatorInterface, TEMPLATE_IMPORTS + constraintRegistry.constraintImports())
-
-        val topLevelMethods = findTopLevelMethods(validatorInterface, graph)
-        populateTypesGraph(graph, typeNames)
-
-        val imports = mutableSetOf("io.github.ktor_batterypack.validation.ValidationResult")
-        val privateMethods = mutableListOf<PrivateValidationMethod>()
-        val publicMethods = mutableListOf<PublicValidationMethod>()
-
-        Traverser.forGraph(graph).breadthFirst(topLevelMethods).forEach { node ->
-            when (node) {
-                is CodegenMethod -> {
-                    imports.addAll(typeNames.imports(node.param))
-
-                    if (node.isPublic && !node.hasImplementation && node.returnType?.fqName == "io.github.ktor_batterypack.validation.ValidationResult") {
-                        publicMethods.add(toPublicMethod(node, typeNames))
-                    } else if (!node.isPublic) {
-                        val additionalValidationMethods = graph.nodes()
-                            .asSequence()
-                            .filterIsInstance<CodegenMethod>()
-                            .filter { it.isPublic && it.hasImplementation }
-                            .filter { qualifiedTypeName(it.param) == qualifiedTypeName(node.param) }
-                            .filter { it.name != node.name }
-                            .toList()
-
-                        val privateMethod = toPrivateMethod(node, additionalValidationMethods, typeNames)
-                        privateMethods.add(privateMethod)
-                    }
-                }
-
-                is CodegenType -> throw IllegalStateException("All types should be resolved. Offender: $node")
-            }
-        }
-
-        return CodegenModel(
-            imports = imports.sorted(),
-            constraintImports = constraintRegistry.constraintImports(),
-            jsonConstraintImports = constraintRegistry.jsonConstraintImports(),
-            packageName = validatorInterface.fqName.substringBeforeLast("."),
-            interfaceName = validatorInterface.name,
-            fqInterfaceName = validatorInterface.fqName,
-            typeName = namingConvention.ifaceTypeName(validatorInterface),
-            fqTypeName = namingConvention.ifaceFqTypeName(validatorInterface),
-            methods = publicMethods.sortedBy { it.name },
-            privateMethods = privateMethods.sortedBy { it.name },
-            methodsGraph = GuavaMethodsGraph(graph),
-            typeNames = typeNames
-        )
+    fun resolve(validatorInterface: ValidatorInterface, mode: CodegenMode): ValidatorModel {
+        return Resolution(validatorInterface, mode).resolve()
     }
 
-    private fun findTopLevelMethods(
-        validatorInterface: ValidatorInterface,
-        graph: MutableGraph<CodegenNode>
-    ): List<CodegenMethod> {
-        val topLevelMethods = mutableListOf<CodegenMethod>()
+    private inner class Resolution(
+        private val validatorInterface: ValidatorInterface,
+        private val mode: CodegenMode
+    ) {
+        private val typeNames = CodegenTypeNames.of(validatorInterface)
+        private val implementedFunctions = validatorInterface.memberFunctions.filter { isImplementedValidation(it) }
+        private val requests = mutableMapOf<String, MethodRequest>()
+        private val pending = ArrayDeque<MethodRequest>()
 
-        for (function in validatorInterface.memberFunctions) {
-            if (!isGraphedFunction(function)) {
-                continue
+        fun resolve(): ValidatorModel {
+            val abstractFunctions = validatorInterface.memberFunctions.filter { function -> !function.hasImplementation }
+
+            for (function in abstractFunctions) {
+                if (MemberFnShape.of(function) == MemberFnShape.VALIDATE_CALL) {
+                    schedule(
+                        MethodRequest(
+                            name = function.name,
+                            paramName = function.paramName,
+                            type = modelType(function),
+                            declaredParamType = function.paramType.typeName
+                        )
+                    )
+                }
             }
 
-            val method = CodegenMethod(
+            val entryMethods = abstractFunctions
+                .filter { function -> MemberFnShape.of(function) == MemberFnShape.VALIDATE_RESULT }
+                .map { function -> toEntryMethod(function) }
+
+            val typeMethods = mutableListOf<TypeMethod>()
+            while (pending.isNotEmpty()) {
+                typeMethods.add(toTypeMethod(pending.removeFirst()))
+            }
+
+            val interfaceClassName = validatorInterface.className
+            return ValidatorModel(
+                implClassName = ClassName(interfaceClassName.packageName, namingConvention.implTypeName(validatorInterface)),
+                interfaceClassName = interfaceClassName,
+                mode = mode,
+                entryMethods = entryMethods.sortedBy { method -> method.name },
+                typeMethods = typeMethods.sortedBy { method -> method.name }
+            )
+        }
+
+        private fun toEntryMethod(function: MemberFn): EntryMethod {
+            val type = modelType(function)
+            return EntryMethod(
                 name = function.name,
                 paramName = function.paramName,
-                param = function.validationParamType ?: function.paramType,
-                returnType = function.returnType,
-                isPublic = function.isPublic,
-                hasImplementation = function.hasImplementation,
-                annotations = function.annotations,
-                isOverride = true
-            )
-
-            graph.addNode(method)
-
-            // existing methods that already have implementations
-            // should not be inferred deeper
-            if (!method.hasImplementation) {
-                topLevelMethods.add(method)
-            }
-
-            if (!method.hasImplementation) {
-                graph.putEdge(method, function.validationParamType ?: function.paramType)
-            } else {
-                graph.putEdge(function.validationParamType ?: function.paramType, method)
-            }
-        }
-
-        return topLevelMethods
-    }
-
-    private fun populateTypesGraph(graph: MutableGraph<CodegenNode>, typeNames: CodegenTypeNames) {
-        var passes = 0
-        while (true) {
-            val types = graph.nodes().filterIsInstance<CodegenType>()
-            if (types.isEmpty()) {
-                return
-            }
-            check(++passes <= MAX_TYPE_GRAPH_PASSES) {
-                "Validation model did not converge after $MAX_TYPE_GRAPH_PASSES passes. Pending types: $types"
-            }
-            for (type in types) {
-                val properties = type.declaredMemberProperties
-                val methods = graph.predecessors(type)
-                val methodName = namingConvention.validationMethodName(type, typeNames)
-                val typeKey = qualifiedTypeName(type)
-
-                val matchingOverride = graph.nodes()
-                    .filterIsInstance<CodegenMethod>()
-                    .find { method ->
-                        method.isPublic
-                            && method.name == methodName
-                            && qualifiedTypeName(method.param) == typeKey
-                            && method.returnType?.fqName == "kotlin.Unit"
-                    }
-
-                val codegenMethod = CodegenMethod(
-                    name = methodName,
-                    paramName = namingConvention.paramName(type),
-                    param = type,
-                    isPublic = false,
-                    hasImplementation = false,
-                    isOverride = matchingOverride != null
+                paramType = function.paramType.typeName,
+                returnType = function.returnType!!.typeName,
+                value = ValueModel(
+                    type = type,
+                    kind = ValueKind.of(type),
+                    checkNotNull = mode == CodegenMode.JSON,
+                    constraints = emptyList(),
+                    validateWith = methodFor(type)
                 )
-
-                val matchingDuplicate = graph.nodes()
-                    .filterIsInstance<CodegenMethod>()
-                    .find { method ->
-                        method.isPublic == codegenMethod.isPublic
-                            && method.name == codegenMethod.name
-                            && method.isOverride == codegenMethod.isOverride
-                            && qualifiedTypeName(method.param) == typeKey
-                            && method.returnType?.fqName == codegenMethod.returnType?.fqName
-                    }
-
-                if (matchingDuplicate != null) {
-                    graph.removeNode(type)
-                    continue
-                }
-
-                if (matchingOverride == null || !matchingOverride.hasImplementation) {
-                    for (property in properties) {
-                        if (property.type.isCollection || property.type.isMap) {
-                            val collectionMethod = CodegenMethod(
-                                name =
-                                    namingConvention.collectionValidationMethodName(type, property, typeNames),
-                                paramName = property.name,
-                                param = property.type,
-                                isPublic = false,
-                                hasImplementation = false,
-                                isOverride = false
-                            )
-                            graph.putEdge(codegenMethod, collectionMethod)
-
-                            for (typeParam in property.type.typeParams) {
-                                if (!typeParam.isPrimitive) {
-                                    graph.putEdge(collectionMethod, typeParam)
-                                }
-                            }
-                        } else {
-                            if (!property.type.isPrimitive) {
-                                graph.putEdge(codegenMethod, property.type)
-                            }
-                        }
-                    }
-
-                    methods.forEach { method ->
-                        graph.putEdge(method, codegenMethod)
-                    }
-                }
-
-                graph.removeNode(type)
-            }
-        }
-    }
-
-    private fun toPublicMethod(method: CodegenMethod, typeNames: CodegenTypeNames): PublicValidationMethod {
-        return PublicValidationMethod(
-            name = method.name,
-            returnType = typeNames.sourceName(method.returnType!!),
-            codegenType = method.param,
-            param = ValidationParameter(
-                name = method.paramName,
-                codegenType = method.param,
-                type = typeNames.sourceName(method.param),
-                fqName = method.param.fqName,
-                isList = method.param.isCollection,
-                isMap = method.param.isMap,
-                isObject = !method.param.isPrimitive && !method.param.isCollection && !method.param.isEnum,
             )
-        )
-    }
-
-    private fun toPrivateMethod(
-        method: CodegenMethod,
-        additionalValidationMethods: List<CodegenMethod>,
-        typeNames: CodegenTypeNames
-    ): PrivateValidationMethod {
-        val itemConstraints = constraintRegistry.findItemConstraints(method.param)
-        val itemType = findItemType(method.param)
-
-        return PrivateValidationMethod(
-            name = method.name,
-            codegenType = method.param,
-            isOverride = method.isOverride,
-            additionalValidationMethods = additionalValidationMethods,
-            param = ValidationParameter(
-                name = method.paramName,
-                codegenType = method.param,
-                type = typeNames.sourceName(method.param),
-                fqName = method.param.fqName,
-                isList = method.param.isCollection,
-                isObject = isObject(method.param),
-                isMap = method.param.isMap,
-                itemConstraints = itemConstraints,
-                itemNullable = itemType?.isMarkedNullable ?: false,
-                itemRequired = itemType != null && (!itemType.isMarkedNullable || rejectsNull(itemConstraints)),
-            ),
-            directProperties = method.param.declaredMemberProperties
-                .filter { it.type.isPrimitive }
-                .map {
-                    val constraints = constraintRegistry.toConstraints(it.type, it.annotations + it.type.annotations)
-                    DirectProperties(
-                        name = it.name,
-                        jsonName = jsonNamingStrategy.translate(it),
-                        codegenType = it.type,
-                        type = typeNames.sourceName(it.type),
-                        nullable = it.type.isMarkedNullable,
-                        required = isRequired(it, constraints),
-                        jsonIgnored = it.isJsonIgnored,
-                        constraints = constraints,
-                    )
-                },
-            nestedProperties = method.param.declaredMemberProperties
-                .filter { !it.type.isPrimitive }
-                .map {
-                    val constraints = constraintRegistry.toConstraints(it.type, it.annotations + it.type.annotations)
-                    NestedProperty(
-                        name = it.name,
-                        jsonName = jsonNamingStrategy.translate(it),
-                        codegenType = it.type,
-                        type = typeNames.sourceName(it.type),
-                        nullable = it.type.isMarkedNullable,
-                        required = isRequired(it, constraints),
-                        jsonIgnored = it.isJsonIgnored,
-                        constraints = constraints,
-                        isList = it.type.isCollection,
-                        isObject = isObject(it.type),
-                    )
-                }
-        )
-    }
-
-    private fun isRequired(member: DeclaredMember, constraints: List<ConstraintMethod>): Boolean {
-        if (rejectsNull(constraints)) {
-            return true
         }
-        return !member.type.isMarkedNullable && !member.hasDefault
+
+        private fun toTypeMethod(request: MethodRequest): TypeMethod {
+            val type = request.type
+            val kind = ValueKind.of(type)
+            val typeKey = qualifiedTypeName(type)
+
+            val properties = if (kind == ValueKind.OBJECT) {
+                type.declaredMemberProperties
+                    .filter { property -> mode == CodegenMode.TYPED || !property.isJsonIgnored }
+                    .map { property -> toPropertyModel(type, property) }
+                    .sortedBy { property -> property.value.kind != ValueKind.SCALAR }
+            } else {
+                emptyList()
+            }
+
+            return TypeMethod(
+                name = request.name,
+                paramName = request.paramName,
+                type = type,
+                kind = kind,
+                declaredParamType = request.declaredParamType,
+                properties = properties,
+                item = findItemType(type, kind)?.let { itemType -> toItemModel(itemType) },
+                additionalCalls = implementedFunctions
+                    .filter { function -> function.name != request.name && qualifiedTypeName(modelType(function)) == typeKey }
+                    .map { function -> function.name }
+            )
+        }
+
+        private fun toPropertyModel(parentType: CodegenType, property: DeclaredMember): PropertyModel {
+            val type = property.type
+            val kind = ValueKind.of(type)
+            val constraints = constraintRegistry.toConstraints(property.annotations + type.annotations, mode)
+            val required = rejectsNull(constraints) || (!type.isMarkedNullable && !property.hasDefault)
+
+            val validateWith = if (kind == ValueKind.LIST || kind == ValueKind.MAP) {
+                schedule(
+                    MethodRequest(
+                        name = namingConvention.collectionValidationMethodName(parentType, property, typeNames),
+                        paramName = property.name,
+                        type = type,
+                        declaredParamType = null
+                    )
+                )
+            } else {
+                methodFor(type)
+            }
+
+            return PropertyModel(
+                name = property.name,
+                key = if (mode == CodegenMode.JSON) jsonNamingStrategy.translate(property) else property.name,
+                value = ValueModel(
+                    type = type,
+                    kind = kind,
+                    checkNotNull = checkNotNull(required, type),
+                    constraints = constraints,
+                    validateWith = validateWith
+                )
+            )
+        }
+
+        private fun toItemModel(type: CodegenType): ValueModel {
+            val constraints = constraintRegistry.toConstraints(type.annotations, mode)
+            val required = !type.isMarkedNullable || rejectsNull(constraints)
+
+            return ValueModel(
+                type = type,
+                kind = ValueKind.of(type),
+                checkNotNull = checkNotNull(required, type),
+                constraints = constraints,
+                validateWith = methodFor(type)
+            )
+        }
+
+        private fun methodFor(type: CodegenType): String? {
+            val kind = ValueKind.of(type)
+            if (kind == ValueKind.SCALAR || (kind == ValueKind.ENUM && mode == CodegenMode.JSON)) {
+                return null
+            }
+
+            val name = namingConvention.validationMethodName(type, typeNames)
+            val typeKey = qualifiedTypeName(type)
+            if (implementedFunctions.any { function -> function.name == name && qualifiedTypeName(modelType(function)) == typeKey }) {
+                return name
+            }
+            if (kind == ValueKind.ENUM) {
+                return null
+            }
+
+            return schedule(
+                MethodRequest(
+                    name = name,
+                    paramName = namingConvention.paramName(type),
+                    type = type,
+                    declaredParamType = null
+                )
+            )
+        }
+
+        private fun schedule(request: MethodRequest): String {
+            if (requests.putIfAbsent(request.name, request) == null) {
+                check(requests.size <= MAX_TYPE_METHODS) {
+                    "Validation model of ${validatorInterface.fqName} needs more than $MAX_TYPE_METHODS methods"
+                }
+                pending.addLast(request)
+            }
+            return request.name
+        }
+
+        private fun checkNotNull(required: Boolean, type: CodegenType): Boolean {
+            return required && (mode == CodegenMode.JSON || type.isMarkedNullable)
+        }
     }
 
+    private data class MethodRequest(
+        val name: String,
+        val paramName: String,
+        val type: CodegenType,
+        val declaredParamType: TypeName?
+    )
 }
 
-private fun rejectsNull(constraints: List<ConstraintMethod>): Boolean {
-    return constraints.any { constraint -> constraint.descriptor.rejectsNull == true }
+private fun rejectsNull(constraints: List<ConstraintCall>): Boolean {
+    return constraints.any { constraint -> constraint.rejectsNull }
 }
 
-private fun findItemType(type: CodegenType): CodegenType? {
-    if (type.isCollection) {
-        return type.typeParams[0]
+private fun findItemType(type: CodegenType, kind: ValueKind): CodegenType? {
+    return when (kind) {
+        ValueKind.LIST -> type.typeParams.getOrNull(0)
+        ValueKind.MAP -> type.typeParams.getOrNull(1)
+        else -> null
     }
-    if (type.isMap) {
-        return type.typeParams[1]
-    }
-    return null
 }
 
-private fun isObject(type: CodegenType): Boolean {
-    return (!type.isPrimitive && !type.isCollection && !type.isEnum) || type.isMap
+private fun modelType(function: MemberFn): CodegenType {
+    return function.validationParamType ?: function.paramType
 }
 
-private fun isGraphedFunction(function: MemberFn): Boolean {
-    return when (MemberFnShape.of(function)) {
-        MemberFnShape.VALIDATE_RESULT -> !function.hasImplementation
-        MemberFnShape.VALIDATE_CALL -> !function.hasImplementation || !isUntypedJsonFunction(function)
-        MemberFnShape.BUILT_IN, MemberFnShape.UNSUPPORTED -> false
-    }
+private fun isImplementedValidation(function: MemberFn): Boolean {
+    return function.hasImplementation
+        && function.isPublic
+        && MemberFnShape.of(function) == MemberFnShape.VALIDATE_CALL
+        && !isUntypedJsonFunction(function)
 }
 
 private fun isUntypedJsonFunction(function: MemberFn): Boolean {

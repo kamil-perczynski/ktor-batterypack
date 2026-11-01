@@ -1,8 +1,9 @@
 package io.github.ktor_batterypack.validation.codegen
 
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.MemberName
 import io.github.ktor_batterypack.validation.ksp.CodegenAnnotation
-import io.github.ktor_batterypack.validation.ksp.CodegenType
-import io.github.ktor_batterypack.validation.ksp.ConstraintMethod
+import io.github.ktor_batterypack.validation.ksp.CodegenMode
 import tools.jackson.dataformat.yaml.YAMLMapper
 
 class ConstraintRegistry(sources: List<ConstraintDescriptionSource>) {
@@ -13,79 +14,76 @@ class ConstraintRegistry(sources: List<ConstraintDescriptionSource>) {
         }
     }
 
-    private val constraintDescriptors: List<ConstraintsDescriptor>
+    private val registeredConstraints: List<RegisteredConstraint>
 
     init {
         val yamlMapper = YAMLMapper.builder()
             .build()
 
-        constraintDescriptors = sources
-            .map { it.loadConstraintDescriptor(yamlMapper) }
-            .map { descriptor ->
-                val constraints = descriptor.constraints.map {
-                    it.copy(
-                        callTpl = it.callTpl ?: descriptor.defaults.callTpl,
-                        jsonCallTpl = it.jsonCallTpl ?: descriptor.defaults.jsonCallTpl,
-                        simpleClassName = it.simpleClassName ?: descriptor.defaults.simpleClassName,
-                    )
-                }
-
-                descriptor.copy(constraints = constraints)
+        registeredConstraints = sources
+            .map { source -> source.loadConstraintDescriptor(yamlMapper) }
+            .flatMap { descriptor ->
+                descriptor.constraints.map { constraint -> register(descriptor.defaults, constraint) }
             }
     }
 
-    fun constraintImports(): List<String> {
-        return constraintDescriptors.flatMap { it.imports }.toSet().sorted()
-    }
-
-    fun jsonConstraintImports(): List<String> {
-        return constraintDescriptors.flatMap { it.jsonImports }.sorted()
-    }
-
-
     fun findDescriptor(annotationFqName: String): ConstraintsDescriptor.Constraint? {
-        return constraintDescriptors
-            .asSequence()
-            .flatMap { descriptor -> descriptor.constraints }
-            .find { constraint -> constraint.annotation == annotationFqName }
+        return findRegistered(annotationFqName)?.descriptor
     }
 
-    fun findItemConstraints(codegenType: CodegenType): List<ConstraintMethod> {
-        if (codegenType.isCollection) {
-            val type = codegenType.typeParams[0]
-            return toConstraints(type, type.annotations)
-        }
-
-        if (codegenType.isMap) {
-            val type = codegenType.typeParams[1]
-            return toConstraints(type, type.annotations)
-        }
-
-        return toConstraints(codegenType, codegenType.annotations)
-    }
-
-    fun toConstraints(
-        codegenType: CodegenType,
-        annotations: List<CodegenAnnotation>
-    ): List<ConstraintMethod> {
+    fun toConstraints(annotations: List<CodegenAnnotation>, mode: CodegenMode): List<ConstraintCall> {
         return unwrapContainerAnnotations(annotations).mapNotNull { annotation ->
-            val descriptor = findDescriptor(annotation.fqName) ?: return@mapNotNull null
-            ConstraintMethod(
-                name = descriptor.methodName ?: "check${annotation.name}",
+            val registered = findRegistered(annotation.fqName) ?: return@mapNotNull null
+            ConstraintCall(
+                member = if (mode == CodegenMode.JSON) registered.jsonMember else registered.member,
                 args = annotation.args,
-                descriptor = descriptor,
+                rejectsNull = registered.descriptor.rejectsNull == true
             )
         }
     }
 
     fun unwrapContainerAnnotations(annotations: List<CodegenAnnotation>): List<CodegenAnnotation> {
         return annotations.flatMap { annotation ->
-            if (findDescriptor(annotation.fqName) != null) {
+            if (findRegistered(annotation.fqName) != null) {
                 return@flatMap listOf(annotation)
             }
             val containedAnnotations = findContainedAnnotations(annotation) ?: return@flatMap listOf(annotation)
             unwrapContainerAnnotations(containedAnnotations)
         }
+    }
+
+    private fun findRegistered(annotationFqName: String): RegisteredConstraint? {
+        return registeredConstraints.find { registered -> registered.descriptor.annotation == annotationFqName }
+    }
+
+    private fun register(
+        defaults: ConstraintsDescriptor.Defaults,
+        constraint: ConstraintsDescriptor.Constraint
+    ): RegisteredConstraint {
+        val className = parseClassName(constraint.className ?: defaults.className, constraint)
+        val methodName = constraint.methodName ?: "check${constraint.annotation.substringAfterLast('.')}"
+        val jsonClassName = constraint.json?.className?.let { name -> parseClassName(name, constraint) } ?: className
+        val jsonMethodName = constraint.json?.methodName ?: methodName
+
+        return RegisteredConstraint(
+            descriptor = constraint,
+            member = MemberName(className, methodName),
+            jsonMember = MemberName(jsonClassName, jsonMethodName)
+        )
+    }
+
+    private fun parseClassName(name: String, constraint: ConstraintsDescriptor.Constraint): ClassName {
+        val className = try {
+            ClassName.bestGuess(name)
+        } catch (e: IllegalArgumentException) {
+            throw IllegalStateException(notFullyQualifiedMessage(name, constraint), e)
+        }
+        check(className.packageName.isNotEmpty()) { notFullyQualifiedMessage(name, constraint) }
+        return className
+    }
+
+    private fun notFullyQualifiedMessage(name: String, constraint: ConstraintsDescriptor.Constraint): String {
+        return "Constraint ${constraint.annotation} refers to `$name`, which is not a fully qualified class name"
     }
 
     private fun findContainedAnnotations(annotation: CodegenAnnotation): List<CodegenAnnotation>? {
@@ -98,6 +96,12 @@ class ConstraintRegistry(sources: List<ConstraintDescriptionSource>) {
         }
         return value.filterIsInstance<CodegenAnnotation>()
     }
+
+    private data class RegisteredConstraint(
+        val descriptor: ConstraintsDescriptor.Constraint,
+        val member: MemberName,
+        val jsonMember: MemberName
+    )
 }
 
 private const val CONTAINER_VALUE_ARG = "value"

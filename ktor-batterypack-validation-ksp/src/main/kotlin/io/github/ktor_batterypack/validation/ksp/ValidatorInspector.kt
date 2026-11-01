@@ -77,7 +77,7 @@ class ValidatorInspector(
 
     private fun inspectResultSignature(inspection: Inspection, function: MemberFn, modelType: CodegenType) {
         val expectedFqName = if (inspection.jsonMode) JSON_NODE_FQ_NAME else modelType.fqName
-        val expectedName = if (inspection.jsonMode) "JsonNode" else inspection.typeNames.sourceName(modelType)
+        val expectedName = if (inspection.jsonMode) "JsonNode" else modelType.typeName.copy(nullable = false).toString()
         val resultType = function.returnType?.typeParams?.firstOrNull()
 
         if (function.paramType.fqName != expectedFqName || resultType?.fqName != expectedFqName) {

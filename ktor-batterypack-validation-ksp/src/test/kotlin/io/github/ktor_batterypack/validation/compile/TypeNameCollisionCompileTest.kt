@@ -140,19 +140,20 @@ class TypeNameCollisionCompileTest {
 
         val source = compiler.generatedSource(result, "ShipmentValidatorImpl.kt")
         assertThat(source).contains(
-            "private fun validateAAddress(address: fixture.collision.a.Address?, call: ValidationCall)",
-            "private fun validateListAAddress(list: List<fixture.collision.a.Address>?, call: ValidationCall)",
-            "private fun validateListBAddress(list: List<fixture.collision.b.Address>?, call: ValidationCall)",
-            "private fun validateAKind(kind: fixture.collision.a.Kind?, call: ValidationCall)",
+            "import fixture.collision.a.Address as AAddress",
+            "import fixture.collision.b.Address as BAddress",
+            "private fun validateAAddress(address: AAddress?, call: ValidationCall)",
+            "private fun validateListAAddress(list: List<AAddress>?, call: ValidationCall)",
+            "private fun validateListBAddress(list: List<BAddress>?, call: ValidationCall)",
         )
-        assertThat(source).doesNotContain("import fixture.collision.a.", "import fixture.collision.b.")
+        assertThat(source).doesNotContain("validateAKind", "validateBKind")
         assertThat(compiler.generatedSource(result, "JsonShipmentValidatorImpl.kt")).contains(
             "private fun validateAAddress(address: ObjectNode?, call: ValidationCall)",
             "private fun validateBAddress(address: ObjectNode?, call: ValidationCall)",
             "private fun validateListAAddress(list: ArrayNode?, call: ValidationCall)",
             "private fun validateListBAddress(list: ArrayNode?, call: ValidationCall)",
-            "private fun validateAKind(kind: JsonNode?, call: ValidationCall, prop: String)",
-            "private fun validateBKind(kind: JsonNode?, call: ValidationCall, prop: String)",
+            "JsonTypeChecks.checkEnum(\"kind\", it, call, setOf(\"HOME\", \"OFFICE\"))",
+            "JsonTypeChecks.checkEnum(\"kind\", it, call, setOf(\"DEPOT\"))",
         )
     }
 

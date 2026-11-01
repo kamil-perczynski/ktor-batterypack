@@ -1,5 +1,7 @@
 package io.github.ktor_batterypack.validation.ksp
 
+import com.squareup.kotlinpoet.ClassName
+
 interface DeclaredMember {
     val annotations: List<CodegenAnnotation>
     val name: String
@@ -22,6 +24,7 @@ interface DeclaredMember {
 interface CodegenAnnotation {
     val name: String
     val fqName: String
+    val className: ClassName
     val args: Map<String, Any>
     val metaAnnotations: List<String>
 }

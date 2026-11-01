@@ -4,36 +4,20 @@ title: Constraints Descriptor Configuration
 type: object
 additionalProperties: false
 required:
-  - imports
-  - jsonImports
   - defaults
   - constraints
 properties:
-  imports:
-    type: array
-    items:
-      type: string
-      description: Fully qualified import for the constraints helper.
-  jsonImports:
-    type: array
-    items:
-      type: string
-      description: Fully qualified import for the JSON constraints helper.
+  $schema:
+    type: string
   defaults:
     type: object
     additionalProperties: false
     required:
-      - simpleClassName
+      - className
     properties:
-      simpleClassName:
+      className:
         type: string
-        description: Simple class name with the constraint methods
-      callTpl:
-        type: string
-        description: Default call template applied to every constraint.
-      jsonCallTpl:
-        type: string
-        description: Default JSON call template applied to every constraint.
+        description: Fully qualified name of the class or object with the constraint methods.
   constraints:
     type: array
     items:
@@ -45,18 +29,23 @@ properties:
         annotation:
           type: string
           description: Fully qualified constraint annotation name.
-        callTpl:
+        className:
           type: string
-          description: Overrides the default call template.
-        jsonCallTpl:
-          type: string
-          description: Overrides the default JSON call template.
-        simpleClassName:
-          type: string
-          description: Simple class name with the constraint methods
+          description: Fully qualified name of the class or object with the constraint method. Overrides defaults.className.
         methodName:
           type: string
           description: Name of the constraint method. Defaults to check followed by the annotation simple name.
+        json:
+          type: object
+          additionalProperties: false
+          description: Overrides the constraint method used by @JsonValidator implementations.
+          properties:
+            className:
+              type: string
+              description: Fully qualified name of the class or object with the JSON constraint method.
+            methodName:
+              type: string
+              description: Name of the JSON constraint method.
         rejectsNull:
           type: boolean
           description: When true, a null or missing value violates the constraint and is reported as NotNull.

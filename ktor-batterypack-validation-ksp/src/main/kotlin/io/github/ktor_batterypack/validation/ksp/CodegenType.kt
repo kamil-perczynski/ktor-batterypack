@@ -1,8 +1,11 @@
 package io.github.ktor_batterypack.validation.ksp
 
-interface CodegenType : CodegenNode {
+import com.squareup.kotlinpoet.TypeName
+
+interface CodegenType {
     val name: String
     val fqName: String
+    val typeName: TypeName
     val isResolved: Boolean
     val typeParams: List<CodegenType>
     val isPrimitive: Boolean
@@ -10,8 +13,7 @@ interface CodegenType : CodegenNode {
     val isMap: Boolean
     val isEnum: Boolean
     val declaredMemberProperties: List<DeclaredMember>
-    val properName: String
     val annotations: List<CodegenAnnotation>
     val isMarkedNullable: Boolean
-    val enumValues : List<String>
+    val enumValues: List<String>
 }
