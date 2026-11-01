@@ -101,7 +101,6 @@ data class MeteringPointAddress(
     JsonSubTypes.Type(value = ProducerParty::class, name = "PRODUCER")
 )
 interface ContractParty {
-    @get:NotBlank
     val type: ContractPartyType
 
     @get:NotBlank
