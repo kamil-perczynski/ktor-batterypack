@@ -6,6 +6,8 @@ data class ValidatorModel(
     val implClassName: ClassName,
     val interfaceClassName: ClassName,
     val mode: CodegenMode,
+    val properties: List<ConstructorProperty>,
+    val overridesClock: Boolean,
     val entryMethods: List<EntryMethod>,
     val typeMethods: List<TypeMethod>
 )

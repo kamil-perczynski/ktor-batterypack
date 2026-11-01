@@ -11,5 +11,6 @@ data class TypeMethod(
     val properties: List<PropertyModel>,
     val item: ValueModel?,
     val dispatch: Dispatch?,
-    val additionalCalls: List<String>
+    val additionalCalls: List<String>,
+    val isSuspend: Boolean
 )

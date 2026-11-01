@@ -42,6 +42,9 @@ class ReflectionMemberFn(private val memberFn: KFunction<*>) : MemberFn {
     override val isPublic: Boolean
         get() = memberFn.visibility == KVisibility.PUBLIC
 
+    override val isSuspend: Boolean
+        get() = memberFn.isSuspend
+
     override val validationParamType: ReflectionCodegenType?
         get() = memberFn.annotations
             .filterIsInstance<ValidationParamType>()

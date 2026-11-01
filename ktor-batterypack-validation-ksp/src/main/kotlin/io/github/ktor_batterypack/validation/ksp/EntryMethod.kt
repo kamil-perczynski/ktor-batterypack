@@ -7,5 +7,6 @@ data class EntryMethod(
     val paramName: String,
     val paramType: TypeName,
     val returnType: TypeName,
-    val value: ValueModel
+    val value: ValueModel,
+    val isSuspend: Boolean
 )

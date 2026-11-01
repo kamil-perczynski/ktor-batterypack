@@ -58,6 +58,44 @@ validation of `Address`. In JSON mode, annotate it with `@ValidationParamType(Ad
 `ObjectNode?`. Implemented functions of the same shape under another name run in addition to the generated
 validation of their type. Other implemented functions are ignored, so interfaces can hold helpers of any shape.
 
+## Injected dependencies
+
+Abstract `val` properties of a validator interface become constructor parameters of the generated class, in
+declaration order, so implemented checks can use services such as repositories or configuration:
+
+```kotlin
+@Validator
+interface UserValidator {
+    val userRepo: UserRepo
+
+    suspend fun validate(user: UserCreate): ValidationResult<UserCreate>
+
+    suspend fun checkEmail(user: UserCreate?, call: ValidationCall) {
+        if (user != null && userRepo.existsByEmail(user.email)) {
+            call.propertyError("email", SingleConstraintError("EmailTaken", "Email is already taken"))
+        }
+    }
+}
+
+// generated: class UserValidatorImpl(override val userRepo: UserRepo, private val clock: Clock = ...) : UserValidator
+```
+
+- Abstract `var` properties fail the build.
+- A `val clock: Clock` property is implemented by the generated `clock` parameter (see
+  [Temporal constraints](#temporal-constraints)), which stays last and keeps its default.
+- A validator with constructor parameters cannot be exposed as `companion object : UserValidator by UserValidatorImpl()`.
+  Create it where its dependencies are available instead, for example as a Koin `@Singleton`.
+
+## Suspend functions
+
+Implemented and abstract `validateX(x: X?, call: ValidationCall)` functions, as well as entry functions, may be
+`suspend`. A generated function becomes `suspend` when it reaches a suspend function, directly or through nested
+types, dispatch branches or list items. Validation stays sequential, so errors keep their order. Validators without
+suspend functions generate the same code as before.
+
+An entry function or abstract `validateX` function that reaches a suspend function must itself be declared `suspend`.
+Otherwise the build fails with an error naming the suspend function it reaches.
+
 ## Supported types
 
 - Objects are validated property by property, at any nesting depth. Types from `java.*`, `javax.*`, `jakarta.*`,
@@ -114,6 +152,8 @@ The processor reports problems as compiler errors that point at the offending in
 skips generating that validator:
 
 - abstract functions with an unsupported shape, or a JSON function without `@ValidationParamType`;
+- abstract `var` properties, a `clock` property that is not a `java.time.Clock`, and non-suspend functions that reach
+  a suspend function;
 - properties with types the processor cannot resolve (type parameters, star projections, unresolved types), and
   JSON-mode scalars without a JSON reader (for example `URI` or `ZonedDateTime`);
 - built-in constraints on types they do not support, for example `@NotBlank` on an `Int` or `@Past` on a `Duration`;
@@ -173,7 +213,8 @@ another clock to the constructor to fix the time in tests or to validate in a di
 val validator = UserValidatorImpl(Clock.fixed(Instant.parse("2026-01-01T00:00:00Z"), ZoneOffset.UTC))
 ```
 
-Custom constraints can read the same clock from `call.clock`.
+Custom constraints can read the same clock from `call.clock`. Declare `val clock: Clock` on the interface to use it
+in implemented checks as well.
 
 ## JSON property names
 

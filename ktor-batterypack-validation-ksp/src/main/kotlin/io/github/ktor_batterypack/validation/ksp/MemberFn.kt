@@ -8,6 +8,7 @@ interface MemberFn {
     val params: List<MemberFnParam>
     val returnType: CodegenType?
     val isPublic: Boolean
+    val isSuspend: Boolean
     val annotations: List<CodegenAnnotation>
     val validationParamType: CodegenType?
     val symbol: Any?

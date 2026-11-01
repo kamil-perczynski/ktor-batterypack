@@ -10,6 +10,8 @@ private const val MAX_TYPE_METHODS = 1000
 private const val JSON_NODE_FQ_NAME = "tools.jackson.databind.JsonNode"
 private const val COLLECTION_TOKEN = "kotlin.collections.Collection"
 private const val MAP_TOKEN = "kotlin.collections.Map"
+private const val CLOCK_PROPERTY = "clock"
+private const val CLOCK_FQ_NAME = "java.time.Clock"
 
 private val JSON_NODE_PACKAGE_PREFIXES = listOf("tools.jackson.databind.", "com.fasterxml.jackson.databind.")
 private val CONSTRAINT_PACKAGE_PREFIXES = listOf("jakarta.validation.constraints.", "javax.validation.constraints.")
@@ -65,10 +67,16 @@ class CodegenModelResolver(
                 .filter { function -> MemberFnShape.of(function) == MemberFnShape.VALIDATE_RESULT }
                 .map { function -> toEntryMethod(function) }
 
-            val typeMethods = mutableListOf<TypeMethod>()
+            val generatedMethods = mutableListOf<TypeMethod>()
             while (pending.isNotEmpty()) {
-                typeMethods.add(toTypeMethod(pending.removeFirst()))
+                generatedMethods.add(toTypeMethod(pending.removeFirst()))
             }
+
+            val suspendCauses = suspendCauses(functions, generatedMethods)
+            checkSuspension(functions, entryMethods, suspendCauses)
+            val typeMethods = generatedMethods.map { method -> method.copy(isSuspend = method.name in suspendCauses) }
+
+            val properties = validatorInterface.abstractProperties.filter { property -> checkProperty(property) }
 
             if (diagnostics.any { diagnostic -> diagnostic.severity == Severity.ERROR }) {
                 return ResolvedValidator(null, diagnostics.toList())
@@ -78,10 +86,71 @@ class CodegenModelResolver(
                 implClassName = names.implClassName(validatorInterface),
                 interfaceClassName = validatorInterface.className,
                 mode = mode,
+                properties = properties
+                    .filter { property -> property.name != CLOCK_PROPERTY }
+                    .map { property -> ConstructorProperty(property.name, property.type.typeName) },
+                overridesClock = properties.any { property -> property.name == CLOCK_PROPERTY },
                 entryMethods = entryMethods.sortedBy { method -> method.name },
                 typeMethods = typeMethods.sortedBy { method -> method.name }
             )
             return ResolvedValidator(model, diagnostics.toList())
+        }
+
+        private fun checkProperty(property: ValidatorProperty): Boolean {
+            if (property.isMutable) {
+                error(
+                    "Property `${property.name}` of `${validatorInterface.name}` must be a `val`. " +
+                        "Abstract properties of a validator become constructor parameters of the generated class",
+                    property.symbol
+                )
+                return false
+            }
+            if (property.name == CLOCK_PROPERTY && (property.type.fqName != CLOCK_FQ_NAME || property.type.isMarkedNullable)) {
+                error("Property `clock` of `${validatorInterface.name}` must have type `$CLOCK_FQ_NAME`", property.symbol)
+                return false
+            }
+            return true
+        }
+
+        private fun suspendCauses(functions: List<MemberFn>, typeMethods: List<TypeMethod>): Map<String, String> {
+            val causes = (implementedFunctions + functions)
+                .filter { function -> function.isSuspend && MemberFnShape.of(function) == MemberFnShape.VALIDATE_CALL }
+                .associateTo(mutableMapOf()) { function -> function.name to function.name }
+
+            var changed = true
+            while (changed) {
+                changed = false
+                for (method in typeMethods) {
+                    if (method.name in causes) {
+                        continue
+                    }
+                    val cause = callees(method).firstNotNullOfOrNull { callee -> causes[callee] } ?: continue
+                    causes[method.name] = cause
+                    changed = true
+                }
+            }
+            return causes
+        }
+
+        private fun callees(method: TypeMethod): List<String> {
+            return method.properties.mapNotNull { property -> property.value.validateWith } +
+                listOfNotNull(method.item?.validateWith) +
+                method.dispatch?.branches.orEmpty().mapNotNull { branch -> branch.validateWith } +
+                method.additionalCalls
+        }
+
+        private fun checkSuspension(functions: List<MemberFn>, entryMethods: List<EntryMethod>, suspendCauses: Map<String, String>) {
+            for (function in functions) {
+                if (function.isSuspend) {
+                    continue
+                }
+                val callee = when (MemberFnShape.of(function)) {
+                    MemberFnShape.VALIDATE_RESULT -> entryMethods.find { method -> method.name == function.name }?.value?.validateWith
+                    else -> function.name
+                }
+                val cause = suspendCauses[callee] ?: continue
+                error("Function `${function.name}` must be declared `suspend` because it calls suspend function `$cause`", function.symbol)
+            }
         }
 
         private fun checkFunction(function: MemberFn): Boolean {
@@ -158,7 +227,8 @@ class CodegenModelResolver(
                     checkNotNull = mode == CodegenMode.JSON,
                     constraints = emptyList(),
                     validateWith = if (valid) methodFor(type, location, function.symbol) else null
-                )
+                ),
+                isSuspend = function.isSuspend
             )
         }
 
@@ -190,7 +260,8 @@ class CodegenModelResolver(
                 dispatch = dispatch,
                 additionalCalls = implementedFunctions
                     .filter { function -> function.name != request.name && qualifiedTypeName(modelType(function)) == typeKey }
-                    .map { function -> function.name }
+                    .map { function -> function.name },
+                isSuspend = false
             )
         }
 
