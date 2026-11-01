@@ -9,6 +9,7 @@ class ValidationCall(
     private val items: MutableList<ConstraintError?> = mutableListOf()
     private val properties: MutableMap<String, MutableList<SingleConstraintError>> = mutableMapOf()
     private val nested: MutableMap<String, ConstraintError> = mutableMapOf()
+    private val keyOrder: MutableSet<String> = linkedSetOf()
 
     fun propertyError(prop: String, constraintError: SingleConstraintError): ValidationCall {
         if (prop == "$") {
@@ -16,6 +17,7 @@ class ValidationCall(
             return this
         }
 
+        keyOrder.add(prop)
         val errors = properties.computeIfAbsent(prop) { mutableListOf() }
         errors.add(constraintError)
         return this
@@ -58,8 +60,11 @@ class ValidationCall(
             null
         }
         else {
-            val next = HashMap(nested)
-            next.putAll(properties.mapValues { (_, fieldErrors) -> FieldConstraintError(fieldErrors) })
+            val next = LinkedHashMap<String, ConstraintError>()
+            for (key in keyOrder) {
+                val fieldErrors = properties[key]
+                next[key] = if (fieldErrors != null) FieldConstraintError(fieldErrors) else nested.getValue(key)
+            }
             if (errors.isNotEmpty()) {
                 next["$"] = FieldConstraintError(errors)
             }
@@ -76,6 +81,7 @@ class ValidationCall(
     }
 
     fun registerNestedObject(prop: String, constraintError: ConstraintError): ValidationCall {
+        keyOrder.add(prop)
         nested[prop] = constraintError
         return this
     }
