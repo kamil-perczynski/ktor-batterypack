@@ -14,7 +14,6 @@ import io.github.ktor_batterypack.validation.codegen.ConstraintRegistry
 import io.github.ktor_batterypack.validation.codegen.JakartaConstraintsSource
 import io.github.ktor_batterypack.validation.codegen.YamlFileConstraintsSource
 import io.github.ktor_batterypack.validation.codegen.emit.ValidatorEmitter
-import io.github.ktor_batterypack.validation.ksp.DefaultCodegenNamingConvention.DEFAULT_CODEGEN_NAMING_CONVENTION
 import io.github.ktor_batterypack.validation.symbol.KspCodegenType
 import io.github.ktor_batterypack.validation.symbol.KspValidatorInterface
 import com.squareup.kotlinpoet.ksp.writeTo
@@ -37,18 +36,11 @@ class ValidationGenerator(private val environment: SymbolProcessorEnvironment) :
                 .plus(listOf(JakartaConstraintsSource()))
         )
 
-        val namingConvention = DEFAULT_CODEGEN_NAMING_CONVENTION
         val emitter = ValidatorEmitter()
-
         val modelResolver = CodegenModelResolver(
-            namingConvention = namingConvention,
             constraintRegistry = constraintRegistry,
-            jsonNamingStrategy = JsonNamingStrategy.fromOption(environment.options[JsonNamingStrategy.OPTION])
-        )
-        val inspector = ValidatorInspector(
-            constraintRegistry = constraintRegistry,
-            namingConvention = namingConvention,
-            strict = environment.options[ValidatorInspector.STRICT_OPTION]?.trim().toBoolean()
+            jsonNamingStrategy = JsonNamingStrategy.fromOption(environment.options[JsonNamingStrategy.OPTION]),
+            strict = environment.options[CodegenModelResolver.STRICT_OPTION]?.trim().toBoolean()
         )
 
         val validatorClassesSymbols =
@@ -62,11 +54,11 @@ class ValidationGenerator(private val environment: SymbolProcessorEnvironment) :
                 .toList()
 
         for (classDecl in validatorClassesSymbols) {
-            generateValidatorClass(inspector, modelResolver, emitter, classDecl, CodegenMode.TYPED)
+            generateValidatorClass(modelResolver, emitter, classDecl, CodegenMode.TYPED)
         }
 
         for (classDecl in jsonValidatorClassesSymbols) {
-            generateValidatorClass(inspector, modelResolver, emitter, classDecl, CodegenMode.JSON)
+            generateValidatorClass(modelResolver, emitter, classDecl, CodegenMode.JSON)
         }
 
         generated = true
@@ -74,7 +66,6 @@ class ValidationGenerator(private val environment: SymbolProcessorEnvironment) :
     }
 
     private fun generateValidatorClass(
-        inspector: ValidatorInspector,
         resolver: CodegenModelResolver,
         emitter: ValidatorEmitter,
         classDecl: KSClassDeclaration,
@@ -84,14 +75,11 @@ class ValidationGenerator(private val environment: SymbolProcessorEnvironment) :
         environment.logger.info("ValidationGenerator: processing $qualifiedName")
 
         try {
-            val validatorInterface = KspValidatorInterface(classDecl)
-            val diagnostics = inspector.inspect(validatorInterface, mode == CodegenMode.JSON)
-            diagnostics.forEach { diagnostic -> report(diagnostic) }
-            if (diagnostics.any { diagnostic -> diagnostic.severity == CodegenDiagnostic.Severity.ERROR }) {
-                return
-            }
+            val resolved = resolver.resolve(KspValidatorInterface(classDecl), mode)
+            resolved.diagnostics.forEach { diagnostic -> report(diagnostic) }
+            val model = resolved.model ?: return
 
-            writeValidatorClass(resolver, emitter, validatorInterface, classDecl, mode)
+            writeValidatorClass(emitter, model, classDecl)
         } catch (e: Exception) {
             environment.logger.error("Could not generate a validator for $qualifiedName: $e", classDecl)
         }
@@ -105,14 +93,7 @@ class ValidationGenerator(private val environment: SymbolProcessorEnvironment) :
         }
     }
 
-    private fun writeValidatorClass(
-        resolver: CodegenModelResolver,
-        emitter: ValidatorEmitter,
-        validatorInterface: ValidatorInterface,
-        classDecl: KSClassDeclaration,
-        mode: CodegenMode
-    ) {
-        val model = resolver.resolve(validatorInterface, mode)
+    private fun writeValidatorClass(emitter: ValidatorEmitter, model: ValidatorModel, classDecl: KSClassDeclaration) {
         val sourceFile = classDecl.containingFile ?: return
         val dependencies = Dependencies(aggregating = false, *collectSourceFiles(sourceFile, model))
 

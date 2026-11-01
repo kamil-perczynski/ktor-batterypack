@@ -9,6 +9,7 @@ import io.github.ktor_batterypack.validation.reflection.ReflectionValidatorInter
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.junit.jupiter.api.Test
+import kotlin.reflect.KClass
 
 class CodegenModelResolverTest {
 
@@ -16,7 +17,7 @@ class CodegenModelResolverTest {
 
     @Test
     fun `json validator schedules overridden and generated methods`() {
-        val model = resolver.resolve(ReflectionValidatorInterface(JsonPersonValidator::class), CodegenMode.JSON)
+        val model = resolve(JsonPersonValidator::class, CodegenMode.JSON)
 
         assertThat(model.entryMethods)
             .extracting({ it.name }, { it.value.kind }, { it.value.validateWith })
@@ -36,7 +37,7 @@ class CodegenModelResolverTest {
 
     @Test
     fun `json validator checks enum properties inline`() {
-        val model = resolver.resolve(ReflectionValidatorInterface(JsonPersonValidator2::class), CodegenMode.JSON)
+        val model = resolve(JsonPersonValidator2::class, CodegenMode.JSON)
 
         assertThat(model.typeMethods)
             .extracting({ it.name }, { it.declaredParamType != null }, { it.kind })
@@ -65,7 +66,7 @@ class CodegenModelResolverTest {
 
     @Test
     fun `typed validator reuses methods for shared types`() {
-        val model = resolver.resolve(ReflectionValidatorInterface(InvoiceCreateValidator::class), CodegenMode.TYPED)
+        val model = resolve(InvoiceCreateValidator::class, CodegenMode.TYPED)
 
         assertThat(model.entryMethods)
             .extracting({ it.name }, { it.value.validateWith })
@@ -87,7 +88,7 @@ class CodegenModelResolverTest {
 
     @Test
     fun `typed validator emits nested objects, maps and lists`() {
-        val model = resolver.resolve(ReflectionValidatorInterface(AppPropsValidator::class), CodegenMode.TYPED)
+        val model = resolve(AppPropsValidator::class, CodegenMode.TYPED)
 
         assertThat(ValidatorEmitter().emit(model).toString()).isEqualTo(
             """
@@ -183,7 +184,7 @@ class CodegenModelResolverTest {
 
     @Test
     fun `json validator emits type checks before constraints`() {
-        val model = resolver.resolve(ReflectionValidatorInterface(JsonPersonValidator::class), CodegenMode.JSON)
+        val model = resolve(JsonPersonValidator::class, CodegenMode.JSON)
 
         assertThat(ValidatorEmitter().emit(model).toString()).isEqualTo(
             """
@@ -329,5 +330,12 @@ class CodegenModelResolverTest {
                 }
             """.trimIndent() + "\n"
         )
+    }
+
+    private fun resolve(validatorInterface: KClass<*>, mode: CodegenMode): ValidatorModel {
+        val resolved = resolver.resolve(ReflectionValidatorInterface(validatorInterface), mode)
+
+        assertThat(resolved.diagnostics).isEmpty()
+        return resolved.model!!
     }
 }
