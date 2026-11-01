@@ -43,6 +43,13 @@ class ConstraintRegistry(sources: List<ConstraintDescriptionSource>) {
     }
 
 
+    fun findDescriptor(annotationFqName: String): ConstraintsDescriptor.Constraint? {
+        return constraintDescriptors
+            .asSequence()
+            .flatMap { descriptor -> descriptor.constraints }
+            .find { constraint -> constraint.annotation == annotationFqName }
+    }
+
     fun findItemConstraints(codegenType: CodegenType): Map<String, ConstraintMethod> {
         if (codegenType.isCollection) {
             val type = codegenType.typeParams[0]
@@ -67,16 +74,7 @@ class ConstraintRegistry(sources: List<ConstraintDescriptionSource>) {
 
         val matchedConstraint = annotations
             .mapNotNull { constraint ->
-                val descriptor = constraintDescriptors
-                    .flatMap { it.constraints }
-                    .find { descriptor ->
-                        constraint.fqName == descriptor.annotation
-                    }
-
-                if (descriptor == null) {
-                    return@mapNotNull null
-                }
-
+                val descriptor = findDescriptor(constraint.fqName) ?: return@mapNotNull null
                 constraint to descriptor
             }
             .associate { (constraint, descriptor) ->

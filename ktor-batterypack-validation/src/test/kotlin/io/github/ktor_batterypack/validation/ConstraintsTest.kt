@@ -203,6 +203,104 @@ class ConstraintsTest {
         assertThat(call.finishObject()).isNull()
     }
 
+    @Test
+    fun `NotEmpty and Size support arrays`() {
+        val call = ValidationCall()
+
+        Constraints.checkNotEmpty("filled", arrayOf("a"), call)
+        Constraints.checkNotEmpty("empty", emptyArray<String>(), call)
+        Constraints.checkSize("small", arrayOf("a"), call, max = 1, min = 0)
+        Constraints.checkSize("large", arrayOf("a", "b"), call, max = 1, min = 0)
+
+        assertThat(errorKeysOf(call)).containsExactly("empty", "large")
+    }
+
+    @Test
+    fun `Min and Max accept bounds beyond the int range`() {
+        val call = ValidationCall()
+
+        Constraints.checkMin("int", Int.MAX_VALUE, call, value = 3_000_000_000)
+        Constraints.checkMax("long", 3_000_000_000, call, value = 3_000_000_000)
+        Constraints.checkMax("big", BigInteger("3000000001"), call, value = 3_000_000_000)
+
+        assertThat(errorKeysOf(call)).containsExactly("int", "big")
+    }
+
+    @Test
+    fun `Min and Max support every numeric type`() {
+        val call = ValidationCall()
+
+        Constraints.checkMin("short", 1.toShort(), call, value = 2)
+        Constraints.checkMin("byte", 2.toByte(), call, value = 2)
+        Constraints.checkMin("float", 1.5f, call, value = 2)
+        Constraints.checkMin("decimal", BigDecimal("1.99"), call, value = 2)
+        Constraints.checkMin("integer", BigInteger.TWO, call, value = 2)
+        Constraints.checkMax("shortMax", 3.toShort(), call, value = 2)
+        Constraints.checkMax("byteMax", 2.toByte(), call, value = 2)
+        Constraints.checkMax("floatMax", 2.5f, call, value = 2)
+        Constraints.checkMax("decimalMax", BigDecimal("2.00"), call, value = 2)
+        Constraints.checkMax("integerMax", BigInteger.valueOf(3), call, value = 2)
+
+        assertThat(errorKeysOf(call)).containsExactly("short", "float", "decimal", "shortMax", "floatMax", "integerMax")
+    }
+
+    @Test
+    fun `Min reports the bound`() {
+        val call = ValidationCall()
+
+        Constraints.checkMin("count", 1, call, value = 2)
+
+        assertThat(errorsOf(call, "count")).containsExactly(SingleConstraintError("Min", "Must be at least 2"))
+    }
+
+    @Test
+    fun `sign constraints support every numeric type`() {
+        val call = ValidationCall()
+
+        Constraints.checkPositive("positiveFloat", 0f, call)
+        Constraints.checkPositive("positiveShort", 1.toShort(), call)
+        Constraints.checkPositive("positiveByte", 0.toByte(), call)
+        Constraints.checkPositive("positiveInteger", BigInteger.ONE, call)
+        Constraints.checkPositiveOrZero("positiveOrZeroFloat", -0.5f, call)
+        Constraints.checkPositiveOrZero("positiveOrZeroShort", 0.toShort(), call)
+        Constraints.checkPositiveOrZero("positiveOrZeroByte", (-1).toByte(), call)
+        Constraints.checkPositiveOrZero("positiveOrZeroInteger", BigInteger.ZERO, call)
+        Constraints.checkNegative("negativeFloat", -0.5f, call)
+        Constraints.checkNegative("negativeShort", 0.toShort(), call)
+        Constraints.checkNegative("negativeByte", (-1).toByte(), call)
+        Constraints.checkNegative("negativeInteger", BigInteger.ZERO, call)
+        Constraints.checkNegativeOrZero("negativeOrZeroFloat", 0.5f, call)
+        Constraints.checkNegativeOrZero("negativeOrZeroShort", 0.toShort(), call)
+        Constraints.checkNegativeOrZero("negativeOrZeroByte", 1.toByte(), call)
+        Constraints.checkNegativeOrZero("negativeOrZeroInteger", BigInteger.ZERO, call)
+
+        assertThat(errorKeysOf(call)).containsExactly(
+            "positiveFloat",
+            "positiveByte",
+            "positiveOrZeroFloat",
+            "positiveOrZeroByte",
+            "negativeShort",
+            "negativeInteger",
+            "negativeOrZeroFloat",
+            "negativeOrZeroByte"
+        )
+    }
+
+    @Test
+    fun `DecimalMin, DecimalMax and Digits support short, byte and float`() {
+        val call = ValidationCall()
+
+        Constraints.checkDecimalMin("short", 1.toShort(), call, value = "2")
+        Constraints.checkDecimalMax("byte", 3.toByte(), call, value = "2")
+        Constraints.checkDecimalMin("float", 0.1f, call, value = "0.1")
+        Constraints.checkDecimalMax("floatNaN", Float.NaN, call, value = "1")
+        Constraints.checkDigits("floatDigits", 0.1f, call, integer = 1, fraction = 1)
+        Constraints.checkDigits("shortDigits", 123.toShort(), call, integer = 2, fraction = 0)
+        Constraints.checkDigits("byteDigits", 12.toByte(), call, integer = 2, fraction = 0)
+
+        assertThat(errorKeysOf(call)).containsExactly("short", "byte", "floatNaN", "shortDigits")
+    }
+
 }
 
 private fun errorsOf(call: ValidationCall, prop: String): List<SingleConstraintError> {

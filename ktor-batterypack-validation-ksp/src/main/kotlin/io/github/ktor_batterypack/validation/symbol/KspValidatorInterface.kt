@@ -11,6 +11,9 @@ class KspValidatorInterface(private val classDecl: KSClassDeclaration) : Validat
 
     override val fqName: String = classDecl.qualifiedName?.asString() ?: error("No qualified name")
 
+    override val symbol: Any?
+        get() = classDecl
+
     override val memberFunctions: List<MemberFn>
         get() = classDecl.declarations
             .filterIsInstance<KSFunctionDeclaration>()

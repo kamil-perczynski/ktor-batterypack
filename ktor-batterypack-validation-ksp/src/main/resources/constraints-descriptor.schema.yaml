@@ -57,3 +57,10 @@ properties:
         rejectsNull:
           type: boolean
           description: When true, a null or missing value violates the constraint and is reported as NotNull.
+        supportedTypes:
+          type: array
+          description: >-
+            Fully qualified Kotlin types the constraint may annotate. kotlin.collections.Collection matches any
+            collection or array, kotlin.collections.Map matches any map. When omitted, the type is not checked.
+          items:
+            type: string

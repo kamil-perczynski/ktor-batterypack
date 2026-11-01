@@ -53,6 +53,13 @@ object Constraints {
     }
 
     @JvmStatic
+    fun checkNotEmpty(prop: String, data: Array<*>, call: ValidationCall) {
+        if (data.isEmpty()) {
+            call.propertyError(prop, SingleConstraintError("NotEmpty"))
+        }
+    }
+
+    @JvmStatic
     fun checkNotEmpty(prop: String, data: Map<*, *>, call: ValidationCall) {
         if (data.isEmpty()) {
             call.propertyError(prop, SingleConstraintError("NotEmpty"))
@@ -135,19 +142,75 @@ object Constraints {
     }
 
     @JvmStatic
-    fun checkMin(prop: String, num: Int, call: ValidationCall, value: Int) {
-        if (num < value) call.propertyError(
+    fun checkMin(prop: String, num: Int, call: ValidationCall, value: Long) {
+        checkMin(prop, num.toLong(), call, value)
+    }
+
+    @JvmStatic
+    fun checkMax(prop: String, num: Int, call: ValidationCall, value: Long) {
+        checkMax(prop, num.toLong(), call, value)
+    }
+
+    @JvmStatic
+    fun checkMin(prop: String, num: Short, call: ValidationCall, value: Long) {
+        checkMin(prop, num.toLong(), call, value)
+    }
+
+    @JvmStatic
+    fun checkMax(prop: String, num: Short, call: ValidationCall, value: Long) {
+        checkMax(prop, num.toLong(), call, value)
+    }
+
+    @JvmStatic
+    fun checkMin(prop: String, num: Byte, call: ValidationCall, value: Long) {
+        checkMin(prop, num.toLong(), call, value)
+    }
+
+    @JvmStatic
+    fun checkMax(prop: String, num: Byte, call: ValidationCall, value: Long) {
+        checkMax(prop, num.toLong(), call, value)
+    }
+
+    @JvmStatic
+    fun checkMin(prop: String, num: BigInteger, call: ValidationCall, value: Long) {
+        if (num < BigInteger.valueOf(value)) call.propertyError(
             prop,
             SingleConstraintError("Min", "Must be at least $value")
         )
     }
 
     @JvmStatic
-    fun checkMax(prop: String, num: Int, call: ValidationCall, value: Int) {
-        if (num > value) call.propertyError(
+    fun checkMax(prop: String, num: BigInteger, call: ValidationCall, value: Long) {
+        if (num > BigInteger.valueOf(value)) call.propertyError(
             prop,
             SingleConstraintError("Max", "Must be at most $value")
         )
+    }
+
+    @JvmStatic
+    fun checkMin(prop: String, num: BigDecimal, call: ValidationCall, value: Long) {
+        if (num < BigDecimal.valueOf(value)) call.propertyError(
+            prop,
+            SingleConstraintError("Min", "Must be at least $value")
+        )
+    }
+
+    @JvmStatic
+    fun checkMax(prop: String, num: BigDecimal, call: ValidationCall, value: Long) {
+        if (num > BigDecimal.valueOf(value)) call.propertyError(
+            prop,
+            SingleConstraintError("Max", "Must be at most $value")
+        )
+    }
+
+    @JvmStatic
+    fun checkMin(prop: String, num: Float, call: ValidationCall, value: Long) {
+        checkMin(prop, num.toDouble(), call, value)
+    }
+
+    @JvmStatic
+    fun checkMax(prop: String, num: Float, call: ValidationCall, value: Long) {
+        checkMax(prop, num.toDouble(), call, value)
     }
 
     @JvmStatic
@@ -211,6 +274,28 @@ object Constraints {
     }
 
     @JvmStatic
+    fun checkPositive(prop: String, value: Float, call: ValidationCall) {
+        checkPositive(prop, value.toDouble(), call)
+    }
+
+    @JvmStatic
+    fun checkPositive(prop: String, value: Short, call: ValidationCall) {
+        checkPositive(prop, value.toLong(), call)
+    }
+
+    @JvmStatic
+    fun checkPositive(prop: String, value: Byte, call: ValidationCall) {
+        checkPositive(prop, value.toLong(), call)
+    }
+
+    @JvmStatic
+    fun checkPositive(prop: String, value: BigInteger, call: ValidationCall) {
+        if (value.signum() <= 0) {
+            call.propertyError(prop, SingleConstraintError("Positive"))
+        }
+    }
+
+    @JvmStatic
     fun checkPositiveOrZero(prop: String, value: BigDecimal, call: ValidationCall) {
         if (value < BigDecimal.ZERO) {
             call.propertyError(prop, SingleConstraintError("PositiveOrZero"))
@@ -234,6 +319,28 @@ object Constraints {
     @JvmStatic
     fun checkPositiveOrZero(prop: String, value: Double, call: ValidationCall) {
         if (value < 0.0) {
+            call.propertyError(prop, SingleConstraintError("PositiveOrZero"))
+        }
+    }
+
+    @JvmStatic
+    fun checkPositiveOrZero(prop: String, value: Float, call: ValidationCall) {
+        checkPositiveOrZero(prop, value.toDouble(), call)
+    }
+
+    @JvmStatic
+    fun checkPositiveOrZero(prop: String, value: Short, call: ValidationCall) {
+        checkPositiveOrZero(prop, value.toLong(), call)
+    }
+
+    @JvmStatic
+    fun checkPositiveOrZero(prop: String, value: Byte, call: ValidationCall) {
+        checkPositiveOrZero(prop, value.toLong(), call)
+    }
+
+    @JvmStatic
+    fun checkPositiveOrZero(prop: String, value: BigInteger, call: ValidationCall) {
+        if (value.signum() < 0) {
             call.propertyError(prop, SingleConstraintError("PositiveOrZero"))
         }
     }
@@ -267,6 +374,28 @@ object Constraints {
     }
 
     @JvmStatic
+    fun checkNegative(prop: String, value: Float, call: ValidationCall) {
+        checkNegative(prop, value.toDouble(), call)
+    }
+
+    @JvmStatic
+    fun checkNegative(prop: String, value: Short, call: ValidationCall) {
+        checkNegative(prop, value.toLong(), call)
+    }
+
+    @JvmStatic
+    fun checkNegative(prop: String, value: Byte, call: ValidationCall) {
+        checkNegative(prop, value.toLong(), call)
+    }
+
+    @JvmStatic
+    fun checkNegative(prop: String, value: BigInteger, call: ValidationCall) {
+        if (value.signum() >= 0) {
+            call.propertyError(prop, SingleConstraintError("Negative"))
+        }
+    }
+
+    @JvmStatic
     fun checkNegativeOrZero(prop: String, value: BigDecimal, call: ValidationCall) {
         if (value > BigDecimal.ZERO) {
             call.propertyError(prop, SingleConstraintError("NegativeOrZero"))
@@ -290,6 +419,28 @@ object Constraints {
     @JvmStatic
     fun checkNegativeOrZero(prop: String, value: Double, call: ValidationCall) {
         if (value > 0.0) {
+            call.propertyError(prop, SingleConstraintError("NegativeOrZero"))
+        }
+    }
+
+    @JvmStatic
+    fun checkNegativeOrZero(prop: String, value: Float, call: ValidationCall) {
+        checkNegativeOrZero(prop, value.toDouble(), call)
+    }
+
+    @JvmStatic
+    fun checkNegativeOrZero(prop: String, value: Short, call: ValidationCall) {
+        checkNegativeOrZero(prop, value.toLong(), call)
+    }
+
+    @JvmStatic
+    fun checkNegativeOrZero(prop: String, value: Byte, call: ValidationCall) {
+        checkNegativeOrZero(prop, value.toLong(), call)
+    }
+
+    @JvmStatic
+    fun checkNegativeOrZero(prop: String, value: BigInteger, call: ValidationCall) {
+        if (value.signum() > 0) {
             call.propertyError(prop, SingleConstraintError("NegativeOrZero"))
         }
     }
@@ -333,6 +484,28 @@ object Constraints {
             return
         }
         checkDecimalMin(prop, checkedValue.toBigDecimal(), call, value, inclusive)
+    }
+
+    @JvmStatic
+    fun checkDecimalMin(prop: String, checkedValue: Float, call: ValidationCall, value: String, inclusive: Boolean = true) {
+        if (checkedValue.isNaN() || checkedValue == Float.NEGATIVE_INFINITY) {
+            decimalMinError(prop, call, value, inclusive)
+            return
+        }
+        if (checkedValue == Float.POSITIVE_INFINITY) {
+            return
+        }
+        checkDecimalMin(prop, checkedValue.toBigDecimal(), call, value, inclusive)
+    }
+
+    @JvmStatic
+    fun checkDecimalMin(prop: String, checkedValue: Short, call: ValidationCall, value: String, inclusive: Boolean = true) {
+        checkDecimalMin(prop, checkedValue.toLong().toBigDecimal(), call, value, inclusive)
+    }
+
+    @JvmStatic
+    fun checkDecimalMin(prop: String, checkedValue: Byte, call: ValidationCall, value: String, inclusive: Boolean = true) {
+        checkDecimalMin(prop, checkedValue.toLong().toBigDecimal(), call, value, inclusive)
     }
 
     @JvmStatic
@@ -387,6 +560,28 @@ object Constraints {
     }
 
     @JvmStatic
+    fun checkDecimalMax(prop: String, checkedValue: Float, call: ValidationCall, value: String, inclusive: Boolean = true) {
+        if (checkedValue.isNaN() || checkedValue == Float.POSITIVE_INFINITY) {
+            decimalMaxError(prop, call, value, inclusive)
+            return
+        }
+        if (checkedValue == Float.NEGATIVE_INFINITY) {
+            return
+        }
+        checkDecimalMax(prop, checkedValue.toBigDecimal(), call, value, inclusive)
+    }
+
+    @JvmStatic
+    fun checkDecimalMax(prop: String, checkedValue: Short, call: ValidationCall, value: String, inclusive: Boolean = true) {
+        checkDecimalMax(prop, checkedValue.toLong().toBigDecimal(), call, value, inclusive)
+    }
+
+    @JvmStatic
+    fun checkDecimalMax(prop: String, checkedValue: Byte, call: ValidationCall, value: String, inclusive: Boolean = true) {
+        checkDecimalMax(prop, checkedValue.toLong().toBigDecimal(), call, value, inclusive)
+    }
+
+    @JvmStatic
     fun checkDecimalMax(prop: String, checkedValue: String, call: ValidationCall, value: String, inclusive: Boolean = true) {
         val number = checkedValue.toBigDecimalOrNull()
         if (number == null) {
@@ -398,6 +593,16 @@ object Constraints {
 
     @JvmStatic
     fun checkSize(prop: String, data: Collection<*>, call: ValidationCall, max: Int, min: Int) {
+        if (data.size !in min..max) {
+            call.propertyError(
+                prop,
+                SingleConstraintError("Size", "Must have size between [$min, $max]")
+            )
+        }
+    }
+
+    @JvmStatic
+    fun checkSize(prop: String, data: Array<*>, call: ValidationCall, max: Int, min: Int) {
         if (data.size !in min..max) {
             call.propertyError(
                 prop,
@@ -448,6 +653,25 @@ object Constraints {
             return
         }
         checkDigits(prop, value.toString().toBigDecimal(), call, integer, fraction)
+    }
+
+    @JvmStatic
+    fun checkDigits(prop: String, value: Float, call: ValidationCall, integer: Int, fraction: Int) {
+        if (value.isNaN() || value.isInfinite()) {
+            digitsError(prop, call, integer, fraction)
+            return
+        }
+        checkDigits(prop, value.toString().toBigDecimal(), call, integer, fraction)
+    }
+
+    @JvmStatic
+    fun checkDigits(prop: String, value: Short, call: ValidationCall, integer: Int, fraction: Int) {
+        checkDigits(prop, value.toLong().toBigDecimal(), call, integer, fraction)
+    }
+
+    @JvmStatic
+    fun checkDigits(prop: String, value: Byte, call: ValidationCall, integer: Int, fraction: Int) {
+        checkDigits(prop, value.toLong().toBigDecimal(), call, integer, fraction)
     }
 
     @JvmStatic

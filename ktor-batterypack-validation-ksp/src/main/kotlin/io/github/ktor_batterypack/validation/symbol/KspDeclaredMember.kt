@@ -28,6 +28,9 @@ class KspDeclaredMember(
     override val type: CodegenType
         get() = toKspCodegenType(prop.type.resolve())
 
+    override val symbol: Any?
+        get() = prop
+
     override val hasDefault: Boolean
         get() {
             if (constructorParameter != null) {

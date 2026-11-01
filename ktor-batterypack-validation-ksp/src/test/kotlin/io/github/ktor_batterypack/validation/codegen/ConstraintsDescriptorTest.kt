@@ -1,10 +1,12 @@
 package io.github.ktor_batterypack.validation.codegen
 
+import io.github.ktor_batterypack.validation.Constraints
 import io.github.ktor_batterypack.validation.ksp.CodegenAnnotation
 import io.github.ktor_batterypack.validation.reflection.toReflectionCodegenType
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import tools.jackson.dataformat.yaml.YAMLMapper
+import java.time.temporal.Temporal
 import kotlin.reflect.typeOf
 
 class ConstraintsDescriptorTest {
@@ -78,10 +80,55 @@ class ConstraintsDescriptorTest {
         assertThat(constraints).isEmpty()
     }
 
+    @Test
+    fun `every supported type has a runtime check overload`() {
+        val descriptor = JakartaConstraintsSource().loadConstraintDescriptor(YAMLMapper.builder().build())
+        val methods = Constraints::class.java.methods
+
+        val missing = descriptor.constraints.flatMap { constraint ->
+            val methodName = "check" + constraint.annotation.substringAfterLast('.')
+            constraint.supportedTypes.orEmpty()
+                .flatMap { supportedType -> toJvmClasses(supportedType) }
+                .filter { jvmClass ->
+                    methods.none { method -> method.name == methodName && method.parameterTypes[1] == jvmClass }
+                }
+                .map { jvmClass -> "$methodName(${jvmClass.name})" }
+        }
+
+        assertThat(missing).isEmpty()
+    }
+
+    @Test
+    fun `jakarta constraints except null checks declare supported types`() {
+        val descriptor = JakartaConstraintsSource().loadConstraintDescriptor(YAMLMapper.builder().build())
+
+        assertThat(descriptor.constraints.filter { constraint -> constraint.supportedTypes == null }.map { it.annotation })
+            .containsExactlyInAnyOrder("jakarta.validation.constraints.NotNull", "jakarta.validation.constraints.Null")
+    }
+
+    private fun toJvmClasses(supportedType: String): List<Class<*>> {
+        return when (supportedType) {
+            "kotlin.Byte" -> listOf(Byte::class.javaPrimitiveType!!)
+            "kotlin.Short" -> listOf(Short::class.javaPrimitiveType!!)
+            "kotlin.Int" -> listOf(Int::class.javaPrimitiveType!!)
+            "kotlin.Long" -> listOf(Long::class.javaPrimitiveType!!)
+            "kotlin.Float" -> listOf(Float::class.javaPrimitiveType!!)
+            "kotlin.Double" -> listOf(Double::class.javaPrimitiveType!!)
+            "kotlin.Boolean" -> listOf(Boolean::class.javaPrimitiveType!!)
+            "kotlin.String" -> listOf(String::class.java)
+            "kotlin.collections.Collection" -> listOf(Collection::class.java, Array<Any>::class.java)
+            "kotlin.collections.Map" -> listOf(Map::class.java)
+            "java.time.LocalDate", "java.time.LocalDateTime", "java.time.OffsetDateTime",
+            "java.time.ZonedDateTime", "java.time.Instant" -> listOf(Temporal::class.java)
+            else -> listOf(Class.forName(supportedType))
+        }
+    }
+
     private data class StubAnnotation(
         override val name: String,
         override val fqName: String,
         override val args: Map<String, Any> = emptyMap(),
+        override val metaAnnotations: List<String> = emptyList(),
     ) : CodegenAnnotation
 
 }

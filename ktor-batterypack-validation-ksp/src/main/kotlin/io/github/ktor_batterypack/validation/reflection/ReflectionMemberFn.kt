@@ -36,6 +36,9 @@ class ReflectionMemberFn(private val memberFn: KFunction<*>) : MemberFn {
     override val returnType: ReflectionCodegenType
         get() = toReflectionCodegenType(memberFn.returnType)
 
+    override val symbol: Any?
+        get() = null
+
     override val isPublic: Boolean
         get() = memberFn.visibility == KVisibility.PUBLIC
 

@@ -8,6 +8,7 @@ import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
+import com.google.devtools.ksp.symbol.KSNode
 import io.github.ktor_batterypack.validation.codegen.ConstraintDescriptionSource
 import io.github.ktor_batterypack.validation.codegen.ConstraintRegistry
 import io.github.ktor_batterypack.validation.codegen.JakartaConstraintsSource
@@ -42,6 +43,11 @@ class ValidationGenerator(private val environment: SymbolProcessorEnvironment) :
             constraintRegistry = constraintRegistry,
             jsonNamingStrategy = JsonNamingStrategy.fromOption(environment.options[JsonNamingStrategy.OPTION])
         )
+        val inspector = ValidatorInspector(
+            constraintRegistry = constraintRegistry,
+            namingConvention = namingConvention,
+            strict = environment.options[ValidatorInspector.STRICT_OPTION]?.trim().toBoolean()
+        )
 
         val validatorClassesSymbols =
             resolver.getSymbolsWithAnnotation("io.github.ktor_batterypack.annotation.Validator")
@@ -53,32 +59,61 @@ class ValidationGenerator(private val environment: SymbolProcessorEnvironment) :
                 .filterIsInstance<KSClassDeclaration>()
                 .toList()
 
-        val deferred = mutableListOf<KSAnnotated>()
         for (classDecl in validatorClassesSymbols) {
-            generateValidatorClass(modelResolver, classDecl) { model ->
+            generateValidatorClass(inspector, modelResolver, classDecl, jsonMode = false) { model ->
                 codegen.generateValidatorClass(model)
             }
         }
 
         for (classDecl in jsonValidatorClassesSymbols) {
-            generateValidatorClass(modelResolver, classDecl) { model ->
+            generateValidatorClass(inspector, modelResolver, classDecl, jsonMode = true) { model ->
                 codegen.generateJsonValidatorClass(model)
             }
         }
 
         generated = true
-        return deferred
+        return emptyList()
     }
 
     private fun generateValidatorClass(
+        inspector: ValidatorInspector,
         resolver: CodegenModelResolver,
         classDecl: KSClassDeclaration,
+        jsonMode: Boolean,
         genFn: (CodegenModel) -> String
     ) {
         val qualifiedName = classDecl.qualifiedName?.asString() ?: return
         environment.logger.info("ValidationGenerator: processing $qualifiedName")
 
-        val model = resolver.resolve(KspValidatorInterface(classDecl))
+        try {
+            val validatorInterface = KspValidatorInterface(classDecl)
+            val diagnostics = inspector.inspect(validatorInterface, jsonMode)
+            diagnostics.forEach { diagnostic -> report(diagnostic) }
+            if (diagnostics.any { diagnostic -> diagnostic.severity == CodegenDiagnostic.Severity.ERROR }) {
+                return
+            }
+
+            writeValidatorClass(resolver, validatorInterface, classDecl, genFn)
+        } catch (e: Exception) {
+            environment.logger.error("Could not generate a validator for $qualifiedName: $e", classDecl)
+        }
+    }
+
+    private fun report(diagnostic: CodegenDiagnostic) {
+        val symbol = diagnostic.symbol as? KSNode
+        when (diagnostic.severity) {
+            CodegenDiagnostic.Severity.ERROR -> environment.logger.error(diagnostic.message, symbol)
+            CodegenDiagnostic.Severity.WARNING -> environment.logger.warn(diagnostic.message, symbol)
+        }
+    }
+
+    private fun writeValidatorClass(
+        resolver: CodegenModelResolver,
+        validatorInterface: ValidatorInterface,
+        classDecl: KSClassDeclaration,
+        genFn: (CodegenModel) -> String
+    ) {
+        val model = resolver.resolve(validatorInterface)
 
         val source = genFn(model)
 

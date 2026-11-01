@@ -12,10 +12,7 @@ class ConstraintArgsHelper : Helper<Any> {
     override fun apply(context: Any?, options: Options): Any {
         val args = context as Map<*, *>
         return args
-            .map { (k, v) ->
-                val value = if (v is String) '"' + v.replace("\\", "\\\\") + '"' else v
-                "$k=$value"
-            }
+            .map { (k, v) -> "$k=${KotlinLiteralRenderer.render(v)}" }
             .joinToString(", ")
     }
 }

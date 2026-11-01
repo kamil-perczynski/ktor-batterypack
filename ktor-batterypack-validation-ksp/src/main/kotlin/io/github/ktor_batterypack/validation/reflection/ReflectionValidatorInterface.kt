@@ -10,6 +10,9 @@ class ReflectionValidatorInterface(private val clazz: KClass<*>) : ValidatorInte
 
     override val name: String = clazz.simpleName!!
 
+    override val symbol: Any?
+        get() = null
+
     override val memberFunctions: List<MemberFn>
         get() = clazz.memberFunctions.map { ReflectionMemberFn(it) }
 }
