@@ -26,7 +26,9 @@ import org.junit.jupiter.api.Test
 import org.koin.ktor.plugin.koin
 import java.util.UUID
 import kotlin.collections.map
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 class RedisStreamFetcherBatteryIT : RedisBatteryIT() {
 
@@ -114,9 +116,9 @@ class RedisStreamFetcherBatteryIT : RedisBatteryIT() {
         closer.add { fetcher.close() }
 
         fetcher.onInit()
-        delay(250.milliseconds)
 
         // then: the message is reclaimed and delivered
+        awaitUntil(5.seconds) { listener.payloads.isNotEmpty() }
         assertThat(listener.payloads.map { it.payload })
             .containsExactly(payload)
         Unit
@@ -159,6 +161,16 @@ class RedisStreamFetcherBatteryIT : RedisBatteryIT() {
         assertThat(consumerNames).doesNotContain("old-consumer")
 
         Unit
+    }
+
+    private suspend fun awaitUntil(timeout: Duration, condition: () -> Boolean) {
+        val deadline = System.nanoTime() + timeout.inWholeNanoseconds
+        while (!condition()) {
+            if (System.nanoTime() > deadline) {
+                throw AssertionError("Condition not met within $timeout")
+            }
+            delay(50.milliseconds)
+        }
     }
 
 }
