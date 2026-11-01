@@ -37,6 +37,9 @@ class KspMemberFn(private val fn: KSFunctionDeclaration) : MemberFn {
             )
         }
 
+    override val isSuspend: Boolean
+        get() = Modifier.SUSPEND in fn.modifiers
+
     override val annotations: List<CodegenAnnotation>
         get() {
             return fn.annotations.map { KspCodegenAnnotation(it) }.toList()

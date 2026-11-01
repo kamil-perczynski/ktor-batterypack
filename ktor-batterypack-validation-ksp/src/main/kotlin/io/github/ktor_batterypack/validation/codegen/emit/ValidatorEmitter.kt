@@ -24,6 +24,7 @@ import io.github.ktor_batterypack.validation.ksp.jsonScalarTypeCheckMethodName
 
 private const val VALIDATION_PACKAGE = "io.github.ktor_batterypack.validation"
 private const val SELF_KEY = "$"
+private const val CLOCK_PROPERTY = "clock"
 
 private val VALIDATION_CALL = ClassName(VALIDATION_PACKAGE, "ValidationCall")
 private val VALIDATION_RESULT = ClassName(VALIDATION_PACKAGE, "ValidationResult")
@@ -51,14 +52,24 @@ class ValidatorEmitter {
             .addAnnotation(GENERATED)
             .primaryConstructor(
                 FunSpec.constructorBuilder()
+                    .addParameters(model.properties.map { property -> ParameterSpec.builder(property.name, property.typeName).build() })
                     .addParameter(
-                        ParameterSpec.builder("clock", CLOCK)
+                        ParameterSpec.builder(CLOCK_PROPERTY, CLOCK)
                             .defaultValue("%T.systemDefaultZone()", CLOCK)
                             .build()
                     )
                     .build()
             )
-            .addProperty(PropertySpec.builder("clock", CLOCK, KModifier.PRIVATE).initializer("clock").build())
+            .addProperties(
+                model.properties.map { property ->
+                    PropertySpec.builder(property.name, property.typeName, KModifier.OVERRIDE).initializer("%N", property.name).build()
+                }
+            )
+            .addProperty(
+                PropertySpec.builder(CLOCK_PROPERTY, CLOCK, if (model.overridesClock) KModifier.OVERRIDE else KModifier.PRIVATE)
+                    .initializer("%N", CLOCK_PROPERTY)
+                    .build()
+            )
             .addSuperinterface(model.interfaceClassName)
             .addFunctions(model.entryMethods.map { method -> entryFunction(model.mode, method) })
             .addFunctions(model.typeMethods.map { method -> typeFunction(model.mode, method) })
@@ -96,7 +107,7 @@ class ValidatorEmitter {
         )
 
         return FunSpec.builder(method.name)
-            .addModifiers(KModifier.OVERRIDE)
+            .addModifiers(listOfNotNull(KModifier.OVERRIDE, suspendModifier(method.isSuspend)))
             .addParameter(method.paramName, method.paramType)
             .returns(method.returnType)
             .addCode(code.build())
@@ -125,11 +136,15 @@ class ValidatorEmitter {
 
         val modifier = if (method.declaredParamType != null) KModifier.OVERRIDE else KModifier.PRIVATE
         return FunSpec.builder(method.name)
-            .addModifiers(modifier)
+            .addModifiers(listOfNotNull(modifier, suspendModifier(method.isSuspend)))
             .addParameter(method.paramName, method.declaredParamType ?: generatedParamType(mode, method).copy(nullable = true))
             .addParameter("call", VALIDATION_CALL)
             .addCode(code.build())
             .build()
+    }
+
+    private fun suspendModifier(isSuspend: Boolean): KModifier? {
+        return if (isSuspend) KModifier.SUSPEND else null
     }
 
     private fun addProperties(code: CodeBlock.Builder, mode: CodegenMode, method: TypeMethod) {

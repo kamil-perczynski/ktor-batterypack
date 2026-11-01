@@ -93,7 +93,7 @@ Domain errors implement `ErrorCode` (`code`, `message`).
 ## Validation stack
 
 1. Declare a `@Validator` (typed) or `@JsonValidator` (`JsonNode` in/out) interface with `fun validateX(...): ValidationResult<T>`.
-2. KSP (`ktor-batterypack-validation-ksp`) generates `*Impl`; the interface exposes it through `companion object : X by XImpl()`.
+2. KSP (`ktor-batterypack-validation-ksp`) generates `*Impl`; the interface exposes it through `companion object : X by XImpl()`. Abstract `val`s on the interface become `*Impl` constructor parameters (then wire it as a bean instead); checks may be `suspend`, and generated methods that reach them become `suspend` too.
 3. Constraint sources: Jakarta validation annotations + optional YAML constraint dir (`kspArg("ktor.validation.constraint.dir", ...)`); runtime checks live in the `Constraints` object (`checkNotNull`, `checkPattern`, `checkSize`, ...).
 4. Controllers bind inputs with `JsonBinder.bindBody<T>(call, validator::validateX)` / `bindQueryParams<T>(...)` — materialize as `JsonNode`, validate, then convert via the shared `JsonMapper`.
 5. `result.check(message)` throws `ValidationException` → 400 problem detail.
