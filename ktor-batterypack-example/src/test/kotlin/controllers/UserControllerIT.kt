@@ -5,8 +5,11 @@ import io.github.kperczynski.domain.user.UserEvent
 import io.github.kperczynski.domain.user.UserEventType
 import io.github.kperczynski.domain.user.UserRepo
 import io.github.kperczynski.infra.CapturedMsg
+import io.github.kperczynski.infra.ACCESS_TOKEN_COOKIE
+import io.github.kperczynski.infra.ADMINS
 import io.github.kperczynski.infra.KtorBatteriesIT
 import io.github.kperczynski.infra.UserEventsMessageCollector
+import io.ktor.client.request.cookie
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.post
@@ -33,6 +36,7 @@ class UserControllerIT : KtorBatteriesIT() {
         messageCollector.expectResult()
 
         val response = httpClient.post("/users") {
+            cookie(ACCESS_TOKEN_COOKIE, accessToken(ADMINS))
             contentType(ContentType.Application.Json)
             setBody("""{"name":"Alice","age":30}""")
         }
@@ -52,7 +56,9 @@ class UserControllerIT : KtorBatteriesIT() {
         val createdUser = userRepo.create(User(id = 0u, name = "Bob", age = 25))
         messageCollector.expectResult()
 
-        val response = httpClient.get("/users/${createdUser.id}")
+        val response = httpClient.get("/users/${createdUser.id}") {
+            cookie(ACCESS_TOKEN_COOKIE, accessToken(ADMINS))
+        }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.OK)
 
@@ -71,6 +77,7 @@ class UserControllerIT : KtorBatteriesIT() {
         val createdUser = userRepo.create(User(id = 0u, name = "Charlie", age = 40))
 
         val response = httpClient.put("/users/${createdUser.id}") {
+            cookie(ACCESS_TOKEN_COOKIE, accessToken(ADMINS))
             contentType(ContentType.Application.Json)
             setBody("""{"name":"Charles","age":41}""")
         }
@@ -82,14 +89,18 @@ class UserControllerIT : KtorBatteriesIT() {
     fun `should delete a user`() = runTest {
         val createdUser = userRepo.create(User(id = 0u, name = "Dave", age = 50))
 
-        val response = httpClient.delete("/users/${createdUser.id}")
+        val response = httpClient.delete("/users/${createdUser.id}") {
+            cookie(ACCESS_TOKEN_COOKIE, accessToken(ADMINS))
+        }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.NoContent)
     }
 
     @Test
     fun `should return 404 for missing user`() = runTest {
-        val response = httpClient.get("/users/99999")
+        val response = httpClient.get("/users/99999") {
+            cookie(ACCESS_TOKEN_COOKIE, accessToken(ADMINS))
+        }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.NotFound)
     }
@@ -97,6 +108,7 @@ class UserControllerIT : KtorBatteriesIT() {
     @Test
     fun `should return 422 for illegal age`() = runTest {
         val response = httpClient.post("/users") {
+            cookie(ACCESS_TOKEN_COOKIE, accessToken(ADMINS))
             contentType(ContentType.Application.Json)
             setBody("""{"name":"Eve","age":150}""")
         }
@@ -106,7 +118,9 @@ class UserControllerIT : KtorBatteriesIT() {
 
     @Test
     fun `should return 400 for invalid user id`() = runTest {
-        val response = httpClient.get("/users/abc")
+        val response = httpClient.get("/users/abc") {
+            cookie(ACCESS_TOKEN_COOKIE, accessToken(ADMINS))
+        }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
     }
@@ -114,6 +128,7 @@ class UserControllerIT : KtorBatteriesIT() {
     @Test
     fun `should return 400 for invalid create request`() = runTest {
         val response = httpClient.post("/users") {
+            cookie(ACCESS_TOKEN_COOKIE, accessToken(ADMINS))
             contentType(ContentType.Application.Json)
             setBody("""{"name":"","age":25}""")
         }
@@ -126,6 +141,7 @@ class UserControllerIT : KtorBatteriesIT() {
         val createdUser = userRepo.create(User(id = 0u, name = "Frank", age = 35))
 
         val response = httpClient.put("/users/${createdUser.id}") {
+            cookie(ACCESS_TOKEN_COOKIE, accessToken(ADMINS))
             contentType(ContentType.Application.Json)
             setBody("""{"name":"A","age":35}""")
         }

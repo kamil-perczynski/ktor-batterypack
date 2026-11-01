@@ -13,7 +13,8 @@ import org.koin.core.annotation.Singleton
 class OidcProviderFactory(
     private val props: OidcProps,
     private val callbacks: OidcCallbacks,
-    private val app: Application
+    private val app: Application,
+    private val customizer: OidcProviderCustomizer?
 ) {
 
     @OptIn(ExperimentalKtorApi::class)
@@ -38,6 +39,8 @@ class OidcProviderFactory(
                     callbacks.onAuthenticated(call, oidcId)
                 }
             }
+
+            customizer?.customize(this)
         }
     }
 }

@@ -1,6 +1,8 @@
 package io.github.kperczynski.controllers
 
 import io.github.kperczynski.domain.plant.PlantRepo
+import io.github.kperczynski.infra.ACCESS_TOKEN_COOKIE
+import io.github.kperczynski.infra.READERS
 import io.github.kperczynski.infra.KtorBatteriesIT
 import io.github.kperczynski.domain.somePlant
 import io.ktor.client.request.*
@@ -25,7 +27,9 @@ class PlantControllerIT : KtorBatteriesIT() {
             )
         )
 
-        val response = httpClient.get("/api/plants")
+        val response = httpClient.get("/api/plants") {
+            cookie(ACCESS_TOKEN_COOKIE, accessToken(READERS))
+        }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.OK)
     }
@@ -40,14 +44,18 @@ class PlantControllerIT : KtorBatteriesIT() {
             )
         )
 
-        val response = httpClient.get("/api/plants/${createdPlant.id}")
+        val response = httpClient.get("/api/plants/${createdPlant.id}") {
+            cookie(ACCESS_TOKEN_COOKIE, accessToken(READERS))
+        }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.OK)
     }
 
     @Test
     fun `should return 404 for missing plant`() = runTest {
-        val response = httpClient.get("/api/plants/99999")
+        val response = httpClient.get("/api/plants/99999") {
+            cookie(ACCESS_TOKEN_COOKIE, accessToken(READERS))
+        }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.NotFound)
     }

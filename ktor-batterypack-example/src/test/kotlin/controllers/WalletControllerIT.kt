@@ -6,6 +6,8 @@ import io.github.kperczynski.domain.wallet.Wallet
 import io.github.kperczynski.domain.wallet.WalletEvent
 import io.github.kperczynski.domain.wallet.WalletEventType
 import io.github.kperczynski.domain.wallet.WalletRepo
+import io.github.kperczynski.infra.ACCESS_TOKEN_COOKIE
+import io.github.kperczynski.infra.ADMINS
 import io.github.kperczynski.infra.KtorBatteriesIT
 import io.github.kperczynski.infra.WalletEventsMessageCollector
 import io.ktor.client.call.body
@@ -34,7 +36,9 @@ class WalletControllerIT : KtorBatteriesIT() {
         messageCollector.expectResult(count = 2)
 
         // when requesting topup by walletId
-        val response = httpClient.get("/api/wallets/topup?amount=50.00&walletId=${wallet.id}")
+        val response = httpClient.get("/api/wallets/topup?amount=50.00&walletId=${wallet.id}") {
+            cookie(ACCESS_TOKEN_COOKIE, accessToken(ADMINS))
+        }
 
         // then HTTP 202 is returned with the wallet before topup
         assertThat(response.status).isEqualTo(HttpStatusCode.Accepted)
@@ -74,7 +78,9 @@ class WalletControllerIT : KtorBatteriesIT() {
         messageCollector.expectResult(count = 2)
 
         // when requesting topup by userId only
-        val response = httpClient.get("/api/wallets/topup?amount=25.00&userId=${user.id}")
+        val response = httpClient.get("/api/wallets/topup?amount=25.00&userId=${user.id}") {
+            cookie(ACCESS_TOKEN_COOKIE, accessToken(ADMINS))
+        }
 
         // then HTTP 202 is returned with a newly created wallet having zero balance
         assertThat(response.status).isEqualTo(HttpStatusCode.Accepted)
@@ -115,7 +121,9 @@ class WalletControllerIT : KtorBatteriesIT() {
         messageCollector.expectResult(count = 2)
 
         // when requesting topup by userId only
-        val response = httpClient.get("/api/wallets/topup?amount=75.50&userId=${user.id}")
+        val response = httpClient.get("/api/wallets/topup?amount=75.50&userId=${user.id}") {
+            cookie(ACCESS_TOKEN_COOKIE, accessToken(ADMINS))
+        }
 
         // then HTTP 202 is returned with a newly created wallet having zero balance
         assertThat(response.status).isEqualTo(HttpStatusCode.Accepted)
@@ -158,7 +166,9 @@ class WalletControllerIT : KtorBatteriesIT() {
 
         // when requesting topup with walletId and userId
         val response =
-            httpClient.get("/api/wallets/topup?amount=30.00&walletId=$nonExistentWalletId&userId=${user.id}")
+            httpClient.get("/api/wallets/topup?amount=30.00&walletId=$nonExistentWalletId&userId=${user.id}") {
+                cookie(ACCESS_TOKEN_COOKIE, accessToken(ADMINS))
+            }
 
         // then HTTP 202 is returned with a newly created wallet having zero balance
         assertThat(response.status).isEqualTo(HttpStatusCode.Accepted)
@@ -197,7 +207,9 @@ class WalletControllerIT : KtorBatteriesIT() {
         // given a request with only amount
 
         // when requesting topup without walletId or userId
-        val response = httpClient.get("/api/wallets/topup?amount=10.00")
+        val response = httpClient.get("/api/wallets/topup?amount=10.00") {
+            cookie(ACCESS_TOKEN_COOKIE, accessToken(ADMINS))
+        }
 
         // then HTTP 422 is returned
         assertThat(response.status).isEqualTo(HttpStatusCode.UnprocessableEntity)
@@ -208,7 +220,9 @@ class WalletControllerIT : KtorBatteriesIT() {
         // given a request with non-existent walletId and no userId
 
         // when requesting topup with a missing walletId only
-        val response = httpClient.get("/api/wallets/topup?amount=10.00&walletId=99999")
+        val response = httpClient.get("/api/wallets/topup?amount=10.00&walletId=99999") {
+            cookie(ACCESS_TOKEN_COOKIE, accessToken(ADMINS))
+        }
 
         // then HTTP 422 is returned
         assertThat(response.status).isEqualTo(HttpStatusCode.UnprocessableEntity)
@@ -219,7 +233,9 @@ class WalletControllerIT : KtorBatteriesIT() {
         // given a request with invalid walletId format
 
         // when requesting topup with walletId=abc
-        val response = httpClient.get("/api/wallets/topup?amount=10.00&walletId=abc")
+        val response = httpClient.get("/api/wallets/topup?amount=10.00&walletId=abc") {
+            cookie(ACCESS_TOKEN_COOKIE, accessToken(ADMINS))
+        }
 
         // then HTTP 400 is returned
         assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
@@ -230,7 +246,9 @@ class WalletControllerIT : KtorBatteriesIT() {
         // given a request with invalid amount format
 
         // when requesting topup with amount=xyz
-        val response = httpClient.get("/api/wallets/topup?amount=xyz&walletId=1")
+        val response = httpClient.get("/api/wallets/topup?amount=xyz&walletId=1") {
+            cookie(ACCESS_TOKEN_COOKIE, accessToken(ADMINS))
+        }
 
         // then HTTP 400 is returned
         assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
@@ -245,7 +263,9 @@ class WalletControllerIT : KtorBatteriesIT() {
         )
 
         // when requesting wallet by id
-        val response = httpClient.get("/api/wallets/${wallet.id}")
+        val response = httpClient.get("/api/wallets/${wallet.id}") {
+            cookie(ACCESS_TOKEN_COOKIE, accessToken(ADMINS))
+        }
 
         // then HTTP 200 is returned with the wallet
         assertThat(response.status).isEqualTo(HttpStatusCode.OK)
@@ -259,7 +279,9 @@ class WalletControllerIT : KtorBatteriesIT() {
         // given a non-existent wallet id
 
         // when requesting wallet by id
-        val response = httpClient.get("/api/wallets/99999")
+        val response = httpClient.get("/api/wallets/99999") {
+            cookie(ACCESS_TOKEN_COOKIE, accessToken(ADMINS))
+        }
 
         // then HTTP 404 is returned
         assertThat(response.status).isEqualTo(HttpStatusCode.NotFound)
