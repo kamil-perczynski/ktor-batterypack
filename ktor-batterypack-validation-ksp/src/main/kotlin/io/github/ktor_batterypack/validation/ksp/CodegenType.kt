@@ -8,7 +8,6 @@ interface CodegenType {
     val typeName: TypeName
     val isResolved: Boolean
     val typeParams: List<CodegenType>
-    val isPrimitive: Boolean
     val isCollection: Boolean
     val isMap: Boolean
     val isEnum: Boolean

@@ -5,7 +5,6 @@ import com.squareup.kotlinpoet.asTypeName
 import io.github.ktor_batterypack.validation.ksp.CodegenType
 import io.github.ktor_batterypack.validation.ksp.CodegenAnnotation
 import io.github.ktor_batterypack.validation.ksp.DeclaredMember
-import io.github.ktor_batterypack.validation.ksp.isPrimitive
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.KVisibility
@@ -13,7 +12,6 @@ import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.javaField
-import kotlin.reflect.jvm.jvmErasure
 
 data class ReflectionCodegenType(
     private val kclass: KClass<*>,
@@ -35,21 +33,6 @@ data class ReflectionCodegenType(
     override val typeParams: List<ReflectionCodegenType> =
         ktype.arguments.mapNotNull { argument -> argument.type }.map { toReflectionCodegenType(it) }
 
-    override val isPrimitive: Boolean
-        get() {
-            if (!isResolved) {
-                return true
-            }
-            if (isCollection) {
-                return false
-            }
-            if (isMap) {
-                return false
-            }
-
-            return isPrimitive(ktype.jvmErasure.qualifiedName!!)
-        }
-
     override val isCollection: Boolean
         get() = kclass.isSubclassOf(Collection::class) || (kclass.java.isArray && !kclass.java.componentType.isPrimitive)
 
@@ -61,19 +44,6 @@ data class ReflectionCodegenType(
 
     override val declaredMemberProperties: List<DeclaredMember>
         get() {
-            if (isPrimitive) {
-                return emptyList()
-            }
-            if (isCollection) {
-                return emptyList()
-            }
-            if (isMap) {
-                return emptyList()
-            }
-            if (isEnum) {
-                return emptyList()
-            }
-
             val primaryConstructor = kclass.primaryConstructor
             return kclass.memberProperties
                 .filter { property -> property.visibility == KVisibility.PUBLIC && (property.javaField != null || property.isAbstract) }

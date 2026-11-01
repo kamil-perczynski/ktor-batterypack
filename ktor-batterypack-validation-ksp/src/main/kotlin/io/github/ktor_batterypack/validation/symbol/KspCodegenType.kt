@@ -16,7 +16,6 @@ import com.squareup.kotlinpoet.ksp.toTypeName
 import io.github.ktor_batterypack.validation.ksp.CodegenAnnotation
 import io.github.ktor_batterypack.validation.ksp.CodegenType
 import io.github.ktor_batterypack.validation.ksp.DeclaredMember
-import io.github.ktor_batterypack.validation.ksp.isPrimitive
 
 class KspCodegenType(
     private val type: KSType,
@@ -54,14 +53,6 @@ class KspCodegenType(
     override val typeParams: List<KspCodegenType>
         get() = type.arguments.mapNotNull { argument -> argument.type?.resolve() }.map { toKspCodegenType(it) }
 
-    override val isPrimitive: Boolean
-        get() {
-            if (!isResolved) return true
-            if (isCollection) return false
-            if (isMap) return false
-            return isPrimitive(fqName)
-        }
-
     override val isCollection: Boolean
         get() {
             val declaration = classDecl ?: return false
@@ -80,11 +71,6 @@ class KspCodegenType(
     override val declaredMemberProperties: List<DeclaredMember>
         get() {
             val declaration = classDecl ?: return emptyList()
-            if (isCollection) return emptyList()
-            if (isMap) return emptyList()
-            if (isPrimitive) return emptyList()
-            if (isEnum) return emptyList()
-
             if (declaration.origin == Origin.JAVA || declaration.origin == Origin.JAVA_LIB) {
                 return declaration.declarations
                     .filterIsInstance<KSPropertyDeclaration>()
