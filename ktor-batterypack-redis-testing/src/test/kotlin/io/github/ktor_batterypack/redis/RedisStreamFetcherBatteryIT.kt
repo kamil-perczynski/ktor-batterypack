@@ -53,7 +53,7 @@ class RedisStreamFetcherBatteryIT : RedisBatteryIT() {
     )
     private val messageProcessor = StreamMessageProcessor(metrics)
     private val redisStreamFetchingLoop =
-        RedisStreamFetchingLoop(redisClient, messageProcessor, redisProps)
+        RedisStreamFetchingLoop(redisClient, messageProcessor, metrics, redisProps)
     private val redisStreamAutoclaimLoop =
         RedisStreamAutoclaimLoop(redisClient, messageProcessor, metrics, redisProps)
     private val redisStreamConsumerLagMonitorLoop =

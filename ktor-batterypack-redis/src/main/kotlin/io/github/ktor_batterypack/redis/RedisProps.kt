@@ -19,7 +19,7 @@ data class RedisProps(
     val database: Int? = null,
     @param:JsonPropertyDescription("Client name reported to Redis (visible in CLIENT LIST); overrides the clientName URL parameter")
     val clientName: String? = null,
-    @param:JsonPropertyDescription("Command timeout in milliseconds; overrides the timeout URL parameter")
+    @param:JsonPropertyDescription("Command timeout in milliseconds (defaults to 10000); overrides the timeout URL parameter. Blocking stream reads get the fetching timeout added on top")
     val timeoutMs: Long? = null,
     @param:JsonPropertyDescription("Redis streams props")
     val streams: RedisStreamProps = RedisStreamProps(),
