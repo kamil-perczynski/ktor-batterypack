@@ -37,6 +37,7 @@ dependencies {
     implementation(project(":ktor-batterypack-annotations"))
     implementation(project(":ktor-batterypack-validation"))
     implementation(project(":ktor-batterypack-core"))
+    implementation(project(":ktor-batterypack-authz"))
     implementation(project(":ktor-batterypack-database"))
     implementation(project(":ktor-batterypack-metrics"))
     implementation(project(":ktor-batterypack-redis"))

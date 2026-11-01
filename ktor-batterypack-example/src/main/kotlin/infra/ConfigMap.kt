@@ -2,6 +2,7 @@ package io.github.kperczynski.infra
 
 import io.github.kperczynski.infra.client.FlorinClientProps
 import io.github.kperczynski.infra.oidc.OidcProps
+import io.github.ktor_batterypack.authz.AuthzProps
 import io.github.ktor_batterypack.database.DatabaseProps
 import io.github.ktor_batterypack.database.liquibase.LiquibaseProps
 import io.github.ktor_batterypack.redis.RedisProps
@@ -23,6 +24,8 @@ data class ConfigMap(
     val redis: RedisProps,
     /** OpenID Connect browser login configuration */
     val oidc: OidcProps,
+    /** Authorization groups and JWT claims mapping */
+    val authz: AuthzProps = AuthzProps(),
 )
 
 
