@@ -10,5 +10,6 @@ data class TypeMethod(
     val declaredParamType: TypeName?,
     val properties: List<PropertyModel>,
     val item: ValueModel?,
+    val dispatch: Dispatch?,
     val additionalCalls: List<String>
 )

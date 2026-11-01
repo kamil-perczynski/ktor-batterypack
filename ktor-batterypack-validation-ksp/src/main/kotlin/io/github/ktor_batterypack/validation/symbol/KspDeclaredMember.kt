@@ -16,9 +16,12 @@ class KspDeclaredMember(
     override val annotations: List<CodegenAnnotation> by lazy {
         val getterAnnotations = prop.getter?.annotations ?: emptySequence()
         val parameterAnnotations = constructorParameter?.annotations ?: emptySequence()
+        val overriddenAnnotations = generateSequence(prop.findOverridee()) { overridden -> overridden.findOverridee() }
+            .flatMap { overridden -> sequenceOf(overridden.annotations, overridden.getter?.annotations ?: emptySequence()) }
+            .toList()
 
         mergeAnnotationSites(
-            listOf(prop.annotations, getterAnnotations, parameterAnnotations).map { site ->
+            (listOf(prop.annotations, getterAnnotations, parameterAnnotations) + overriddenAnnotations).map { site ->
                 site.map { annotation -> KspCodegenAnnotation(annotation) }.toList()
             }
         )

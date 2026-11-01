@@ -35,29 +35,6 @@ interface JsonInvoiceCreateValidator {
         }
     }
 
-    @ValidationParamType(ContractParty::class)
-    fun validateContractParty(contractParty: ObjectNode?, call: ValidationCall) {
-        if (contractParty == null) return
-
-        JsonTypeChecks.checkNotNull("type", contractParty, call)
-        val type = JsonTypeChecks.checkString("type", contractParty, call) ?: return
-
-        when (type) {
-            ContractPartyType.SELLER.name -> validateSellerParty(contractParty, call)
-            ContractPartyType.BUYER.name -> validateBuyerParty(contractParty, call)
-            ContractPartyType.RECEIVER.name -> validateReceiverParty(contractParty, call)
-            ContractPartyType.RECEIVER.name -> validateProducerParty(contractParty, call)
-            ContractPartyType.PRODUCER.name -> validatePayerParty(contractParty, call)
-            else -> call.propertyError(
-                "type",
-                SingleConstraintError(
-                    "EnumConstant",
-                    "Unrecognized contract party type '$type'"
-                )
-            )
-        }
-    }
-
     @ValidationParamType(InvoiceCreate::class)
     fun checkInvoiceCreate(invoiceCreate: ObjectNode?, call: ValidationCall) {
         if (invoiceCreate == null) return
@@ -82,21 +59,6 @@ interface JsonInvoiceCreateValidator {
             )
         }
     }
-
-    @ValidationParamType(SellerParty::class)
-    fun validateSellerParty(sellerParty: ObjectNode?, call: ValidationCall)
-
-    @ValidationParamType(PayerParty::class)
-    fun validatePayerParty(payerParty: ObjectNode?, call: ValidationCall)
-
-    @ValidationParamType(ReceiverParty::class)
-    fun validateReceiverParty(receiverParty: ObjectNode?, call: ValidationCall)
-
-    @ValidationParamType(BuyerParty::class)
-    fun validateBuyerParty(buyerParty: ObjectNode?, call: ValidationCall)
-
-    @ValidationParamType(ProducerParty::class)
-    fun validateProducerParty(producerParty: ObjectNode?, call: ValidationCall)
 
 }
 

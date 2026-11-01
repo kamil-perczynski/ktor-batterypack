@@ -1,5 +1,6 @@
 package io.github.ktor_batterypack.validation.symbol
 
+import com.google.devtools.ksp.getAllSuperTypes
 import com.google.devtools.ksp.isAbstract
 import com.google.devtools.ksp.isPublic
 import com.google.devtools.ksp.symbol.ClassKind
@@ -9,11 +10,13 @@ import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeAlias
+import com.google.devtools.ksp.symbol.Modifier
 import com.google.devtools.ksp.symbol.Origin
 import com.google.devtools.ksp.symbol.Variance
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.ksp.toTypeName
 import io.github.ktor_batterypack.validation.ksp.CodegenAnnotation
+import io.github.ktor_batterypack.validation.ksp.CodegenSubtype
 import io.github.ktor_batterypack.validation.ksp.CodegenType
 import io.github.ktor_batterypack.validation.ksp.DeclaredMember
 
@@ -68,6 +71,46 @@ class KspCodegenType(
     override val isEnum: Boolean
         get() = classDecl?.classKind == ClassKind.ENUM_CLASS
 
+    override val isSealed: Boolean
+        get() = classDecl?.modifiers?.contains(Modifier.SEALED) == true
+
+    override val isAbstract: Boolean
+        get() {
+            val declaration = classDecl ?: return false
+            return declaration.classKind == ClassKind.INTERFACE || declaration.isAbstract() || isSealed
+        }
+
+    override val declarationAnnotations: List<CodegenAnnotation>
+        get() = classDecl?.annotations?.map { KspCodegenAnnotation(it) }?.toList().orEmpty()
+
+    override val supertypes: List<CodegenType>
+        get() = classDecl?.getAllSuperTypes()
+            ?.filter { supertype -> supertype.declaration.qualifiedName?.asString() != "kotlin.Any" }
+            ?.map { supertype -> toKspCodegenType(supertype) }
+            ?.toList()
+            .orEmpty()
+
+    override val sealedSubtypes: List<CodegenType>
+        get() {
+            val declaration = classDecl ?: return emptyList()
+            if (!isSealed) {
+                return emptyList()
+            }
+            return declaration.getSealedSubclasses()
+                .map { subclass -> toKspCodegenType(subclass.asStarProjectedType()) }
+                .toList()
+        }
+
+    override val jsonSubtypes: List<CodegenSubtype>
+        get() {
+            val jsonSubTypes = classDecl?.annotations?.find { annotation ->
+                annotation.annotationType.resolve().declaration.qualifiedName?.asString() == JSON_SUB_TYPES_FQ_NAME
+            } ?: return emptyList()
+
+            val entries = jsonSubTypes.arguments.find { argument -> argument.name?.asString() == "value" }?.value as? List<*>
+            return entries.orEmpty().filterIsInstance<KSAnnotation>().mapNotNull { entry -> toCodegenSubtype(entry) }
+        }
+
     override val declaredMemberProperties: List<DeclaredMember>
         get() {
             val declaration = classDecl ?: return emptyList()
@@ -116,6 +159,18 @@ class KspCodegenType(
         return type.toString()
     }
 
+}
+
+private const val JSON_SUB_TYPES_FQ_NAME = "com.fasterxml.jackson.annotation.JsonSubTypes"
+
+private fun toCodegenSubtype(entry: KSAnnotation): CodegenSubtype? {
+    val arguments = entry.arguments.associate { argument -> argument.name?.asString() to argument.value }
+    val type = arguments["value"] as? KSType ?: return null
+    val name = arguments["name"] as? String
+    val names = (arguments["names"] as? List<*>).orEmpty().filterIsInstance<String>()
+    val declaredNames = (listOfNotNull(name) + names).filter { value -> value.isNotEmpty() }.distinct()
+    val subtype = (type.declaration as? KSClassDeclaration)?.asStarProjectedType() ?: type
+    return CodegenSubtype(toKspCodegenType(subtype), declaredNames)
 }
 
 private fun isSubtypeOf(classDecl: KSClassDeclaration, targetFqName: String): Boolean {

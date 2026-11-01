@@ -166,8 +166,9 @@ class CodegenModelResolver(
             val type = request.type
             val kind = ValueKind.of(type)
             val typeKey = qualifiedTypeName(type)
+            val dispatch = if (kind == ValueKind.OBJECT) toDispatch(type, request.symbol) else null
 
-            val properties = if (kind == ValueKind.OBJECT) {
+            val properties = if (kind == ValueKind.OBJECT && validatesOwnProperties(dispatch)) {
                 type.declaredMemberProperties
                     .filter { property -> mode == CodegenMode.TYPED || !property.isJsonIgnored }
                     .map { property -> toPropertyModel(type, property) }
@@ -186,10 +187,103 @@ class CodegenModelResolver(
                 item = findItemType(type, kind)?.let { itemType ->
                     toItemModel(itemType, "items of ${request.location}", request.symbol)
                 },
+                dispatch = dispatch,
                 additionalCalls = implementedFunctions
                     .filter { function -> function.name != request.name && qualifiedTypeName(modelType(function)) == typeKey }
                     .map { function -> function.name }
             )
+        }
+
+        private fun validatesOwnProperties(dispatch: Dispatch?): Boolean {
+            if (dispatch == null) {
+                return true
+            }
+            if (mode == CodegenMode.TYPED) {
+                return !dispatch.exhaustive
+            }
+            return dispatch.branches.any { branch -> branch.validateWith == null }
+        }
+
+        private fun toDispatch(type: CodegenType, symbol: Any?): Dispatch? {
+            return if (mode == CodegenMode.TYPED) toTypedDispatch(type, symbol) else toJsonDispatch(type, symbol)
+        }
+
+        private fun toTypedDispatch(type: CodegenType, symbol: Any?): Dispatch? {
+            val branches = PolymorphicTypes.directSubtypes(type)
+                .map { subtype -> subtype.type }
+                .filter { subtype -> checkSubtype(type, subtype, symbol) }
+                .sortedWith(compareByDescending<CodegenType> { subtype -> subtype.supertypes.size }.thenBy { subtype -> subtype.fqName })
+                .mapNotNull { subtype ->
+                    methodFor(subtype, subtypeLocation(type, subtype), symbol)?.let { method ->
+                        DispatchBranch(subtype, emptyList(), method)
+                    }
+                }
+            if (branches.isEmpty()) {
+                return null
+            }
+
+            val coveredTypes = branches.map { branch -> branch.type.fqName }.toSet()
+            return Dispatch(
+                typeIdProperty = null,
+                branches = branches,
+                exhaustive = type.isSealed && type.sealedSubtypes.all { subtype -> subtype.fqName in coveredTypes }
+            )
+        }
+
+        private fun toJsonDispatch(type: CodegenType, symbol: Any?): Dispatch? {
+            val typeInfo = JsonTypeInfoModel.of(type) ?: return null
+            val targets = PolymorphicTypes.concreteSubtypes(type)
+            if (typeInfo.isDisabled || targets.none { target -> target.type.fqName != type.fqName }) {
+                return null
+            }
+            if (!typeInfo.isSupported) {
+                error(
+                    "@JsonTypeInfo(use = ${typeInfo.use}, include = ${typeInfo.include}) of `${type.name}` is not supported " +
+                        "by a @JsonValidator. Use JsonTypeInfo.Id.NAME with JsonTypeInfo.As.PROPERTY or JsonTypeInfo.As.EXISTING_PROPERTY",
+                    symbol
+                )
+                return null
+            }
+
+            val typeIdOwners = mutableMapOf<String, CodegenType>()
+            val branches = mutableListOf<DispatchBranch>()
+            for (target in targets) {
+                val subtype = target.type
+                val isOwnType = subtype.fqName == type.fqName
+                if (!isOwnType && !checkSubtype(type, subtype, symbol)) {
+                    continue
+                }
+
+                val typeIds = PolymorphicTypes.typeIds(target, typeInfo)
+                for (typeId in typeIds) {
+                    val owner = typeIdOwners.putIfAbsent(typeId, subtype)
+                    if (owner != null) {
+                        error("Type id \"$typeId\" of `${type.name}` maps to both `${owner.name}` and `${subtype.name}`", symbol)
+                    }
+                }
+
+                val validateWith = if (isOwnType) null else methodFor(subtype, subtypeLocation(type, subtype), symbol)
+                if (isOwnType || validateWith != null) {
+                    branches.add(DispatchBranch(subtype, typeIds, validateWith))
+                }
+            }
+            return Dispatch(typeInfo.typeIdProperty, branches, exhaustive = false)
+        }
+
+        private fun checkSubtype(type: CodegenType, subtype: CodegenType, symbol: Any?): Boolean {
+            if (!subtype.isResolved) {
+                error("Subtype `${subtype.name}` of `${type.name}` has unsupported type `$subtype`", symbol)
+                return false
+            }
+            if (subtype.supertypes.none { supertype -> supertype.fqName == type.fqName }) {
+                error("`${subtype.name}` is listed in @JsonSubTypes of `${type.name}` but does not extend it", symbol)
+                return false
+            }
+            return ValueKind.of(subtype) == ValueKind.OBJECT
+        }
+
+        private fun subtypeLocation(type: CodegenType, subtype: CodegenType): String {
+            return "subtype `${subtype.name}` of `${type.name}`"
         }
 
         private fun toPropertyModel(parentType: CodegenType, property: DeclaredMember): PropertyModel {

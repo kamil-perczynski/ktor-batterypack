@@ -218,6 +218,30 @@ class JsonTypeChecksTest {
         )
     }
 
+    @Test
+    fun `checkTypeId returns a known type id`() {
+        val node = readTree("""{"kind": "CAT"}""")
+        val call = ValidationCall()
+
+        assertThat(JsonTypeChecks.checkTypeId("kind", node, call, setOf("CAT", "DOG"))).isEqualTo("CAT")
+        assertThat(call.finishObject()).isNull()
+    }
+
+    @Test
+    fun `checkTypeId reports missing, mistyped and unknown type ids`() {
+        val missing = ValidationCall()
+        val mistyped = ValidationCall()
+        val unknown = ValidationCall()
+
+        assertThat(JsonTypeChecks.checkTypeId("kind", readTree("""{}"""), missing, setOf("CAT"))).isNull()
+        assertThat(JsonTypeChecks.checkTypeId("kind", readTree("""{"kind": 1}"""), mistyped, setOf("CAT"))).isNull()
+        assertThat(JsonTypeChecks.checkTypeId("kind", readTree("""{"kind": "COW"}"""), unknown, setOf("CAT"))).isNull()
+
+        assertThat(errorsOf(missing, "kind")).containsExactly(SingleConstraintError("NotNull", "Must not be null"))
+        assertThat(errorsOf(mistyped, "kind")).containsExactly(SingleConstraintError("Type", "Expected string but was number"))
+        assertThat(errorsOf(unknown, "kind")).containsExactly(SingleConstraintError("EnumValues", "Allowed values are: [CAT]"))
+    }
+
     private fun readTree(json: String): JsonNode {
         return jsonMapper.readTree(json)
     }

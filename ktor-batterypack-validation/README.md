@@ -70,6 +70,44 @@ validation of their type. Other implemented functions are ignored, so interfaces
 - JSON validators report enum values that match no entry as `EnumValues`. Typed validators accept any entry, unless you
   implement a validation function for the enum such as `fun validateKind(kind: Kind?, call: ValidationCall)`.
 
+## Polymorphic types
+
+A value is validated as its runtime subtype when its declared type is `sealed` or lists its subtypes with
+`@JsonSubTypes`.
+
+Typed validators dispatch on the runtime class, most specific subtypes first:
+
+```kotlin
+when (animal) {
+    is Cat -> validateCat(animal, call)
+    is Dog -> validateDog(animal, call)
+}
+```
+
+When the dispatch does not cover every possible subtype (an open or abstract type with `@JsonSubTypes`, or a sealed
+type with subtypes the processor cannot validate), an `else` branch validates the properties declared on the base type.
+
+JSON validators dispatch on the type id when the base type or one of its supertypes has `@JsonTypeInfo`:
+
+```kotlin
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "kind")
+sealed interface Animal
+
+@JsonTypeName("CAT")
+data class Cat(@field:NotBlank val favoritePrey: String) : Animal
+```
+
+- The candidate subtypes are the concrete classes reachable through `@JsonSubTypes` and sealed subclasses, at any depth.
+- Type ids come from `@JsonSubTypes.Type(name = ..., names = [...])`, then `@JsonTypeName`, then Jackson's default:
+  the class name without its package (`Outer$Inner`) for `Id.NAME`, or the simple name for `Id.SIMPLE_NAME`.
+- The type id property (`@type` unless `property` is set) is reported as `NotNull` when missing, `Type` when it is not a
+  string, and `EnumValues` when it matches no subtype. The subtype's properties are only checked when the id is known.
+- Supported settings are `use = Id.NAME` or `Id.SIMPLE_NAME` with `include = As.PROPERTY` or `As.EXISTING_PROPERTY`.
+  `use = Id.NONE` turns dispatch off.
+
+Overriding properties inherit the constraints of the properties they override, so `@get:NotBlank val name: String` on
+`Animal` also applies to `Cat.name`. A constraint of the same annotation type on the override replaces the inherited one.
+
 ## Build diagnostics
 
 The processor reports problems as compiler errors that point at the offending interface, function or property, and
@@ -78,7 +116,9 @@ skips generating that validator:
 - abstract functions with an unsupported shape, or a JSON function without `@ValidationParamType`;
 - properties with types the processor cannot resolve (type parameters, star projections, unresolved types), and
   JSON-mode scalars without a JSON reader (for example `URI` or `ZonedDateTime`);
-- built-in constraints on types they do not support, for example `@NotBlank` on an `Int` or `@Past` on a `Duration`.
+- built-in constraints on types they do not support, for example `@NotBlank` on an `Int` or `@Past` on a `Duration`;
+- subtypes that are generic or do not extend the type listing them in `@JsonSubTypes`;
+- in JSON mode, unsupported `@JsonTypeInfo` settings and a type id that maps to more than one subtype.
 
 Constraint annotations without a descriptor (anything in `jakarta.validation.constraints` or meta-annotated with
 `@Constraint`) are ignored with a warning. Set the KSP option `ktor.validation.strict` to `true` to fail the build

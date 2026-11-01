@@ -14,6 +14,7 @@ import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.joinToCode
 import io.github.ktor_batterypack.validation.codegen.constraint.ConstraintCall
 import io.github.ktor_batterypack.validation.ksp.CodegenMode
+import io.github.ktor_batterypack.validation.ksp.Dispatch
 import io.github.ktor_batterypack.validation.ksp.EntryMethod
 import io.github.ktor_batterypack.validation.ksp.TypeMethod
 import io.github.ktor_batterypack.validation.ksp.ValidatorModel
@@ -106,13 +107,11 @@ class ValidatorEmitter {
         val code = CodeBlock.builder()
         code.addStatement("if (%N == null) return", method.paramName)
 
-        for (property in method.properties) {
-            val source = if (mode == CodegenMode.TYPED) {
-                CodeBlock.of("%N.%N", method.paramName, property.name)
-            } else {
-                CodeBlock.of("%N", method.paramName)
-            }
-            addValue(code, mode, property.value, property.key, source, "call", nested = property.value.kind in NESTED_KINDS)
+        val dispatch = method.dispatch
+        when {
+            dispatch == null -> addProperties(code, mode, method)
+            mode == CodegenMode.TYPED -> addTypedDispatch(code, method, dispatch)
+            else -> addJsonDispatch(code, method, dispatch)
         }
 
         val item = method.item
@@ -131,6 +130,59 @@ class ValidatorEmitter {
             .addParameter("call", VALIDATION_CALL)
             .addCode(code.build())
             .build()
+    }
+
+    private fun addProperties(code: CodeBlock.Builder, mode: CodegenMode, method: TypeMethod) {
+        for (property in method.properties) {
+            val source = if (mode == CodegenMode.TYPED) {
+                CodeBlock.of("%N.%N", method.paramName, property.name)
+            } else {
+                CodeBlock.of("%N", method.paramName)
+            }
+            addValue(code, mode, property.value, property.key, source, "call", nested = property.value.kind in NESTED_KINDS)
+        }
+    }
+
+    private fun addTypedDispatch(code: CodeBlock.Builder, method: TypeMethod, dispatch: Dispatch) {
+        code.beginControlFlow("when (%N)", method.paramName)
+        for (branch in dispatch.branches) {
+            code.addStatement("is %T -> %N(%N, call)", branch.type.typeName.copy(nullable = false), branch.validateWith, method.paramName)
+        }
+        if (!dispatch.exhaustive) {
+            addOwnPropertiesBranch(code, CodegenMode.TYPED, CodeBlock.of("else"), method)
+        }
+        code.endControlFlow()
+    }
+
+    private fun addJsonDispatch(code: CodeBlock.Builder, method: TypeMethod, dispatch: Dispatch) {
+        val typeIdProperty = KotlinLiteralRenderer.render(dispatch.typeIdProperty!!)
+        val typeIds = dispatch.branches.flatMap { branch -> branch.typeIds }.map { typeId -> CodeBlock.of("%S", typeId) }
+        code.beginControlFlow(
+            "when (%T.checkTypeId(%L, %N, call, setOf(%L)))",
+            JSON_TYPE_CHECKS,
+            typeIdProperty,
+            method.paramName,
+            typeIds.joinToCode(", ")
+        )
+        for (branch in dispatch.branches) {
+            val condition = branch.typeIds.map { typeId -> CodeBlock.of("%S", typeId) }.joinToCode(", ")
+            if (branch.validateWith == null) {
+                addOwnPropertiesBranch(code, CodegenMode.JSON, condition, method)
+            } else {
+                code.addStatement("%L -> %N(%N, call)", condition, branch.validateWith, method.paramName)
+            }
+        }
+        code.endControlFlow()
+    }
+
+    private fun addOwnPropertiesBranch(code: CodeBlock.Builder, mode: CodegenMode, condition: CodeBlock, method: TypeMethod) {
+        if (method.properties.isEmpty()) {
+            code.addStatement("%L -> {}", condition)
+            return
+        }
+        code.beginControlFlow("%L ->", condition)
+        addProperties(code, mode, method)
+        code.endControlFlow()
     }
 
     private fun addItemLoop(code: CodeBlock.Builder, mode: CodegenMode, method: TypeMethod, item: ValueModel) {

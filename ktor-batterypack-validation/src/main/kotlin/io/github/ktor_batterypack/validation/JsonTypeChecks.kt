@@ -26,6 +26,17 @@ object JsonTypeChecks {
     }
 
     @JvmStatic
+    fun checkTypeId(prop: String, node: JsonNode, call: ValidationCall?, allowedValues: Set<String>): String? {
+        checkNotNull(prop, node, call) ?: return null
+        val typeId = checkString(prop, node, call) ?: return null
+        if (!allowedValues.contains(typeId)) {
+            checkEnum(prop, typeId, call, allowedValues)
+            return null
+        }
+        return typeId
+    }
+
+    @JvmStatic
     fun checkObject(prop: String, jsonNode: JsonNode, call: ValidationCall? = null): ObjectNode? {
         val objectNode = resolveValue(jsonNode, prop) ?: return null
 

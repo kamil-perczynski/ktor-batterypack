@@ -95,7 +95,8 @@ class ValidationGenerator(private val environment: SymbolProcessorEnvironment) :
 
     private fun writeValidatorClass(emitter: ValidatorEmitter, model: ValidatorModel, classDecl: KSClassDeclaration) {
         val sourceFile = classDecl.containingFile ?: return
-        val dependencies = Dependencies(aggregating = false, *collectSourceFiles(sourceFile, model))
+        val aggregating = model.typeMethods.any { method -> method.dispatch != null }
+        val dependencies = Dependencies(aggregating, *collectSourceFiles(sourceFile, model))
 
         emitter.emit(model).writeTo(environment.codeGenerator, dependencies)
 

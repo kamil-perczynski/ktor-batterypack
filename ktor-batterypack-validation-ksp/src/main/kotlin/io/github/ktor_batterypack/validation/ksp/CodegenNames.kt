@@ -26,6 +26,7 @@ class CodegenNames private constructor(private val methodNameSegments: Map<Strin
             type.typeParams.forEach { typeParam -> collectReachableTypes(typeParam, types) }
             if (ValueKind.of(type) == ValueKind.OBJECT) {
                 type.declaredMemberProperties.forEach { property -> collectReachableTypes(property.type, types) }
+                PolymorphicTypes.directSubtypes(type).forEach { subtype -> collectReachableTypes(subtype.type, types) }
             }
         }
 

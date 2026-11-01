@@ -34,26 +34,4 @@ interface InvoiceCreateValidator {
         }
     }
 
-    fun validateContractParty(contractParty: ContractParty?, call: ValidationCall) {
-        if (contractParty == null) return
-
-        when (contractParty) {
-            is SellerParty -> validateSellerParty(contractParty, call)
-            is BuyerParty -> validateBuyerParty(contractParty, call)
-            is ReceiverParty -> validateReceiverParty(contractParty, call)
-            is ProducerParty -> validateProducerParty(contractParty, call)
-            is PayerParty -> validatePayerParty(contractParty, call)
-        }
-    }
-
-    fun validateSellerParty(sellerParty: SellerParty?, call: ValidationCall)
-
-    fun validatePayerParty(payerParty: PayerParty?, call: ValidationCall)
-
-    fun validateReceiverParty(receiverParty: ReceiverParty?, call: ValidationCall)
-
-    fun validateBuyerParty(buyerParty: BuyerParty?, call: ValidationCall)
-
-    fun validateProducerParty(producerParty: ProducerParty?, call: ValidationCall)
-
 }
