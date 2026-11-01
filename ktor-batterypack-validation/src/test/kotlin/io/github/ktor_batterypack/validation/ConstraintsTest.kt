@@ -117,6 +117,92 @@ class ConstraintsTest {
         assertThat(errorKeysOf(call)).containsExactly("second")
     }
 
+    @Test
+    fun `NotNull and Null check presence`() {
+        val call = ValidationCall()
+
+        Constraints.checkNotNull("present", "x", call)
+        Constraints.checkNotNull("missing", null, call)
+        Constraints.checkNull("unset", null, call)
+        Constraints.checkNull("set", "x", call)
+
+        val errors = call.finishObject()?.properties
+        assertThat(errors?.keys).containsExactly("missing", "set")
+        assertThat((errors?.get("missing") as FieldConstraintError).errors)
+            .containsExactly(SingleConstraintError("NotNull", "Must not be null"))
+        assertThat((errors.get("set") as FieldConstraintError).errors)
+            .containsExactly(SingleConstraintError("Null", "Must be null"))
+    }
+
+    @Test
+    fun `AssertTrue and AssertFalse check the boolean value`() {
+        val call = ValidationCall()
+
+        Constraints.checkAssertTrue("accepted", true, call)
+        Constraints.checkAssertTrue("declined", false, call)
+        Constraints.checkAssertFalse("clean", false, call)
+        Constraints.checkAssertFalse("dirty", true, call)
+
+        val errors = call.finishObject()?.properties
+        assertThat(errors?.keys).containsExactly("declined", "dirty")
+        assertThat((errors?.get("declined") as FieldConstraintError).errors)
+            .containsExactly(SingleConstraintError("AssertTrue", "Must be true"))
+        assertThat((errors.get("dirty") as FieldConstraintError).errors)
+            .containsExactly(SingleConstraintError("AssertFalse", "Must be false"))
+    }
+
+    @Test
+    fun `Digits counts integer and fraction digits without trailing zeros`() {
+        val call = ValidationCall()
+
+        Constraints.checkDigits("fits", BigDecimal("999.99"), call, integer = 3, fraction = 2)
+        Constraints.checkDigits("trailingZeros", BigDecimal("1.5000"), call, integer = 1, fraction = 1)
+        Constraints.checkDigits("bigInteger", BigInteger("1000"), call, integer = 4, fraction = 0)
+        Constraints.checkDigits("fractionOnly", 0.25, call, integer = 0, fraction = 2)
+        Constraints.checkDigits("tooManyIntegers", 1000, call, integer = 3, fraction = 0)
+        Constraints.checkDigits("tooManyFractions", BigDecimal("1.234"), call, integer = 3, fraction = 2)
+        Constraints.checkDigits("long", 12_345L, call, integer = 4, fraction = 0)
+        Constraints.checkDigits("notANumber", "abc", call, integer = 3, fraction = 0)
+        Constraints.checkDigits("nan", Double.NaN, call, integer = 3, fraction = 0)
+
+        assertThat(errorKeysOf(call)).containsExactly("tooManyIntegers", "tooManyFractions", "long", "notANumber", "nan")
+    }
+
+    @Test
+    fun `Digits reports the allowed digits`() {
+        val call = ValidationCall()
+
+        Constraints.checkDigits("amount", BigDecimal("1234.5"), call, integer = 3, fraction = 2)
+
+        assertThat(errorsOf(call, "amount")).containsExactly(
+            SingleConstraintError("Digits", "Must have at most 3 integer digits and 2 fraction digits")
+        )
+    }
+
+    @Test
+    fun `NotEmpty and Size support maps`() {
+        val call = ValidationCall()
+
+        Constraints.checkNotEmpty("filled", mapOf("a" to 1), call)
+        Constraints.checkNotEmpty("empty", emptyMap<String, Int>(), call)
+        Constraints.checkSize("small", mapOf("a" to 1), call, max = 1, min = 0)
+        Constraints.checkSize("large", mapOf("a" to 1, "b" to 2), call, max = 1, min = 0)
+
+        val errors = call.finishObject()?.properties
+        assertThat(errors?.keys).containsExactly("empty", "large")
+        assertThat((errors?.get("large") as FieldConstraintError).errors)
+            .containsExactly(SingleConstraintError("Size", "Must have size between [0, 1]"))
+    }
+
+    @Test
+    fun `NotEmpty accepts collections of nullable items`() {
+        val call = ValidationCall()
+
+        Constraints.checkNotEmpty("items", listOf<String?>(null), call)
+
+        assertThat(call.finishObject()).isNull()
+    }
+
 }
 
 private fun errorsOf(call: ValidationCall, prop: String): List<SingleConstraintError> {

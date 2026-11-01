@@ -53,6 +53,9 @@ class {{typeName}} : {{interfaceName}} {
         {{~#if param.isList}}
         for (item in {{param.name}}) {
             val itemCall = call.listItem()
+            {{~#if param.itemNullable}}{{#if param.itemRequired}}
+            Constraints.checkNotNull("$", item, itemCall)
+            {{~/if}}{{/if}}
 
             {{~#if param.itemConstraints.size}}
             item?.let {
@@ -71,11 +74,14 @@ class {{typeName}} : {{interfaceName}} {
             val (key, value) = entry
 
             val nested = call.nestedProperty(key)
+            {{~#if param.itemNullable}}{{#if param.itemRequired}}
+            Constraints.checkNotNull("$", value, nested)
+            {{~/if}}{{/if}}
 
             {{~#if param.itemConstraints.size}}
             value?.let {
             {{~#each param.itemConstraints}}
-                {{constraint constraint=this prop=../name call='nested'}}
+                {{constraint constraint=this prop='$' call='nested'}}
             {{~/each}}
             }
             {{~/if}}

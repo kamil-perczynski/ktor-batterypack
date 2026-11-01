@@ -5,12 +5,12 @@ import com.google.common.graph.MutableGraph
 import com.google.common.graph.Traverser
 import io.github.ktor_batterypack.validation.codegen.ConstraintRegistry
 import io.github.ktor_batterypack.validation.ksp.DefaultCodegenNamingConvention.DEFAULT_CODEGEN_NAMING_CONVENTION
-import jakarta.validation.constraints.NotNull
 
 class CodegenModelResolver(
     private val maxDepth: Int = 10,
     private val namingConvention: CodegenNamingConvention = DEFAULT_CODEGEN_NAMING_CONVENTION,
-    private val constraintRegistry: ConstraintRegistry = ConstraintRegistry.default()
+    private val constraintRegistry: ConstraintRegistry = ConstraintRegistry.default(),
+    private val jsonNamingStrategy: JsonNamingStrategy = JsonNamingStrategy.IDENTITY
 ) {
 
     fun resolve(validatorInterface: ValidatorInterface): CodegenModel {
@@ -206,6 +206,7 @@ class CodegenModelResolver(
         additionalValidationMethods: List<CodegenMethod>
     ): PrivateValidationMethod {
         val itemConstraints = constraintRegistry.findItemConstraints(method.param)
+        val itemType = findItemType(method.param)
 
         return PrivateValidationMethod(
             name = method.name,
@@ -220,29 +221,37 @@ class CodegenModelResolver(
                 isList = method.param.isCollection,
                 isObject = isObject(method.param),
                 isMap = method.param.isMap,
-                itemConstraints = itemConstraints
+                itemConstraints = itemConstraints,
+                itemNullable = itemType?.isMarkedNullable ?: false,
+                itemRequired = itemType != null && (!itemType.isMarkedNullable || rejectsNull(itemConstraints)),
             ),
             directProperties = method.param.declaredMemberProperties
                 .filter { it.type.isPrimitive }
                 .map {
-                    val constraints = constraintRegistry.toConstraints(it.type, it.annotations)
+                    val constraints = constraintRegistry.toConstraints(it.type, it.annotations + it.type.annotations)
                     DirectProperties(
                         name = it.name,
+                        jsonName = jsonNamingStrategy.translate(it),
                         codegenType = it.type,
                         type = it.type.properName,
-                        nullable = isNullable(it),
+                        nullable = it.type.isMarkedNullable,
+                        required = isRequired(it, constraints),
+                        jsonIgnored = it.isJsonIgnored,
                         constraints = constraints,
                     )
                 },
             nestedProperties = method.param.declaredMemberProperties
                 .filter { !it.type.isPrimitive }
                 .map {
-                    val constraints = constraintRegistry.toConstraints(it.type, it.annotations)
+                    val constraints = constraintRegistry.toConstraints(it.type, it.annotations + it.type.annotations)
                     NestedProperty(
                         name = it.name,
+                        jsonName = jsonNamingStrategy.translate(it),
                         codegenType = it.type,
                         type = it.type.properName,
-                        nullable = isNullable(it),
+                        nullable = it.type.isMarkedNullable,
+                        required = isRequired(it, constraints),
+                        jsonIgnored = it.isJsonIgnored,
                         constraints = constraints,
                         isList = it.type.isCollection,
                         isObject = isObject(it.type),
@@ -251,11 +260,27 @@ class CodegenModelResolver(
         )
     }
 
-    private fun isNullable(member: DeclaredMember): Boolean {
-        return member.type.isMarkedNullable
-            || member.type.annotations.any { annotation -> annotation.fqName == NotNull::class.qualifiedName }
+    private fun isRequired(member: DeclaredMember, constraints: Map<String, ConstraintMethod>): Boolean {
+        if (rejectsNull(constraints)) {
+            return true
+        }
+        return !member.type.isMarkedNullable && !member.hasDefault
     }
 
+}
+
+private fun rejectsNull(constraints: Map<String, ConstraintMethod>): Boolean {
+    return constraints.values.any { constraint -> constraint.descriptor.rejectsNull == true }
+}
+
+private fun findItemType(type: CodegenType): CodegenType? {
+    if (type.isCollection) {
+        return type.typeParams[0]
+    }
+    if (type.isMap) {
+        return type.typeParams[1]
+    }
+    return null
 }
 
 private fun isObject(type: CodegenType): Boolean {

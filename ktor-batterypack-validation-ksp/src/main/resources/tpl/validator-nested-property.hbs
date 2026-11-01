@@ -1,6 +1,12 @@
+        {{~#if prop.nullable}}{{#if prop.required}}
+        Constraints.checkNotNull("{{prop.name}}", {{param.name}}.{{prop.name}}, call)
+        {{~/if}}{{/if}}
         {{~#if prop.isObject}}
         {{param.name}}.{{prop.name}}?.let {
             val itemCall = call.nestedProperty("{{prop.name}}")
+            {{~#each prop.constraints}}
+            {{constraint constraint=this prop='$' call='itemCall'}}
+            {{~/each}}
             {{~#with (findValidationMethod paramType=param.codegenType prop=prop)}}
             {{this}}(it, itemCall)
             {{~/with}}

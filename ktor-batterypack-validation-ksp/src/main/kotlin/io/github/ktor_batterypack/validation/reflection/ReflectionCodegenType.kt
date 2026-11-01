@@ -6,8 +6,11 @@ import io.github.ktor_batterypack.validation.ksp.DeclaredMember
 import io.github.ktor_batterypack.validation.ksp.isPrimitive
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
-import kotlin.reflect.full.declaredMemberProperties
+import kotlin.reflect.KVisibility
 import kotlin.reflect.full.isSubclassOf
+import kotlin.reflect.full.memberProperties
+import kotlin.reflect.full.primaryConstructor
+import kotlin.reflect.jvm.javaField
 import kotlin.reflect.jvm.jvmErasure
 
 data class ReflectionCodegenType(
@@ -60,7 +63,13 @@ data class ReflectionCodegenType(
                 return emptyList()
             }
 
-            return kclass.declaredMemberProperties.map { ReflectionDeclaredMember(it) }
+            val primaryConstructor = kclass.primaryConstructor
+            return kclass.memberProperties
+                .filter { property -> property.visibility == KVisibility.PUBLIC && (property.javaField != null || property.isAbstract) }
+                .map { property ->
+                    val parameter = primaryConstructor?.parameters?.find { parameter -> parameter.name == property.name }
+                    ReflectionDeclaredMember(property, parameter, hasPrimaryConstructor = primaryConstructor != null)
+                }
         }
 
     override val properName: String

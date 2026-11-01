@@ -54,7 +54,9 @@ class {{typeName}} : {{interfaceName}} {
         {{~#if param.isList}}
         for (item in {{param.name}}) {
             val itemCall = call.listItem()
+            {{~#if param.itemRequired}}
             JsonTypeChecks.checkNotNull("$", item, itemCall)
+            {{~/if}}
             JsonTypeChecks.{{toTypeCheckMethodName param.codegenType.typeParams.0}}("$", item, itemCall)?.let {
             {{~#each param.itemConstraints}}
                 {{jsonConstraint constraint=this prop='$' call='itemCall'}}
@@ -75,25 +77,24 @@ class {{typeName}} : {{interfaceName}} {
         {{~else if param.isMap}}
         for ((key, value) in {{param.name}}.properties()) {
             val nested = call.nestedProperty(key)
+            {{~#if param.itemRequired}}
             JsonTypeChecks.checkNotNull("$", value, nested)
-
-            {{~#if param.itemConstraints.size}}
-            value?.let {
+            {{~/if}}
+            JsonTypeChecks.{{toTypeCheckMethodName param.codegenType.typeParams.1}}("$", value, nested)?.let {
             {{~#each param.itemConstraints}}
                 {{jsonConstraint constraint=this prop='$' call='nested'}}
             {{~/each}}
-            }
-            {{~/if}}
 
-            {{~#with (findValidationMethod paramType=param.codegenType.typeParams.1)}}
             {{~#if param.codegenType.typeParams.1.isEnum}}
-            {{this}}(value, nested, null)
-            {{~else}}
-            JsonTypeChecks.checkObject("$", value, nested)?.let {
-                {{this}}(it, nested)
-            }
-            {{/if}}
+            {{~#with (findValidationMethod paramType=param.codegenType.typeParams.1)}}
+                {{this}}(value, nested, prop="$")
             {{~/with}}
+            {{~else}}
+            {{~#with (findValidationMethod paramType=param.codegenType.typeParams.1)}}
+                {{this}}(it, nested)
+            {{~/with}}
+            {{~/if}}
+            }
             nested.finishObject()
         }
         {{~else if param.codegenType.isEnum}}
