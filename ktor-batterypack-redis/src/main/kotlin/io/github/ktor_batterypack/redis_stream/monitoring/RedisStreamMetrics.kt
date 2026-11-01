@@ -44,6 +44,14 @@ class RedisStreamMetrics(private val meterRegistry: MeterRegistry) {
             .increment(count.toDouble())
     }
 
+    fun recordConnectionFailure(loop: String, throwableClass: String) {
+        Counter.builder("redis.stream.connection.failures")
+            .tag("loop", loop)
+            .tag("throwable", throwableClass)
+            .register(meterRegistry)
+            .increment()
+    }
+
     fun recordStreamInfo(consumers: List<StreamConsumerMetrics>) {
         streamInfoGauge.register(
             consumers.flatMap { c ->

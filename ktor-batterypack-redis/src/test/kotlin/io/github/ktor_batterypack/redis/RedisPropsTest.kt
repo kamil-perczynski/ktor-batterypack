@@ -68,6 +68,13 @@ class RedisPropsTest {
     }
 
     @Test
+    fun `should default command timeout to 10 seconds when not configured`() {
+        val uri = RedisProps(url = "redis://localhost:6379").toRedisUri()
+
+        assertThat(uri.timeout).isEqualTo(Duration.ofSeconds(10))
+    }
+
+    @Test
     fun `should disable ssl from the url scheme`() {
         val uri = RedisProps(
             url = "rediss://localhost:6379",

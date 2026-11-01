@@ -36,7 +36,7 @@ class RedisStreamAutoclaimLoop(
         listeners: Map<String, RedisStreamListener>,
         consumerGroup: String,
     ): LoopHandle {
-        val connection = redisClient.connect()
+        val connection = ReconnectingRedisConnection(redisClient, "autoclaim", metrics)
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob() + CoroutineName("Autoclaim"))
 
         val autoclaimIntervalMs = redisProps.streams.fetcher.autoclaimIntervalMs
@@ -51,15 +51,17 @@ class RedisStreamAutoclaimLoop(
 
                 for (stream in streams) {
                     try {
-                        autoclaimStream(
-                            stream = stream,
-                            consumer = consumer,
-                            consumerGroup = consumerGroup,
-                            autoclaimMinIdleMs = autoclaimMinIdleMs,
-                            autoclaimCount = autoclaimCount,
-                            listeners = listeners,
-                            connection = connection
-                        )
+                        connection.execute { conn ->
+                            autoclaimStream(
+                                stream = stream,
+                                consumer = consumer,
+                                consumerGroup = consumerGroup,
+                                autoclaimMinIdleMs = autoclaimMinIdleMs,
+                                autoclaimCount = autoclaimCount,
+                                listeners = listeners,
+                                connection = conn
+                            )
+                        }
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
@@ -75,10 +77,7 @@ class RedisStreamAutoclaimLoop(
                     scope.cancel()
                     scope.coroutineContext.job.join()
                 }
-                if (connection.isOpen) {
-                    log.debug("Closing Redis connection for autoclaim loop")
-                    connection.close()
-                }
+                connection.close()
             }
         }
     }

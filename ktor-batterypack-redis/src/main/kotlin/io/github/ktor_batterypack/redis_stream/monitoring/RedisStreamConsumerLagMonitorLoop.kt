@@ -4,6 +4,7 @@ import io.github.ktor_batterypack.redis_stream.LoopHandle
 import io.github.ktor_batterypack.redis.RedisProps
 import io.github.ktor_batterypack.redis_stream.RedisStreamListener
 import io.github.ktor_batterypack.redis_stream.RedisStreamsBackgroundLoop
+import io.github.ktor_batterypack.redis_stream.bgloops.ReconnectingRedisConnection
 import io.github.ktor_batterypack.redis_stream.bgloops.toXInfoResultDto
 import io.lettuce.core.RedisClient
 import kotlinx.coroutines.*
@@ -27,7 +28,7 @@ class RedisStreamConsumerLagMonitorLoop(
         listeners: Map<String, RedisStreamListener>,
         consumerGroup: String,
     ): LoopHandle {
-        val connection = redisClient.connect()
+        val connection = ReconnectingRedisConnection(redisClient, "lag-monitor", metrics)
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob() + CoroutineName("LagMonitor"))
 
         val lagCheckIntervalMs = redisProps.streams.fetcher.lagCheckIntervalMs
@@ -38,9 +39,11 @@ class RedisStreamConsumerLagMonitorLoop(
                 val allConsumers = mutableListOf<StreamConsumerMetrics>()
                 for (stream in streams) {
                     try {
-                        val raw = connection.async()
-                            .xinfoConsumers(stream, consumerGroup)
-                            .await() as List<*>
+                        val raw = connection.execute { conn ->
+                            conn.async()
+                                .xinfoConsumers(stream, consumerGroup)
+                                .await() as List<*>
+                        }
 
                         val consumersInfo = toXInfoResultDto(raw)
 
@@ -73,10 +76,7 @@ class RedisStreamConsumerLagMonitorLoop(
                     scope.cancel()
                     scope.coroutineContext.job.join()
                 }
-                if (connection.isOpen) {
-                    log.debug("Closing Redis connection for consumer lag monitor loop")
-                    connection.close()
-                }
+                connection.close()
             }
         }
     }
