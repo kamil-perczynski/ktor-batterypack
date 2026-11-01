@@ -47,6 +47,12 @@ Abstract functions in a validator interface must have one of two shapes:
 - `fun validateAddress(address: Address?, call: ValidationCall)` is generated as the validation of `Address`, replacing
   the private method that would otherwise be generated. It must be named `validate` + the type's simple name.
 
+The type part of a validation function name is the simple name followed by the names of its type arguments, so
+`List<Address>` is validated by `validateListAddress`. When one validator reaches different classes with the same
+simple name, each one is prefixed with the shortest distinguishing package segments: `com.example.billing.Address`
+and `com.example.shipping.Address` are validated by `validateBillingAddress` and `validateShippingAddress`.
+Generated code refers to these classes by their fully qualified names.
+
 Implementing `fun validateAddress(address: Address?, call: ValidationCall)` yourself replaces the generated
 validation of `Address`. In JSON mode, annotate it with `@ValidationParamType(Address::class)` and accept an
 `ObjectNode?`. Implemented functions of the same shape under another name run in addition to the generated
@@ -70,8 +76,7 @@ skips generating that validator:
 - abstract functions with an unsupported shape, or a JSON function without `@ValidationParamType`;
 - properties with types the processor cannot resolve (type parameters, star projections, unresolved types), and
   JSON-mode scalars without a JSON reader (for example `URI` or `ZonedDateTime`);
-- built-in constraints on types they do not support, for example `@NotBlank` on an `Int` or `@Past` on a `LocalTime`;
-- different classes with the same simple name reached from one validator.
+- built-in constraints on types they do not support, for example `@NotBlank` on an `Int` or `@Past` on a `Duration`.
 
 Constraint annotations without a descriptor (anything in `jakarta.validation.constraints` or meta-annotated with
 `@Constraint`) are ignored with a warning. Set the KSP option `ktor.validation.strict` to `true` to fail the build
@@ -90,6 +95,8 @@ ksp {
 - Abstract properties declared by interfaces or abstract classes.
 - Constraint annotations are collected from the property, its getter, its field and the matching primary-constructor
   parameter, so `@field:`, `@get:`, `@param:` and bare annotations all apply.
+- Repeated constraints (`@field:Pattern(...) @field:Pattern(...)`) and their containers (`@Pattern.List(...)`) all
+  apply, in declaration order.
 - In JSON mode, properties annotated with `@JsonIgnore` are skipped.
 
 ## Null semantics
@@ -109,6 +116,22 @@ ksp {
   `List<String>` and `List<@NotNull String?>` reject them.
 - JSON mode does not reject an explicit `null` for a non-null property that has a default value. Configure Jackson
   (for example `KotlinFeature.NullIsSameAsDefault`) to decide how such payloads deserialize.
+
+## Temporal constraints
+
+`@Past`, `@PastOrPresent`, `@Future` and `@FutureOrPresent` support `Date`, `Calendar`, `Instant`, `LocalDate`,
+`LocalDateTime`, `LocalTime`, `MonthDay`, `OffsetDateTime`, `OffsetTime`, `Year`, `YearMonth`, `ZonedDateTime` and the
+`java.time.chrono` dates. Instants, offset and zoned date-times, `Date` and `Calendar` are compared as points in time;
+local types are compared with the current date or time in the clock's zone.
+
+Generated validators read the current time from a `java.time.Clock`, `Clock.systemDefaultZone()` by default. Pass
+another clock to the constructor to fix the time in tests or to validate in a different zone:
+
+```kotlin
+val validator = UserValidatorImpl(Clock.fixed(Instant.parse("2026-01-01T00:00:00Z"), ZoneOffset.UTC))
+```
+
+Custom constraints can read the same clock from `call.clock`.
 
 ## JSON property names
 
@@ -171,6 +194,9 @@ By default a constraint is called as `EvenConstraints.checkEven(prop, value, cal
 the value is present. Annotation arguments are passed as named arguments, rendered as Kotlin literals: strings, chars,
 numbers, enum entries, `KClass` references, arrays (as `arrayOf(...)`) and nested annotations are supported.
 Set `rejectsNull: true` to make the property required; a missing value is then reported as `NotNull`.
+Set `methodName` to call another method than `check` + the annotation's simple name, for example when a custom
+`com.example.Email` sits next to `jakarta.validation.constraints.Email`. Constraints are matched by their fully
+qualified annotation name, so both apply.
 
 `supportedTypes` lists the fully qualified Kotlin types the constraint may annotate; the build fails when it is
 applied to any other type. `kotlin.collections.Collection` matches any collection or `Array`, and

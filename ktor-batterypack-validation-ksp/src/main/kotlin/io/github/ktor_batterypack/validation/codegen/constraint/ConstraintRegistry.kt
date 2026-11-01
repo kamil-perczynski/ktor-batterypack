@@ -50,7 +50,7 @@ class ConstraintRegistry(sources: List<ConstraintDescriptionSource>) {
             .find { constraint -> constraint.annotation == annotationFqName }
     }
 
-    fun findItemConstraints(codegenType: CodegenType): Map<String, ConstraintMethod> {
+    fun findItemConstraints(codegenType: CodegenType): List<ConstraintMethod> {
         if (codegenType.isCollection) {
             val type = codegenType.typeParams[0]
             return toConstraints(type, type.annotations)
@@ -67,24 +67,37 @@ class ConstraintRegistry(sources: List<ConstraintDescriptionSource>) {
     fun toConstraints(
         codegenType: CodegenType,
         annotations: List<CodegenAnnotation>
-    ): Map<String, ConstraintMethod> {
-        if (annotations.isEmpty()) {
-            return emptyMap()
+    ): List<ConstraintMethod> {
+        return unwrapContainerAnnotations(annotations).mapNotNull { annotation ->
+            val descriptor = findDescriptor(annotation.fqName) ?: return@mapNotNull null
+            ConstraintMethod(
+                name = descriptor.methodName ?: "check${annotation.name}",
+                args = annotation.args,
+                descriptor = descriptor,
+            )
         }
+    }
 
-        val matchedConstraint = annotations
-            .mapNotNull { constraint ->
-                val descriptor = findDescriptor(constraint.fqName) ?: return@mapNotNull null
-                constraint to descriptor
+    fun unwrapContainerAnnotations(annotations: List<CodegenAnnotation>): List<CodegenAnnotation> {
+        return annotations.flatMap { annotation ->
+            if (findDescriptor(annotation.fqName) != null) {
+                return@flatMap listOf(annotation)
             }
-            .associate { (constraint, descriptor) ->
-                constraint.name to ConstraintMethod(
-                    "check${constraint.name}",
-                    constraint.args,
-                    descriptor,
-                )
-            }
+            val containedAnnotations = findContainedAnnotations(annotation) ?: return@flatMap listOf(annotation)
+            unwrapContainerAnnotations(containedAnnotations)
+        }
+    }
 
-        return matchedConstraint
+    private fun findContainedAnnotations(annotation: CodegenAnnotation): List<CodegenAnnotation>? {
+        if (annotation.args.keys != setOf(CONTAINER_VALUE_ARG)) {
+            return null
+        }
+        val value = annotation.args.getValue(CONTAINER_VALUE_ARG) as? List<*> ?: return null
+        if (value.any { item -> item !is CodegenAnnotation }) {
+            return null
+        }
+        return value.filterIsInstance<CodegenAnnotation>()
     }
 }
+
+private const val CONTAINER_VALUE_ARG = "value"

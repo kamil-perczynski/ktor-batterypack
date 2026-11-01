@@ -2,12 +2,21 @@ package io.github.ktor_batterypack.validation
 
 import java.math.BigDecimal
 import java.math.BigInteger
+import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.MonthDay
 import java.time.OffsetDateTime
+import java.time.OffsetTime
+import java.time.Year
+import java.time.YearMonth
 import java.time.ZonedDateTime
+import java.time.chrono.ChronoLocalDate
 import java.time.temporal.Temporal
+import java.util.Calendar
+import java.util.Date
 import java.util.concurrent.ConcurrentHashMap
 
 object Constraints {
@@ -82,28 +91,104 @@ object Constraints {
 
     @JvmStatic
     fun checkPast(prop: String, date: Temporal, call: ValidationCall) {
-        if (date.compareToNow() >= 0) {
-            call.propertyError(prop, SingleConstraintError("Past"))
-        }
+        checkPastComparison(prop, compareToNow(date, call.clock), call)
+    }
+
+    @JvmStatic
+    fun checkPast(prop: String, date: Date, call: ValidationCall) {
+        checkPastComparison(prop, date.time.compareTo(call.clock.millis()), call)
+    }
+
+    @JvmStatic
+    fun checkPast(prop: String, date: Calendar, call: ValidationCall) {
+        checkPastComparison(prop, date.timeInMillis.compareTo(call.clock.millis()), call)
+    }
+
+    @JvmStatic
+    fun checkPast(prop: String, date: MonthDay, call: ValidationCall) {
+        checkPastComparison(prop, date.compareTo(MonthDay.now(call.clock)), call)
     }
 
     @JvmStatic
     fun checkPastOrPresent(prop: String, date: Temporal, call: ValidationCall) {
-        if (date.compareToNow() > 0) {
-            call.propertyError(prop, SingleConstraintError("PastOrPresent"))
-        }
+        checkPastOrPresentComparison(prop, compareToNow(date, call.clock), call)
+    }
+
+    @JvmStatic
+    fun checkPastOrPresent(prop: String, date: Date, call: ValidationCall) {
+        checkPastOrPresentComparison(prop, date.time.compareTo(call.clock.millis()), call)
+    }
+
+    @JvmStatic
+    fun checkPastOrPresent(prop: String, date: Calendar, call: ValidationCall) {
+        checkPastOrPresentComparison(prop, date.timeInMillis.compareTo(call.clock.millis()), call)
+    }
+
+    @JvmStatic
+    fun checkPastOrPresent(prop: String, date: MonthDay, call: ValidationCall) {
+        checkPastOrPresentComparison(prop, date.compareTo(MonthDay.now(call.clock)), call)
     }
 
     @JvmStatic
     fun checkFuture(prop: String, date: Temporal, call: ValidationCall) {
-        if (date.compareToNow() <= 0) {
-            call.propertyError(prop, SingleConstraintError("Future"))
-        }
+        checkFutureComparison(prop, compareToNow(date, call.clock), call)
+    }
+
+    @JvmStatic
+    fun checkFuture(prop: String, date: Date, call: ValidationCall) {
+        checkFutureComparison(prop, date.time.compareTo(call.clock.millis()), call)
+    }
+
+    @JvmStatic
+    fun checkFuture(prop: String, date: Calendar, call: ValidationCall) {
+        checkFutureComparison(prop, date.timeInMillis.compareTo(call.clock.millis()), call)
+    }
+
+    @JvmStatic
+    fun checkFuture(prop: String, date: MonthDay, call: ValidationCall) {
+        checkFutureComparison(prop, date.compareTo(MonthDay.now(call.clock)), call)
     }
 
     @JvmStatic
     fun checkFutureOrPresent(prop: String, date: Temporal, call: ValidationCall) {
-        if (date.compareToNow() < 0) {
+        checkFutureOrPresentComparison(prop, compareToNow(date, call.clock), call)
+    }
+
+    @JvmStatic
+    fun checkFutureOrPresent(prop: String, date: Date, call: ValidationCall) {
+        checkFutureOrPresentComparison(prop, date.time.compareTo(call.clock.millis()), call)
+    }
+
+    @JvmStatic
+    fun checkFutureOrPresent(prop: String, date: Calendar, call: ValidationCall) {
+        checkFutureOrPresentComparison(prop, date.timeInMillis.compareTo(call.clock.millis()), call)
+    }
+
+    @JvmStatic
+    fun checkFutureOrPresent(prop: String, date: MonthDay, call: ValidationCall) {
+        checkFutureOrPresentComparison(prop, date.compareTo(MonthDay.now(call.clock)), call)
+    }
+
+    private fun checkPastComparison(prop: String, comparedToNow: Int, call: ValidationCall) {
+        if (comparedToNow >= 0) {
+            call.propertyError(prop, SingleConstraintError("Past"))
+        }
+    }
+
+    private fun checkPastOrPresentComparison(prop: String, comparedToNow: Int, call: ValidationCall) {
+        if (comparedToNow > 0) {
+            call.propertyError(prop, SingleConstraintError("PastOrPresent"))
+        }
+    }
+
+    private fun checkFutureComparison(prop: String, comparedToNow: Int, call: ValidationCall) {
+        if (comparedToNow <= 0) {
+            call.propertyError(prop, SingleConstraintError("Future"))
+        }
+    }
+
+    private fun checkFutureOrPresentComparison(prop: String, comparedToNow: Int, call: ValidationCall) {
+        if (comparedToNow < 0) {
             call.propertyError(prop, SingleConstraintError("FutureOrPresent"))
         }
     }
@@ -703,11 +788,17 @@ private fun decimalMaxError(prop: String, call: ValidationCall, value: String, i
     call.propertyError(prop, SingleConstraintError("DecimalMax", "Must be $bound $value"))
 }
 
-private fun Temporal.compareToNow(): Int = when (this) {
-    is LocalDate -> compareTo(LocalDate.now())
-    is LocalDateTime -> compareTo(LocalDateTime.now())
-    is OffsetDateTime -> compareTo(OffsetDateTime.now())
-    is ZonedDateTime -> compareTo(ZonedDateTime.now())
-    is Instant -> compareTo(Instant.now())
-    else -> throw IllegalArgumentException("Unsupported temporal type: ${this::class.simpleName}")
+private fun compareToNow(date: Temporal, clock: Clock): Int {
+    return when (date) {
+        is Instant -> date.compareTo(clock.instant())
+        is OffsetDateTime -> date.toInstant().compareTo(clock.instant())
+        is ZonedDateTime -> date.toInstant().compareTo(clock.instant())
+        is LocalDateTime -> date.compareTo(LocalDateTime.now(clock))
+        is LocalTime -> date.compareTo(LocalTime.now(clock))
+        is OffsetTime -> date.compareTo(OffsetTime.now(clock))
+        is ChronoLocalDate -> date.toEpochDay().compareTo(LocalDate.now(clock).toEpochDay())
+        is YearMonth -> date.compareTo(YearMonth.now(clock))
+        is Year -> date.compareTo(Year.now(clock))
+        else -> throw IllegalArgumentException("Unsupported temporal type: ${date::class.simpleName}")
+    }
 }

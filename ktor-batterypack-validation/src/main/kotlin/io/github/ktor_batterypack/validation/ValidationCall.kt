@@ -1,9 +1,12 @@
 package io.github.ktor_batterypack.validation
 
+import java.time.Clock
+
 class ValidationCall(
     private val parent: ValidationCall? = null,
     private val parentProp: String? = null,
-    private val listItem: Boolean = false
+    private val listItem: Boolean = false,
+    val clock: Clock = Clock.systemDefaultZone()
 ) {
     private val errors: MutableList<SingleConstraintError> = mutableListOf()
     private val items: MutableList<ConstraintError?> = mutableListOf()
@@ -34,11 +37,11 @@ class ValidationCall(
     }
 
     fun nestedProperty(prop: String): ValidationCall {
-        return ValidationCall(this, prop)
+        return ValidationCall(this, prop, clock = clock)
     }
 
     fun listItem(): ValidationCall {
-        return ValidationCall(this, null, true)
+        return ValidationCall(this, null, true, clock)
     }
 
     fun finishList(): ListConstraintError? {

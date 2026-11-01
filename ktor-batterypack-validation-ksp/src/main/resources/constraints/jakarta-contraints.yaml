@@ -49,18 +49,40 @@ constraints:
       - kotlin.collections.Map
   - annotation: jakarta.validation.constraints.Past
     supportedTypes:
+      - java.util.Date
+      - java.util.Calendar
+      - java.time.Instant
       - java.time.LocalDate
       - java.time.LocalDateTime
+      - java.time.LocalTime
+      - java.time.MonthDay
       - java.time.OffsetDateTime
+      - java.time.OffsetTime
+      - java.time.Year
+      - java.time.YearMonth
       - java.time.ZonedDateTime
-      - java.time.Instant
+      - java.time.chrono.HijrahDate
+      - java.time.chrono.JapaneseDate
+      - java.time.chrono.MinguoDate
+      - java.time.chrono.ThaiBuddhistDate
   - annotation: jakarta.validation.constraints.PastOrPresent
     supportedTypes:
+      - java.util.Date
+      - java.util.Calendar
+      - java.time.Instant
       - java.time.LocalDate
       - java.time.LocalDateTime
+      - java.time.LocalTime
+      - java.time.MonthDay
       - java.time.OffsetDateTime
+      - java.time.OffsetTime
+      - java.time.Year
+      - java.time.YearMonth
       - java.time.ZonedDateTime
-      - java.time.Instant
+      - java.time.chrono.HijrahDate
+      - java.time.chrono.JapaneseDate
+      - java.time.chrono.MinguoDate
+      - java.time.chrono.ThaiBuddhistDate
   - annotation: jakarta.validation.constraints.Pattern
     supportedTypes:
       - kotlin.String
@@ -102,18 +124,40 @@ constraints:
       - kotlin.String
   - annotation: jakarta.validation.constraints.Future
     supportedTypes:
+      - java.util.Date
+      - java.util.Calendar
+      - java.time.Instant
       - java.time.LocalDate
       - java.time.LocalDateTime
+      - java.time.LocalTime
+      - java.time.MonthDay
       - java.time.OffsetDateTime
+      - java.time.OffsetTime
+      - java.time.Year
+      - java.time.YearMonth
       - java.time.ZonedDateTime
-      - java.time.Instant
+      - java.time.chrono.HijrahDate
+      - java.time.chrono.JapaneseDate
+      - java.time.chrono.MinguoDate
+      - java.time.chrono.ThaiBuddhistDate
   - annotation: jakarta.validation.constraints.FutureOrPresent
     supportedTypes:
+      - java.util.Date
+      - java.util.Calendar
+      - java.time.Instant
       - java.time.LocalDate
       - java.time.LocalDateTime
+      - java.time.LocalTime
+      - java.time.MonthDay
       - java.time.OffsetDateTime
+      - java.time.OffsetTime
+      - java.time.Year
+      - java.time.YearMonth
       - java.time.ZonedDateTime
-      - java.time.Instant
+      - java.time.chrono.HijrahDate
+      - java.time.chrono.JapaneseDate
+      - java.time.chrono.MinguoDate
+      - java.time.chrono.ThaiBuddhistDate
   - annotation: jakarta.validation.constraints.Negative
     supportedTypes:
       - kotlin.Byte
