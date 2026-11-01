@@ -117,12 +117,8 @@ class RepeatedConstraintsCompileTest {
         Files.writeString(
             constraintDir.resolve("email-constraints.yaml"),
             """
-            imports:
-              - fixture.email.EmailRules
-            jsonImports:
-              - fixture.email.EmailRules
             defaults:
-              simpleClassName: EmailRules
+              className: fixture.email.EmailRules
             constraints:
               - annotation: fixture.email.Email
                 methodName: checkCorporateEmail

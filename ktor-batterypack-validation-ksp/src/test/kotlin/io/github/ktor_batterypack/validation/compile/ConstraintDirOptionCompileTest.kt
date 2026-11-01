@@ -17,12 +17,8 @@ class ConstraintDirOptionCompileTest {
         Files.writeString(
             constraintDir.resolve("even-constraints.yaml"),
             """
-            imports:
-              - fixture.custom.EvenConstraints
-            jsonImports:
-              - fixture.custom.EvenConstraints
             defaults:
-              simpleClassName: EvenConstraints
+              className: fixture.custom.EvenConstraints
             constraints:
               - annotation: fixture.custom.Even
             """.trimIndent()

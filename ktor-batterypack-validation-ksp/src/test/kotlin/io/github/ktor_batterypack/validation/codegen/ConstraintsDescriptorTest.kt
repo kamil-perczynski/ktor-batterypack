@@ -1,13 +1,14 @@
 package io.github.ktor_batterypack.validation.codegen
 
+import com.squareup.kotlinpoet.ClassName
 import io.github.ktor_batterypack.validation.Constraints
 import io.github.ktor_batterypack.validation.ksp.CodegenAnnotation
-import io.github.ktor_batterypack.validation.reflection.toReflectionCodegenType
+import io.github.ktor_batterypack.validation.ksp.CodegenMode
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import tools.jackson.dataformat.yaml.YAMLMapper
 import java.time.temporal.Temporal
-import kotlin.reflect.typeOf
 
 class ConstraintsDescriptorTest {
 
@@ -42,12 +43,7 @@ class ConstraintsDescriptorTest {
     fun `jakarta descriptor declares every supported jakarta constraint`() {
         val descriptor = JakartaConstraintsSource().loadConstraintDescriptor(YAMLMapper.builder().build())
 
-        assertThat(descriptor.imports).containsExactly("io.github.ktor_batterypack.validation.Constraints")
-        assertThat(descriptor.jsonImports).containsExactly(
-            "io.github.ktor_batterypack.validation.Constraints",
-            "io.github.ktor_batterypack.validation.JsonConstraints",
-        )
-        assertThat(descriptor.defaults.simpleClassName).isEqualTo("Constraints")
+        assertThat(descriptor.defaults.className).isEqualTo("io.github.ktor_batterypack.validation.Constraints")
         assertThat(descriptor.constraints.map { constraint -> constraint.annotation })
             .containsExactlyInAnyOrderElementsOf(JAKARTA_CONSTRAINTS.map { name -> "jakarta.validation.constraints.$name" })
     }
@@ -58,19 +54,20 @@ class ConstraintsDescriptorTest {
             StubAnnotation(name, "jakarta.validation.constraints.$name")
         }
 
-        val constraints = ConstraintRegistry.default()
-            .toConstraints(toReflectionCodegenType(typeOf<String>()), annotations)
-            .associateBy { constraint -> constraint.name.removePrefix("check") }
+        val typed = ConstraintRegistry.default().toConstraints(annotations, CodegenMode.TYPED)
+        val json = ConstraintRegistry.default().toConstraints(annotations, CodegenMode.JSON)
 
-        assertThat(constraints.keys).containsExactlyElementsOf(JAKARTA_CONSTRAINTS)
-        assertThat(constraints.values.map { constraint -> constraint.descriptor.simpleClassName }).containsOnly("Constraints")
-        assertThat(constraints.getValue("NotBlank").name).isEqualTo("checkNotBlank")
-        assertThat(constraints.getValue("NotEmpty").descriptor.jsonCallTpl)
-            .isEqualTo("JsonConstraints.checkNotEmpty({{quote prop}}, {{value}}, {{call}})")
-        assertThat(constraints.getValue("Size").descriptor.jsonCallTpl)
-            .isEqualTo("JsonConstraints.checkSize({{quote prop}}, {{value}}, {{call}}, {{constraintArgs args}})")
-        assertThat(constraints.filterKeys { name -> name != "NotEmpty" && name != "Size" }.values.map { constraint -> constraint.descriptor.jsonCallTpl })
-            .containsOnlyNulls()
+        assertThat(typed.map { constraint -> constraint.member.toString() })
+            .containsExactlyElementsOf(JAKARTA_CONSTRAINTS.map { name -> "io.github.ktor_batterypack.validation.Constraints.check$name" })
+        assertThat(json.map { constraint -> constraint.member.toString() })
+            .containsExactlyElementsOf(
+                JAKARTA_CONSTRAINTS.map { name ->
+                    val owner = if (name == "NotEmpty" || name == "Size") "JsonConstraints" else "Constraints"
+                    "io.github.ktor_batterypack.validation.$owner.check$name"
+                }
+            )
+        assertThat(typed.filter { constraint -> constraint.rejectsNull }.map { constraint -> constraint.member.simpleName })
+            .containsExactlyInAnyOrder("checkNotNull", "checkNotBlank", "checkNotEmpty")
     }
 
     @Test
@@ -81,9 +78,9 @@ class ConstraintsDescriptorTest {
             StubAnnotation("Pattern", "jakarta.validation.constraints.Pattern", mapOf("regexp" to "z$")),
         )
 
-        val constraints = ConstraintRegistry.default().toConstraints(toReflectionCodegenType(typeOf<String>()), annotations)
+        val constraints = ConstraintRegistry.default().toConstraints(annotations, CodegenMode.TYPED)
 
-        assertThat(constraints.map { constraint -> constraint.name to constraint.args })
+        assertThat(constraints.map { constraint -> constraint.member.simpleName to constraint.args })
             .containsExactly(
                 "checkPattern" to mapOf("regexp" to "^a"),
                 "checkNotBlank" to emptyMap(),
@@ -104,7 +101,7 @@ class ConstraintsDescriptorTest {
             )
         )
 
-        val constraints = ConstraintRegistry.default().toConstraints(toReflectionCodegenType(typeOf<String>()), listOf(container))
+        val constraints = ConstraintRegistry.default().toConstraints(listOf(container), CodegenMode.TYPED)
 
         assertThat(constraints.map { constraint -> constraint.args })
             .containsExactly(mapOf("regexp" to "^a"), mapOf("regexp" to "z$"))
@@ -113,10 +110,8 @@ class ConstraintsDescriptorTest {
     @Test
     fun `registry keeps constraints sharing a simple name apart`() {
         val customDescriptor = """
-            imports: [com.example.EmailRules]
-            jsonImports: [com.example.EmailRules]
             defaults:
-              simpleClassName: EmailRules
+              className: com.example.EmailRules
             constraints:
               - annotation: com.example.Email
                 methodName: checkCorporateEmail
@@ -134,17 +129,71 @@ class ConstraintsDescriptorTest {
             StubAnnotation("Email", "com.example.Email"),
         )
 
-        val constraints = registry.toConstraints(toReflectionCodegenType(typeOf<String>()), annotations)
+        val constraints = registry.toConstraints(annotations, CodegenMode.TYPED)
 
-        assertThat(constraints.map { constraint -> "${constraint.descriptor.simpleClassName}.${constraint.name}" })
-            .containsExactly("Constraints.checkEmail", "EmailRules.checkCorporateEmail")
+        assertThat(constraints.map { constraint -> constraint.member.toString() })
+            .containsExactly("io.github.ktor_batterypack.validation.Constraints.checkEmail", "com.example.EmailRules.checkCorporateEmail")
+    }
+
+    @Test
+    fun `registry applies json overrides of class and method`() {
+        val customDescriptor = """
+            defaults:
+              className: com.example.Rules
+            constraints:
+              - annotation: com.example.Iban
+                json:
+                  className: com.example.JsonRules
+                  methodName: checkIbanNode
+              - annotation: com.example.Vat
+                json:
+                  methodName: checkVatNode
+        """.trimIndent()
+        val registry = ConstraintRegistry(
+            listOf(
+                ConstraintDescriptionSource { yamlMapper ->
+                    yamlMapper.readValue(customDescriptor, ConstraintsDescriptor::class.java)
+                }
+            )
+        )
+        val annotations = listOf(
+            StubAnnotation("Iban", "com.example.Iban"),
+            StubAnnotation("Vat", "com.example.Vat"),
+        )
+
+        assertThat(registry.toConstraints(annotations, CodegenMode.TYPED).map { constraint -> constraint.member.toString() })
+            .containsExactly("com.example.Rules.checkIban", "com.example.Rules.checkVat")
+        assertThat(registry.toConstraints(annotations, CodegenMode.JSON).map { constraint -> constraint.member.toString() })
+            .containsExactly("com.example.JsonRules.checkIbanNode", "com.example.Rules.checkVatNode")
+    }
+
+    @Test
+    fun `registry rejects class names that are not fully qualified`() {
+        val customDescriptor = """
+            defaults:
+              className: Rules
+            constraints:
+              - annotation: com.example.Iban
+        """.trimIndent()
+
+        assertThatThrownBy {
+            ConstraintRegistry(
+                listOf(
+                    ConstraintDescriptionSource { yamlMapper ->
+                        yamlMapper.readValue(customDescriptor, ConstraintsDescriptor::class.java)
+                    }
+                )
+            )
+        }
+            .isInstanceOf(IllegalStateException::class.java)
+            .hasMessage("Constraint com.example.Iban refers to `Rules`, which is not a fully qualified class name")
     }
 
     @Test
     fun `registry ignores annotations without a descriptor`() {
         val annotations = listOf(StubAnnotation("Deprecated", "kotlin.Deprecated"))
 
-        val constraints = ConstraintRegistry.default().toConstraints(toReflectionCodegenType(typeOf<String>()), annotations)
+        val constraints = ConstraintRegistry.default().toConstraints(annotations, CodegenMode.TYPED)
 
         assertThat(constraints).isEmpty()
     }
@@ -204,6 +253,9 @@ class ConstraintsDescriptorTest {
         override val fqName: String,
         override val args: Map<String, Any> = emptyMap(),
         override val metaAnnotations: List<String> = emptyList(),
-    ) : CodegenAnnotation
+    ) : CodegenAnnotation {
+        override val className: ClassName
+            get() = ClassName.bestGuess(fqName)
+    }
 
 }

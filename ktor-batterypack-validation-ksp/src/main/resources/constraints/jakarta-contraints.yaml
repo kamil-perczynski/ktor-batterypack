@@ -1,11 +1,6 @@
 $schema: ../constraints-descriptor.schema.yaml
-imports:
-  - io.github.ktor_batterypack.validation.Constraints
-jsonImports:
-  - io.github.ktor_batterypack.validation.Constraints
-  - io.github.ktor_batterypack.validation.JsonConstraints
 defaults:
-  simpleClassName: Constraints
+  className: io.github.ktor_batterypack.validation.Constraints
 constraints:
   - annotation: jakarta.validation.constraints.NotNull
     rejectsNull: true
@@ -16,7 +11,8 @@ constraints:
       - kotlin.String
   - annotation: jakarta.validation.constraints.NotEmpty
     rejectsNull: true
-    jsonCallTpl: JsonConstraints.checkNotEmpty({{quote prop}}, {{value}}, {{call}})
+    json:
+      className: io.github.ktor_batterypack.validation.JsonConstraints
     supportedTypes:
       - kotlin.String
       - kotlin.collections.Collection
@@ -42,7 +38,8 @@ constraints:
       - java.math.BigInteger
       - java.math.BigDecimal
   - annotation: jakarta.validation.constraints.Size
-    jsonCallTpl: JsonConstraints.checkSize({{quote prop}}, {{value}}, {{call}}, {{constraintArgs args}})
+    json:
+      className: io.github.ktor_batterypack.validation.JsonConstraints
     supportedTypes:
       - kotlin.String
       - kotlin.collections.Collection

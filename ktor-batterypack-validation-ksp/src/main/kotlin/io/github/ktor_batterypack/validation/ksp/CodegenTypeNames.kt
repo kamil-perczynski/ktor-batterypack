@@ -1,9 +1,9 @@
 package io.github.ktor_batterypack.validation.ksp
 
-class CodegenTypeNames(types: Collection<CodegenType>, reservedImports: Collection<String> = emptyList()) {
+class CodegenTypeNames(types: Collection<CodegenType>) {
 
     companion object {
-        fun of(validatorInterface: ValidatorInterface, reservedImports: Collection<String> = emptyList()): CodegenTypeNames {
+        fun of(validatorInterface: ValidatorInterface): CodegenTypeNames {
             val types = linkedMapOf<String, CodegenType>()
             for (function in validatorInterface.memberFunctions) {
                 val shape = MemberFnShape.of(function)
@@ -11,7 +11,7 @@ class CodegenTypeNames(types: Collection<CodegenType>, reservedImports: Collecti
                     collectReachableTypes(function.validationParamType ?: function.paramType, types)
                 }
             }
-            return CodegenTypeNames(types.values, reservedImports + validatorInterface.fqName)
+            return CodegenTypeNames(types.values)
         }
 
         private fun collectReachableTypes(type: CodegenType, types: MutableMap<String, CodegenType>) {
@@ -27,47 +27,20 @@ class CodegenTypeNames(types: Collection<CodegenType>, reservedImports: Collecti
     }
 
     private val methodNameSegments: Map<String, String>
-    private val qualifiedFqNames: Set<String>
 
     init {
-        val simpleNames = types.associate { type -> type.fqName to type.name }
-        val collidingGroups = simpleNames.entries
+        methodNameSegments = types
+            .associate { type -> type.fqName to type.name }
+            .entries
             .groupBy({ (_, simpleName) -> simpleName }, { (fqName, _) -> fqName })
             .filterValues { fqNames -> fqNames.size > 1 }
-
-        methodNameSegments = collidingGroups
             .flatMap { (simpleName, fqNames) -> disambiguate(simpleName, fqNames).entries }
             .associate { (fqName, segment) -> fqName to segment }
-
-        val reservedBySimpleName = reservedImports.groupBy { reservedImport -> reservedImport.substringAfterLast('.') }
-        val reservedCollisions = simpleNames
-            .filter { (fqName, simpleName) -> reservedBySimpleName[simpleName].orEmpty().any { reserved -> reserved != fqName } }
-            .keys
-        qualifiedFqNames = collidingGroups.values.flatten().toSet() + reservedCollisions
-    }
-
-    fun sourceName(type: CodegenType): String {
-        val name = if (type.fqName in qualifiedFqNames) type.fqName else type.name
-        if (type.typeParams.isEmpty()) {
-            return name
-        }
-        val typeArgs = type.typeParams.joinToString(", ") { typeParam ->
-            if (typeParam.isMarkedNullable) sourceName(typeParam) + '?' else sourceName(typeParam)
-        }
-        return "$name<$typeArgs>"
     }
 
     fun methodNameSegment(type: CodegenType): String {
         val name = methodNameSegments[type.fqName] ?: capitalize(type.name)
         return name + type.typeParams.joinToString("") { typeParam -> methodNameSegment(typeParam) }
-    }
-
-    fun imports(type: CodegenType): List<String> {
-        val typeParamImports = type.typeParams.flatMap { typeParam -> imports(typeParam) }
-        if (type.fqName in qualifiedFqNames) {
-            return typeParamImports
-        }
-        return listOf(type.fqName) + typeParamImports
     }
 
     private fun disambiguate(simpleName: String, fqNames: List<String>): Map<String, String> {

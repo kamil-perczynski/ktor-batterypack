@@ -1,9 +1,5 @@
-$schema: ../jakarta-constraints.schema.yaml
-imports:
-  - io.github.kperczynski.libs.ktor.client.EmailConstraints
-jsonImports:
-  - io.github.kperczynski.libs.ktor.client.EmailConstraints
+$schema: ../../../../../ktor-batterypack-validation-ksp/src/main/resources/constraints-descriptor.schema.yaml
 defaults:
-  simpleClassName: EmailConstraints
+  className: io.github.kperczynski.libs.ktor.client.EmailConstraints
 constraints:
   - annotation: io.github.kperczynski.libs.ktor.client.Email

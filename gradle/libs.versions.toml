@@ -2,12 +2,10 @@
 aws-sdk = "2.55.0"
 assertj = "3.27.7"
 classgraph = "4.8.195"
-handlebars = "4.5.3"
 kctfork = "0.12.1"
 dotenv-kotlin = "6.5.1"
 exposed = "1.5.0"
 flyway = "13.7.0"
-guava = "33.6.0-jre"
 hikari = "7.0.2"
 lettuce = "7.5.1.RELEASE"
 liquibase = "5.0.4"
@@ -24,6 +22,7 @@ confluent = "8.3.2"
 koin = "4.2.1"
 koin-plugin = "1.0.0-RC2"
 kotlin = "2.3.20"
+kotlinpoet = "2.3.0"
 ksp = "2.3.10"
 logback = "1.5.21"
 logstash-logback-encoder = "9.0"
@@ -43,8 +42,8 @@ assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
 classgraph = { module = "io.github.classgraph:classgraph", version.ref = "classgraph" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 
-guava = { module = "com.google.guava:guava", version.ref = "guava" }
-handlebars = { module = "com.github.jknack:handlebars", version.ref = "handlebars" }
+kotlinpoet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoet" }
+kotlinpoet-ksp = { module = "com.squareup:kotlinpoet-ksp", version.ref = "kotlinpoet" }
 kctfork-core = { module = "dev.zacsweers.kctfork:core", version.ref = "kctfork" }
 kctfork-ksp = { module = "dev.zacsweers.kctfork:ksp", version.ref = "kctfork" }
 exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }

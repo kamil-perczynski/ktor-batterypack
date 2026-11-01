@@ -1,5 +1,7 @@
 package io.github.ktor_batterypack.validation.reflection
 
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.asClassName
 import io.github.ktor_batterypack.validation.ksp.MemberFn
 import io.github.ktor_batterypack.validation.ksp.ValidatorInterface
 import kotlin.reflect.KClass
@@ -9,6 +11,9 @@ class ReflectionValidatorInterface(private val clazz: KClass<*>) : ValidatorInte
     override val fqName: String = clazz.qualifiedName!!
 
     override val name: String = clazz.simpleName!!
+
+    override val className: ClassName
+        get() = clazz.asClassName()
 
     override val symbol: Any?
         get() = null
