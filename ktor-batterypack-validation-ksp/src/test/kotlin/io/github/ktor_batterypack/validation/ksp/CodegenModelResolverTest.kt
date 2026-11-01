@@ -173,6 +173,7 @@ class CodegenModelResolverTest {
                         
                         databaseProps.connectionProps?.let {
                             val itemCall = call.nestedProperty("connectionProps")
+                            Constraints.checkNotEmpty("$", it, itemCall)
                             validateDatabasePropsConnectionPropsMap(it, itemCall)
                             itemCall.finishObject()
                         }
@@ -292,10 +293,12 @@ class CodegenModelResolverTest {
                         
                         JsonTypeChecks.checkNotNull("idNumber", idDocIdentification, call)
                         JsonTypeChecks.checkString("idNumber", idDocIdentification, call)?.let {
+                            Constraints.checkNotBlank("idNumber", it, call)
                         }
 
                         JsonTypeChecks.checkNotNull("issueDate", idDocIdentification, call)
                         JsonTypeChecks.checkString("issueDate", idDocIdentification, call)?.let {
+                            Constraints.checkNotBlank("issueDate", it, call)
                         }
 
                         JsonTypeChecks.checkNotNull("type", idDocIdentification, call)
@@ -307,6 +310,8 @@ class CodegenModelResolverTest {
                         
                         JsonTypeChecks.checkNotNull("confidence", livenessIdentification, call)
                         JsonTypeChecks.checkDouble("confidence", livenessIdentification, call)?.let {
+                            Constraints.checkMin("confidence", it, call, value=0)
+                            Constraints.checkMax("confidence", it, call, value=100)
                         }
 
                         JsonTypeChecks.checkNotNull("type", livenessIdentification, call)
@@ -323,11 +328,13 @@ class CodegenModelResolverTest {
 
                         JsonTypeChecks.checkNotNull("firstName", person, call)
                         JsonTypeChecks.checkString("firstName", person, call)?.let {
+                            Constraints.checkNotNull("firstName", it, call)
                             Constraints.checkNotBlank("firstName", it, call)
                         }
 
                         JsonTypeChecks.checkNotNull("lastName", person, call)
                         JsonTypeChecks.checkString("lastName", person, call)?.let {
+                            Constraints.checkNotNull("lastName", it, call)
                             Constraints.checkNotBlank("lastName", it, call)
                         }
 
@@ -340,6 +347,7 @@ class CodegenModelResolverTest {
                         JsonTypeChecks.checkNotNull("creditCards", person, call)
                         JsonTypeChecks.checkArray("creditCards", person, call)?.let {
                             val itemCall = call.nestedProperty("creditCards")
+                            JsonConstraints.checkNotEmpty("$", it, itemCall)
                             validatePersonCreditCardsList(it, itemCall)
                             itemCall.finishList()
                         }

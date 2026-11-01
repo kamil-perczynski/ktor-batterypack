@@ -20,12 +20,40 @@ object Constraints {
     @JvmStatic
     fun checkNotNull(prop: String, data: Any?, call: ValidationCall) {
         if (data == null) {
-            call.propertyError(prop, SingleConstraintError("NotNull"))
+            call.propertyError(prop, SingleConstraintError("NotNull", "Must not be null"))
         }
     }
 
     @JvmStatic
-    fun checkNotEmpty(prop: String, data: Collection<Any>, call: ValidationCall) {
+    fun checkNull(prop: String, data: Any?, call: ValidationCall) {
+        if (data != null) {
+            call.propertyError(prop, SingleConstraintError("Null", "Must be null"))
+        }
+    }
+
+    @JvmStatic
+    fun checkAssertTrue(prop: String, value: Boolean, call: ValidationCall) {
+        if (!value) {
+            call.propertyError(prop, SingleConstraintError("AssertTrue", "Must be true"))
+        }
+    }
+
+    @JvmStatic
+    fun checkAssertFalse(prop: String, value: Boolean, call: ValidationCall) {
+        if (value) {
+            call.propertyError(prop, SingleConstraintError("AssertFalse", "Must be false"))
+        }
+    }
+
+    @JvmStatic
+    fun checkNotEmpty(prop: String, data: Collection<*>, call: ValidationCall) {
+        if (data.isEmpty()) {
+            call.propertyError(prop, SingleConstraintError("NotEmpty"))
+        }
+    }
+
+    @JvmStatic
+    fun checkNotEmpty(prop: String, data: Map<*, *>, call: ValidationCall) {
         if (data.isEmpty()) {
             call.propertyError(prop, SingleConstraintError("NotEmpty"))
         }
@@ -378,6 +406,67 @@ object Constraints {
         }
     }
 
+    @JvmStatic
+    fun checkSize(prop: String, data: Map<*, *>, call: ValidationCall, max: Int, min: Int) {
+        if (data.size !in min..max) {
+            call.propertyError(
+                prop,
+                SingleConstraintError("Size", "Must have size between [$min, $max]")
+            )
+        }
+    }
+
+    @JvmStatic
+    fun checkDigits(prop: String, value: BigDecimal, call: ValidationCall, integer: Int, fraction: Int) {
+        val stripped = value.stripTrailingZeros()
+        val integerDigits = stripped.precision() - stripped.scale()
+        val fractionDigits = maxOf(stripped.scale(), 0)
+        if (integerDigits > integer || fractionDigits > fraction) {
+            digitsError(prop, call, integer, fraction)
+        }
+    }
+
+    @JvmStatic
+    fun checkDigits(prop: String, value: BigInteger, call: ValidationCall, integer: Int, fraction: Int) {
+        checkDigits(prop, value.toBigDecimal(), call, integer, fraction)
+    }
+
+    @JvmStatic
+    fun checkDigits(prop: String, value: Int, call: ValidationCall, integer: Int, fraction: Int) {
+        checkDigits(prop, value.toBigDecimal(), call, integer, fraction)
+    }
+
+    @JvmStatic
+    fun checkDigits(prop: String, value: Long, call: ValidationCall, integer: Int, fraction: Int) {
+        checkDigits(prop, value.toBigDecimal(), call, integer, fraction)
+    }
+
+    @JvmStatic
+    fun checkDigits(prop: String, value: Double, call: ValidationCall, integer: Int, fraction: Int) {
+        if (value.isNaN() || value.isInfinite()) {
+            digitsError(prop, call, integer, fraction)
+            return
+        }
+        checkDigits(prop, value.toString().toBigDecimal(), call, integer, fraction)
+    }
+
+    @JvmStatic
+    fun checkDigits(prop: String, value: String, call: ValidationCall, integer: Int, fraction: Int) {
+        val number = value.toBigDecimalOrNull()
+        if (number == null) {
+            digitsError(prop, call, integer, fraction)
+            return
+        }
+        checkDigits(prop, number, call, integer, fraction)
+    }
+
+}
+
+private fun digitsError(prop: String, call: ValidationCall, integer: Int, fraction: Int) {
+    call.propertyError(
+        prop,
+        SingleConstraintError("Digits", "Must have at most $integer integer digits and $fraction fraction digits")
+    )
 }
 
 private fun decimalMinError(prop: String, call: ValidationCall, value: String, inclusive: Boolean) {

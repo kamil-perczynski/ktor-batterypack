@@ -25,7 +25,10 @@ data class PublicValidationMethod(
 
 data class NestedProperty(
     val name: String,
+    val jsonName: String,
     val nullable: Boolean,
+    val required: Boolean,
+    val jsonIgnored: Boolean,
     val codegenType: CodegenType,
     val type: String,
     val isList: Boolean,
@@ -36,8 +39,11 @@ data class NestedProperty(
 data class DirectProperties(
     val codegenType: CodegenType,
     val name: String,
+    val jsonName: String,
     val type: String,
     val nullable: Boolean,
+    val required: Boolean,
+    val jsonIgnored: Boolean,
     val constraints: Map<String, ConstraintMethod>
 )
 
@@ -60,6 +66,8 @@ data class ValidationParameter(
     val isObject: Boolean = false,
     val isMap: Boolean,
     val itemConstraints: Map<String, ConstraintMethod> = emptyMap(),
+    val itemNullable: Boolean = false,
+    val itemRequired: Boolean = false,
 )
 
 data class ConstraintMethod(

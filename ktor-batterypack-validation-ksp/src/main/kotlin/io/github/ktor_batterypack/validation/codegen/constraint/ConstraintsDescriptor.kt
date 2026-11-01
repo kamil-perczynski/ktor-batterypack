@@ -18,6 +18,7 @@ data class ConstraintsDescriptor(
         @param:JsonProperty("annotation") val annotation: String,
         @param:JsonProperty("simpleClassName") val simpleClassName: String? = null,
         @param:JsonProperty("callTpl") val callTpl: String? = null,
-        @param:JsonProperty("jsonCallTpl") val jsonCallTpl: String? = null
+        @param:JsonProperty("jsonCallTpl") val jsonCallTpl: String? = null,
+        @param:JsonProperty("rejectsNull") val rejectsNull: Boolean? = null
     )
 }

@@ -1,11 +1,19 @@
 package io.github.ktor_batterypack.validation
 
 import tools.jackson.databind.node.ArrayNode
+import tools.jackson.databind.node.ObjectNode
 
 object JsonConstraints {
 
     @JvmStatic
     fun checkSize(prop: String, node: ArrayNode, call: ValidationCall, min: Int, max: Int) {
+        if (node.size() !in min..max) {
+            call.propertyError(prop, SingleConstraintError("Size", "Must have size between [$min, $max]"))
+        }
+    }
+
+    @JvmStatic
+    fun checkSize(prop: String, node: ObjectNode, call: ValidationCall, min: Int, max: Int) {
         if (node.size() !in min..max) {
             call.propertyError(prop, SingleConstraintError("Size", "Must have size between [$min, $max]"))
         }
@@ -25,6 +33,13 @@ object JsonConstraints {
     fun checkNotEmpty(prop: String, value: ArrayNode, call: ValidationCall) {
         if (value.isEmpty) {
             call.propertyError(prop, SingleConstraintError("NotEmpty", "Must not be empty array"))
+        }
+    }
+
+    @JvmStatic
+    fun checkNotEmpty(prop: String, value: ObjectNode, call: ValidationCall) {
+        if (value.isEmpty) {
+            call.propertyError(prop, SingleConstraintError("NotEmpty", "Must not be empty object"))
         }
     }
 

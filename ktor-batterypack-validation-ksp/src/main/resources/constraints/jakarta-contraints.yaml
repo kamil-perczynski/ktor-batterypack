@@ -7,8 +7,13 @@ jsonImports:
 defaults:
   simpleClassName: Constraints
 constraints:
+  - annotation: jakarta.validation.constraints.NotNull
+    rejectsNull: true
+  - annotation: jakarta.validation.constraints.Null
   - annotation: jakarta.validation.constraints.NotBlank
+    rejectsNull: true
   - annotation: jakarta.validation.constraints.NotEmpty
+    rejectsNull: true
     jsonCallTpl: JsonConstraints.checkNotEmpty({{quote prop}}, {{value}}, {{call}})
   - annotation: jakarta.validation.constraints.Min
   - annotation: jakarta.validation.constraints.Max
@@ -19,6 +24,7 @@ constraints:
   - annotation: jakarta.validation.constraints.Pattern
   - annotation: jakarta.validation.constraints.DecimalMax
   - annotation: jakarta.validation.constraints.DecimalMin
+  - annotation: jakarta.validation.constraints.Digits
   - annotation: jakarta.validation.constraints.Email
   - annotation: jakarta.validation.constraints.Future
   - annotation: jakarta.validation.constraints.FutureOrPresent
@@ -26,3 +32,5 @@ constraints:
   - annotation: jakarta.validation.constraints.NegativeOrZero
   - annotation: jakarta.validation.constraints.Positive
   - annotation: jakarta.validation.constraints.PositiveOrZero
+  - annotation: jakarta.validation.constraints.AssertTrue
+  - annotation: jakarta.validation.constraints.AssertFalse

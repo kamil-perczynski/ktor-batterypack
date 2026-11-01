@@ -11,6 +11,11 @@ class ConstraintsDescriptorTest {
 
     companion object {
         private val JAKARTA_CONSTRAINTS = listOf(
+            "NotNull",
+            "Null",
+            "AssertTrue",
+            "AssertFalse",
+            "Digits",
             "NotBlank",
             "NotEmpty",
             "Min",

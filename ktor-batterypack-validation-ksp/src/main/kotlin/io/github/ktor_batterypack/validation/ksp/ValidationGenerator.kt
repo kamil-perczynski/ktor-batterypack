@@ -39,7 +39,8 @@ class ValidationGenerator(private val environment: SymbolProcessorEnvironment) :
 
         val modelResolver = CodegenModelResolver(
             namingConvention = namingConvention,
-            constraintRegistry = constraintRegistry
+            constraintRegistry = constraintRegistry,
+            jsonNamingStrategy = JsonNamingStrategy.fromOption(environment.options[JsonNamingStrategy.OPTION])
         )
 
         val validatorClassesSymbols =

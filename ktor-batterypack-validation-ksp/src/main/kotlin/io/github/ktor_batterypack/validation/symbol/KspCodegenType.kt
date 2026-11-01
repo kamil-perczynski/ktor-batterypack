@@ -1,6 +1,9 @@
 package io.github.ktor_batterypack.validation.symbol
 
+import com.google.devtools.ksp.isAbstract
+import com.google.devtools.ksp.isPublic
 import com.google.devtools.ksp.symbol.ClassKind
+import com.google.devtools.ksp.symbol.Origin
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
@@ -49,9 +52,22 @@ data class KspCodegenType(private val type: KSType) : CodegenType {
             if (isPrimitive) return emptyList()
             if (isEnum) return emptyList()
 
-            return classDecl.declarations
-                .filterIsInstance<KSPropertyDeclaration>()
-                .map { KspDeclaredMember(it) }
+            if (classDecl.origin == Origin.JAVA || classDecl.origin == Origin.JAVA_LIB) {
+                return classDecl.declarations
+                    .filterIsInstance<KSPropertyDeclaration>()
+                    .map { property -> KspDeclaredMember(property, null, hasPrimaryConstructor = false) }
+                    .toList()
+            }
+
+            val primaryConstructor = classDecl.primaryConstructor
+            return classDecl.getAllProperties()
+                .filter { property -> property.isPublic() && (property.hasBackingField || property.isAbstract()) }
+                .map { property ->
+                    val parameter = primaryConstructor?.parameters?.find { parameter ->
+                        parameter.name?.asString() == property.simpleName.asString()
+                    }
+                    KspDeclaredMember(property, parameter, hasPrimaryConstructor = primaryConstructor != null)
+                }
                 .toList()
         }
 
