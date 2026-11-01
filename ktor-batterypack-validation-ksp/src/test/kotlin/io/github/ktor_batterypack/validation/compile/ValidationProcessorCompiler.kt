@@ -1,5 +1,6 @@
 package io.github.ktor_batterypack.validation.compile
 
+import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
@@ -21,13 +22,17 @@ class ValidationProcessorCompiler {
         .addModule(KotlinModule.Builder().build())
         .build()
 
-    fun compile(sources: List<SourceFile>, processorOptions: Map<String, String> = emptyMap()): JvmCompilationResult {
+    fun compile(
+        sources: List<SourceFile>,
+        processorOptions: Map<String, String> = emptyMap(),
+        additionalProviders: List<SymbolProcessorProvider> = emptyList()
+    ): JvmCompilationResult {
         val compilation = KotlinCompilation()
         compilation.sources = sources
         compilation.inheritClassPath = true
         compilation.messageOutputStream = OutputStream.nullOutputStream()
         compilation.useKsp2()
-        compilation.symbolProcessorProviders = mutableListOf(ValidationGeneratorProvider())
+        compilation.symbolProcessorProviders = (listOf(ValidationGeneratorProvider()) + additionalProviders).toMutableList()
         compilation.kspProcessorOptions = processorOptions.toMutableMap()
         return compilation.compile()
     }

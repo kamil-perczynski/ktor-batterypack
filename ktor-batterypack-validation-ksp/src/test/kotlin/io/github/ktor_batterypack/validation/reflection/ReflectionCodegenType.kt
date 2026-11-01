@@ -35,6 +35,9 @@ data class ReflectionCodegenType(
     override val isResolved: Boolean
         get() = ktype.classifier is KClass<*> && ktype.arguments.none { argument -> argument.type == null }
 
+    override val isError: Boolean
+        get() = false
+
     override val typeParams: List<ReflectionCodegenType> =
         ktype.arguments.mapNotNull { argument -> argument.type }.map { toReflectionCodegenType(it) }
 
