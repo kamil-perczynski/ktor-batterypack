@@ -30,6 +30,9 @@ data class ReflectionDeclaredMember(
     override val type: CodegenType
         get() = toReflectionCodegenType(prop.returnType)
 
+    override val symbol: Any?
+        get() = null
+
     override val hasDefault: Boolean
         get() {
             if (constructorParameter != null) {

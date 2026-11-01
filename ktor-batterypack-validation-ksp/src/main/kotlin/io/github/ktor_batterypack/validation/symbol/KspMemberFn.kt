@@ -53,6 +53,9 @@ class KspMemberFn(private val fn: KSFunctionDeclaration) : MemberFn {
             ?.value
             ?.let { toKspCodegenType(it as KSType) }
 
+    override val symbol: Any?
+        get() = fn
+
     companion object {
         private const val VALIDATION_PARAM_TYPE_FQ_NAME =
             "io.github.ktor_batterypack.validation.ValidationParamType"

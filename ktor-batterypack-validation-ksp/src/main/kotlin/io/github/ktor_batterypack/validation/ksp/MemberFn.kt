@@ -10,6 +10,7 @@ interface MemberFn {
     val isPublic: Boolean
     val annotations: List<CodegenAnnotation>
     val validationParamType: CodegenType?
+    val symbol: Any?
 }
 
 data class MemberFnParam(val name: String, val type: CodegenType)

@@ -5,6 +5,7 @@ interface DeclaredMember {
     val name: String
     val type: CodegenType
     val hasDefault: Boolean
+    val symbol: Any?
     val jsonName: String?
         get() {
             val jsonProperty = annotations.find { annotation -> annotation.fqName == JSON_PROPERTY_FQ_NAME }
@@ -22,6 +23,7 @@ interface CodegenAnnotation {
     val name: String
     val fqName: String
     val args: Map<String, Any>
+    val metaAnnotations: List<String>
 }
 
 private const val JSON_PROPERTY_FQ_NAME = "com.fasterxml.jackson.annotation.JsonProperty"

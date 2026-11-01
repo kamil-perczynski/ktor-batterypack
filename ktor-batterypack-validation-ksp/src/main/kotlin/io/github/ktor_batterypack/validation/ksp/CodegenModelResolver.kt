@@ -6,8 +6,11 @@ import com.google.common.graph.Traverser
 import io.github.ktor_batterypack.validation.codegen.ConstraintRegistry
 import io.github.ktor_batterypack.validation.ksp.DefaultCodegenNamingConvention.DEFAULT_CODEGEN_NAMING_CONVENTION
 
+private const val MAX_TYPE_GRAPH_PASSES = 1000
+
+private val JSON_NODE_PACKAGE_PREFIXES = listOf("tools.jackson.databind.", "com.fasterxml.jackson.databind.")
+
 class CodegenModelResolver(
-    private val maxDepth: Int = 10,
     private val namingConvention: CodegenNamingConvention = DEFAULT_CODEGEN_NAMING_CONVENTION,
     private val constraintRegistry: ConstraintRegistry = ConstraintRegistry.default(),
     private val jsonNamingStrategy: JsonNamingStrategy = JsonNamingStrategy.IDENTITY
@@ -72,7 +75,7 @@ class CodegenModelResolver(
         val topLevelMethods = mutableListOf<CodegenMethod>()
 
         for (function in validatorInterface.memberFunctions) {
-            if (isBuiltInMethod(function)) {
+            if (!isGraphedFunction(function)) {
                 continue
             }
 
@@ -106,8 +109,15 @@ class CodegenModelResolver(
     }
 
     private fun populateTypesGraph(graph: MutableGraph<CodegenNode>) {
-        for (i in 1..maxDepth) {
+        var passes = 0
+        while (true) {
             val types = graph.nodes().filterIsInstance<CodegenType>()
+            if (types.isEmpty()) {
+                return
+            }
+            check(++passes <= MAX_TYPE_GRAPH_PASSES) {
+                "Validation model did not converge after $MAX_TYPE_GRAPH_PASSES passes. Pending types: $types"
+            }
             for (type in types) {
                 val properties = type.declaredMemberProperties
                 val methods = graph.predecessors(type)
@@ -287,6 +297,18 @@ private fun isObject(type: CodegenType): Boolean {
     return (!type.isPrimitive && !type.isCollection && !type.isEnum) || type.isMap
 }
 
-private fun isBuiltInMethod(function: MemberFn): Boolean {
-    return function.name == "equals" || function.name == "hashCode" || function.name == "toString"
+private fun isGraphedFunction(function: MemberFn): Boolean {
+    return when (MemberFnShape.of(function)) {
+        MemberFnShape.VALIDATE_RESULT -> !function.hasImplementation
+        MemberFnShape.VALIDATE_CALL -> !function.hasImplementation || !isUntypedJsonFunction(function)
+        MemberFnShape.BUILT_IN, MemberFnShape.UNSUPPORTED -> false
+    }
+}
+
+private fun isUntypedJsonFunction(function: MemberFn): Boolean {
+    if (function.validationParamType != null) {
+        return false
+    }
+    val paramFqName = function.paramType.fqName
+    return JSON_NODE_PACKAGE_PREFIXES.any { prefix -> paramFqName.startsWith(prefix) }
 }

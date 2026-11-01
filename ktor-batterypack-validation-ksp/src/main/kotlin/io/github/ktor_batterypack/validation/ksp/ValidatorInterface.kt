@@ -4,4 +4,5 @@ interface ValidatorInterface {
     val name: String
     val memberFunctions: List<MemberFn>
     val fqName: String
+    val symbol: Any?
 }

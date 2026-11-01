@@ -38,6 +38,51 @@ interface JsonUserValidator {
 }
 ```
 
+## Validator functions
+
+Abstract functions in a validator interface must have one of two shapes:
+
+- `fun validate(user: UserCreate): ValidationResult<UserCreate>` is generated as a public entry point. In JSON mode
+  the parameter and result type are `JsonNode` and the model type comes from `@ValidationParamType`.
+- `fun validateAddress(address: Address?, call: ValidationCall)` is generated as the validation of `Address`, replacing
+  the private method that would otherwise be generated. It must be named `validate` + the type's simple name.
+
+Implementing `fun validateAddress(address: Address?, call: ValidationCall)` yourself replaces the generated
+validation of `Address`. In JSON mode, annotate it with `@ValidationParamType(Address::class)` and accept an
+`ObjectNode?`. Implemented functions of the same shape under another name run in addition to the generated
+validation of their type. Other implemented functions are ignored, so interfaces can hold helpers of any shape.
+
+## Supported types
+
+- Objects are validated property by property, at any nesting depth. Types from `java.*`, `javax.*`, `jakarta.*`,
+  `kotlin.*` and `kotlinx.*` are treated as scalar values.
+- Collections, `Array<T>` and maps are validated per item (map values for maps). Primitive arrays such as `IntArray`
+  are scalar values.
+- Typealiases are expanded, so `typealias Email = String` behaves like `String`.
+- JSON validators read scalar values as `String`, `Int`, `Long`, `Float`, `Double`, `Boolean`, `BigDecimal`, `UUID`,
+  `LocalDate`, `LocalDateTime`, `LocalTime`, `OffsetDateTime` and `Instant`, plus enums.
+
+## Build diagnostics
+
+The processor reports problems as compiler errors that point at the offending interface, function or property, and
+skips generating that validator:
+
+- abstract functions with an unsupported shape, or a JSON function without `@ValidationParamType`;
+- properties with types the processor cannot resolve (type parameters, star projections, unresolved types), and
+  JSON-mode scalars without a JSON reader (for example `URI` or `ZonedDateTime`);
+- built-in constraints on types they do not support, for example `@NotBlank` on an `Int` or `@Past` on a `LocalTime`;
+- different classes with the same simple name reached from one validator.
+
+Constraint annotations without a descriptor (anything in `jakarta.validation.constraints` or meta-annotated with
+`@Constraint`) are ignored with a warning. Set the KSP option `ktor.validation.strict` to `true` to fail the build
+instead:
+
+```kotlin
+ksp {
+    arg("ktor.validation.strict", "true")
+}
+```
+
 ## Which properties are validated
 
 - Public properties that have a backing field, including properties inherited from superclasses.
@@ -117,8 +162,16 @@ constraints:
   - annotation: com.example.Even
   - annotation: com.example.Present
     rejectsNull: true
+    supportedTypes:
+      - kotlin.String
+      - kotlin.collections.Collection
 ```
 
 By default a constraint is called as `EvenConstraints.checkEven(prop, value, call, <annotation args>)`, and only when
-the value is present. Set `rejectsNull: true` to make the property required; a missing value is then reported as
-`NotNull`.
+the value is present. Annotation arguments are passed as named arguments, rendered as Kotlin literals: strings, chars,
+numbers, enum entries, `KClass` references, arrays (as `arrayOf(...)`) and nested annotations are supported.
+Set `rejectsNull: true` to make the property required; a missing value is then reported as `NotNull`.
+
+`supportedTypes` lists the fully qualified Kotlin types the constraint may annotate; the build fails when it is
+applied to any other type. `kotlin.collections.Collection` matches any collection or `Array`, and
+`kotlin.collections.Map` matches any map. Without `supportedTypes`, the type is not checked.

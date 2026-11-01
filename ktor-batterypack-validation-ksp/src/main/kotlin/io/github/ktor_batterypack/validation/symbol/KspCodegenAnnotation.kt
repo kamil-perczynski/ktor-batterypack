@@ -1,7 +1,11 @@
 package io.github.ktor_batterypack.validation.symbol
 
+import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSType
+import io.github.ktor_batterypack.validation.ksp.AnnotationValue
 import io.github.ktor_batterypack.validation.ksp.CodegenAnnotation
 
 class KspCodegenAnnotation(private val annotation: KSAnnotation) : CodegenAnnotation {
@@ -21,7 +25,6 @@ class KspCodegenAnnotation(private val annotation: KSAnnotation) : CodegenAnnota
     override val args: Map<String, Any>
         get() = annotation.arguments
             .filter { arg ->
-                // Safely extract argument name (handles null names by resolving from declaration if needed)
                 val argName = arg.name?.asString() ?: ""
                 argName !in IGNORED_JARARTA_PARAMS && arg.value != null
             }
@@ -31,13 +34,27 @@ class KspCodegenAnnotation(private val annotation: KSAnnotation) : CodegenAnnota
                 key to unwrappedValue
             }
 
+    override val metaAnnotations: List<String>
+        get() = resolvedDeclaration.annotations
+            .mapNotNull { metaAnnotation -> metaAnnotation.annotationType.resolve().declaration.qualifiedName?.asString() }
+            .toList()
+
     private fun unwrapKspValue(value: Any): Any {
         return when (value) {
             is List<*> -> value.filterNotNull().map { unwrapKspValue(it) }
-            is KSType -> value.declaration.qualifiedName?.asString() ?: value.toString()
+            is KSType -> toAnnotationValue(value.declaration)
+            is KSClassDeclaration -> toAnnotationValue(value)
             is KSAnnotation -> KspCodegenAnnotation(value)
             else -> value
         }
+    }
+
+    private fun toAnnotationValue(declaration: KSDeclaration): AnnotationValue {
+        val qualifiedName = declaration.qualifiedName?.asString() ?: declaration.simpleName.asString()
+        if (declaration is KSClassDeclaration && declaration.classKind == ClassKind.ENUM_ENTRY) {
+            return AnnotationValue.EnumEntry(qualifiedName)
+        }
+        return AnnotationValue.ClassReference(qualifiedName)
     }
 
     companion object {

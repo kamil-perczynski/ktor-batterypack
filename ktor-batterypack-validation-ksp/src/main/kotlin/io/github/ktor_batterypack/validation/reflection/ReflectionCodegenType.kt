@@ -24,15 +24,21 @@ data class ReflectionCodegenType(
     override val fqName: String
         get() = kclass.qualifiedName!!
 
+    override val isResolved: Boolean
+        get() = ktype.classifier is KClass<*> && ktype.arguments.none { argument -> argument.type == null }
+
     override val typeParams: List<ReflectionCodegenType> =
-        ktype.arguments.map { toReflectionCodegenType(it.type!!) }
+        ktype.arguments.mapNotNull { argument -> argument.type }.map { toReflectionCodegenType(it) }
 
     override val isPrimitive: Boolean
         get() {
-            if (kclass.isSubclassOf(Collection::class)) {
+            if (!isResolved) {
+                return true
+            }
+            if (isCollection) {
                 return false
             }
-            if (kclass.isSubclassOf(Map::class)) {
+            if (isMap) {
                 return false
             }
 
@@ -40,7 +46,7 @@ data class ReflectionCodegenType(
         }
 
     override val isCollection: Boolean
-        get() = kclass.isSubclassOf(Collection::class)
+        get() = kclass.isSubclassOf(Collection::class) || (kclass.java.isArray && !kclass.java.componentType.isPrimitive)
 
     override val isMap: Boolean
         get() = kclass.isSubclassOf(Map::class)

@@ -12,25 +12,151 @@ constraints:
   - annotation: jakarta.validation.constraints.Null
   - annotation: jakarta.validation.constraints.NotBlank
     rejectsNull: true
+    supportedTypes:
+      - kotlin.String
   - annotation: jakarta.validation.constraints.NotEmpty
     rejectsNull: true
     jsonCallTpl: JsonConstraints.checkNotEmpty({{quote prop}}, {{value}}, {{call}})
+    supportedTypes:
+      - kotlin.String
+      - kotlin.collections.Collection
+      - kotlin.collections.Map
   - annotation: jakarta.validation.constraints.Min
+    supportedTypes:
+      - kotlin.Byte
+      - kotlin.Short
+      - kotlin.Int
+      - kotlin.Long
+      - kotlin.Float
+      - kotlin.Double
+      - java.math.BigInteger
+      - java.math.BigDecimal
   - annotation: jakarta.validation.constraints.Max
+    supportedTypes:
+      - kotlin.Byte
+      - kotlin.Short
+      - kotlin.Int
+      - kotlin.Long
+      - kotlin.Float
+      - kotlin.Double
+      - java.math.BigInteger
+      - java.math.BigDecimal
   - annotation: jakarta.validation.constraints.Size
     jsonCallTpl: JsonConstraints.checkSize({{quote prop}}, {{value}}, {{call}}, {{constraintArgs args}})
+    supportedTypes:
+      - kotlin.String
+      - kotlin.collections.Collection
+      - kotlin.collections.Map
   - annotation: jakarta.validation.constraints.Past
+    supportedTypes:
+      - java.time.LocalDate
+      - java.time.LocalDateTime
+      - java.time.OffsetDateTime
+      - java.time.ZonedDateTime
+      - java.time.Instant
   - annotation: jakarta.validation.constraints.PastOrPresent
+    supportedTypes:
+      - java.time.LocalDate
+      - java.time.LocalDateTime
+      - java.time.OffsetDateTime
+      - java.time.ZonedDateTime
+      - java.time.Instant
   - annotation: jakarta.validation.constraints.Pattern
+    supportedTypes:
+      - kotlin.String
   - annotation: jakarta.validation.constraints.DecimalMax
+    supportedTypes:
+      - kotlin.Byte
+      - kotlin.Short
+      - kotlin.Int
+      - kotlin.Long
+      - kotlin.Float
+      - kotlin.Double
+      - java.math.BigInteger
+      - java.math.BigDecimal
+      - kotlin.String
   - annotation: jakarta.validation.constraints.DecimalMin
+    supportedTypes:
+      - kotlin.Byte
+      - kotlin.Short
+      - kotlin.Int
+      - kotlin.Long
+      - kotlin.Float
+      - kotlin.Double
+      - java.math.BigInteger
+      - java.math.BigDecimal
+      - kotlin.String
   - annotation: jakarta.validation.constraints.Digits
+    supportedTypes:
+      - kotlin.Byte
+      - kotlin.Short
+      - kotlin.Int
+      - kotlin.Long
+      - kotlin.Float
+      - kotlin.Double
+      - java.math.BigInteger
+      - java.math.BigDecimal
+      - kotlin.String
   - annotation: jakarta.validation.constraints.Email
+    supportedTypes:
+      - kotlin.String
   - annotation: jakarta.validation.constraints.Future
+    supportedTypes:
+      - java.time.LocalDate
+      - java.time.LocalDateTime
+      - java.time.OffsetDateTime
+      - java.time.ZonedDateTime
+      - java.time.Instant
   - annotation: jakarta.validation.constraints.FutureOrPresent
+    supportedTypes:
+      - java.time.LocalDate
+      - java.time.LocalDateTime
+      - java.time.OffsetDateTime
+      - java.time.ZonedDateTime
+      - java.time.Instant
   - annotation: jakarta.validation.constraints.Negative
+    supportedTypes:
+      - kotlin.Byte
+      - kotlin.Short
+      - kotlin.Int
+      - kotlin.Long
+      - kotlin.Float
+      - kotlin.Double
+      - java.math.BigInteger
+      - java.math.BigDecimal
   - annotation: jakarta.validation.constraints.NegativeOrZero
+    supportedTypes:
+      - kotlin.Byte
+      - kotlin.Short
+      - kotlin.Int
+      - kotlin.Long
+      - kotlin.Float
+      - kotlin.Double
+      - java.math.BigInteger
+      - java.math.BigDecimal
   - annotation: jakarta.validation.constraints.Positive
+    supportedTypes:
+      - kotlin.Byte
+      - kotlin.Short
+      - kotlin.Int
+      - kotlin.Long
+      - kotlin.Float
+      - kotlin.Double
+      - java.math.BigInteger
+      - java.math.BigDecimal
   - annotation: jakarta.validation.constraints.PositiveOrZero
+    supportedTypes:
+      - kotlin.Byte
+      - kotlin.Short
+      - kotlin.Int
+      - kotlin.Long
+      - kotlin.Float
+      - kotlin.Double
+      - java.math.BigInteger
+      - java.math.BigDecimal
   - annotation: jakarta.validation.constraints.AssertTrue
+    supportedTypes:
+      - kotlin.Boolean
   - annotation: jakarta.validation.constraints.AssertFalse
+    supportedTypes:
+      - kotlin.Boolean
