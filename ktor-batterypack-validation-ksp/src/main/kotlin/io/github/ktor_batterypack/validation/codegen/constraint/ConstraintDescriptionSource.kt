@@ -9,7 +9,7 @@ fun interface ConstraintDescriptionSource {
 
 internal fun toConstraintDescriptor(input: InputStream, yaml: YAMLMapper): ConstraintsDescriptor {
     val yamlBytes = try {
-        input.bufferedReader().readAllAsString()
+        input.bufferedReader().use { reader -> reader.readAllAsString() }
     } catch (e: Exception) {
         throw IllegalStateException("Could not read the file: ${e.message}", e)
     }

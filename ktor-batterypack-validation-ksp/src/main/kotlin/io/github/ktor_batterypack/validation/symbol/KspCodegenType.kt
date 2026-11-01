@@ -2,6 +2,7 @@ package io.github.ktor_batterypack.validation.symbol
 
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import io.github.ktor_batterypack.validation.ksp.CodegenType
@@ -12,6 +13,9 @@ import io.github.ktor_batterypack.validation.ksp.isPrimitive
 data class KspCodegenType(private val type: KSType) : CodegenType {
 
     private val classDecl: KSClassDeclaration = type.declaration as KSClassDeclaration
+
+    val containingFile: KSFile?
+        get() = classDecl.containingFile
 
     override val name: String
         get() = classDecl.simpleName.asString()
