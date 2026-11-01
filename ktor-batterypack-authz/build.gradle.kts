@@ -40,7 +40,7 @@ dependencies {
     api(project(":ktor-batterypack-core"))
 
     api(ktorLibs.server.core)
-    api(ktorLibs.server.auth.oidc)
+    compileOnly(ktorLibs.server.auth.oidc)
 
     implementation(libs.koin.annotations)
     implementation(libs.koin.core)
@@ -50,4 +50,5 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation(libs.assertj.core)
     testImplementation(ktorLibs.server.testHost)
+    testImplementation(ktorLibs.server.auth.oidc)
 }
