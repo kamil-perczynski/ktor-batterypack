@@ -27,6 +27,20 @@ class DefaultKtorExceptionHandler : KtorExceptionHandler {
         registerDefaultNotFound(it)
         registerInternalServerError(it)
         registerMethodNotAllowed(it)
+        registerUnauthorized(it)
+    }
+
+    private fun registerUnauthorized(it: StatusPagesConfig) {
+        it.status(HttpStatusCode.Unauthorized) { call, status ->
+            val problemDetail = ProblemDetail(
+                type = "UNAUTHORIZED",
+                title = "Unauthorized",
+                status = status.value,
+                detail = "Authentication is required to access this resource",
+                instance = call.request.uri
+            )
+            call.respond(status, problemDetail)
+        }
     }
 
     private fun registerDefaultNotFound(it: StatusPagesConfig) {
