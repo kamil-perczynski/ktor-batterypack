@@ -53,6 +53,9 @@ class KspCodegenType(
             return type.arguments.none { argument -> argument.variance == Variance.STAR || argument.type == null }
         }
 
+    override val isError: Boolean
+        get() = type.isError
+
     override val typeParams: List<KspCodegenType>
         get() = type.arguments.mapNotNull { argument -> argument.type?.resolve() }.map { toKspCodegenType(it) }
 

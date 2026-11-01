@@ -40,6 +40,7 @@ class CodegenModelResolver(
         private val requests = mutableMapOf<String, MethodRequest>()
         private val pending = ArrayDeque<MethodRequest>()
         private val diagnostics = linkedSetOf<CodegenDiagnostic>()
+        private var hasUnresolvedTypes = false
 
         fun resolve(): ResolvedValidator {
             val functions = validatorInterface.memberFunctions
@@ -79,7 +80,7 @@ class CodegenModelResolver(
             val properties = validatorInterface.abstractProperties.filter { property -> checkProperty(property) }
 
             if (diagnostics.any { diagnostic -> diagnostic.severity == Severity.ERROR }) {
-                return ResolvedValidator(null, diagnostics.toList())
+                return ResolvedValidator(null, diagnostics.toList(), hasUnresolvedTypes)
             }
 
             val model = ValidatorModel(
@@ -93,10 +94,14 @@ class CodegenModelResolver(
                 entryMethods = entryMethods.sortedBy { method -> method.name },
                 typeMethods = typeMethods.sortedBy { method -> method.name }
             )
-            return ResolvedValidator(model, diagnostics.toList())
+            return ResolvedValidator(model, diagnostics.toList(), hasUnresolvedTypes)
         }
 
         private fun checkProperty(property: ValidatorProperty): Boolean {
+            if (property.type.isError) {
+                unsupportedType(property.type, "Property `${property.name}` of `${validatorInterface.name}` has", property.symbol)
+                return false
+            }
             if (property.isMutable) {
                 error(
                     "Property `${property.name}` of `${validatorInterface.name}` must be a `val`. " +
@@ -176,7 +181,7 @@ class CodegenModelResolver(
 
             val type = modelType(function)
             if (!type.isResolved) {
-                error("Function `${function.name}` validates unsupported type `$type`", function.symbol)
+                unsupportedType(type, "Function `${function.name}` validates", function.symbol)
                 return false
             }
 
@@ -343,7 +348,7 @@ class CodegenModelResolver(
 
         private fun checkSubtype(type: CodegenType, subtype: CodegenType, symbol: Any?): Boolean {
             if (!subtype.isResolved) {
-                error("Subtype `${subtype.name}` of `${type.name}` has unsupported type `$subtype`", symbol)
+                unsupportedType(subtype, "Subtype `${subtype.name}` of `${type.name}` has", symbol)
                 return false
             }
             if (subtype.supertypes.none { supertype -> supertype.fqName == type.fqName }) {
@@ -452,7 +457,7 @@ class CodegenModelResolver(
             symbol: Any?
         ): Boolean {
             if (!type.isResolved) {
-                error("${capitalize(location)} has unsupported type `$type`", symbol)
+                unsupportedType(type, "${capitalize(location)} has", symbol)
                 return false
             }
 
@@ -502,6 +507,15 @@ class CodegenModelResolver(
 
         private fun checkNotNull(required: Boolean, type: CodegenType): Boolean {
             return required && (mode == CodegenMode.JSON || type.isMarkedNullable)
+        }
+
+        private fun unsupportedType(type: CodegenType, subject: String, symbol: Any?) {
+            if (type.isError) {
+                hasUnresolvedTypes = true
+                error("$subject unresolved type `${type.name}`", symbol)
+            } else {
+                error("$subject unsupported type `$type`", symbol)
+            }
         }
 
         private fun error(message: String, symbol: Any?) {

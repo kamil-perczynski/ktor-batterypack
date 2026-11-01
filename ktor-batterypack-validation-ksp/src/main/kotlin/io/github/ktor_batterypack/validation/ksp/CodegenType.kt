@@ -7,6 +7,7 @@ interface CodegenType {
     val fqName: String
     val typeName: TypeName
     val isResolved: Boolean
+    val isError: Boolean
     val typeParams: List<CodegenType>
     val isCollection: Boolean
     val isMap: Boolean
