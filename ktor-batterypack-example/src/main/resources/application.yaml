@@ -35,3 +35,40 @@ oidc:
     - "http://localhost:8080"
   stateEncryptionKey: "${OIDC_STATE_ENCRYPTION_KEY:-}"
   clientSecret: "${COGNITO_CLIENT_SECRET:-}"
+
+authz:
+  jwt:
+    groupsClaim: "cognito:groups"
+  groups:
+    readers:
+      permissions:
+        - "plant:list"
+        - "plant:read"
+        - "wallet:read"
+        - "user:read"
+    editors:
+      permissions:
+        - "plant:list"
+        - "plant:read"
+        - "plant:create"
+        - "plant:identify"
+        - "care-task:snooze"
+        - "care-task:update"
+        - "invoice:create"
+        - "wallet:read"
+        - "user:read"
+    admins:
+      permissions:
+        - "plant:list"
+        - "plant:read"
+        - "plant:create"
+        - "plant:identify"
+        - "care-task:snooze"
+        - "care-task:update"
+        - "invoice:create"
+        - "wallet:read"
+        - "wallet:topup"
+        - "user:read"
+        - "user:create"
+        - "user:update"
+        - "user:delete"

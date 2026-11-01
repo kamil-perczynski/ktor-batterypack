@@ -8,6 +8,7 @@ import io.github.kperczynski.infra.oidc.OidcErrorCode
 import io.github.kperczynski.infra.oidc.OidcIdpClient
 import io.github.kperczynski.infra.oidc.OidcProps
 import io.github.kperczynski.infra.oidc.OidcUserinfo
+import io.github.ktor_batterypack.authz.AuthzProps
 import io.github.ktor_batterypack.core.exception.ErrorCodeException
 import io.github.ktor_batterypack.core.ktor.KtorController
 import io.github.ktor_batterypack.core.ktor.currentRoutingCall
@@ -44,6 +45,7 @@ private val log = LoggerFactory.getLogger(OidcController::class.java)
 class OidcController(
     private val jsonMapper: JsonMapper,
     private val props: OidcProps,
+    private val authzProps: AuthzProps,
     private val idpClient: OidcIdpClient,
     private val authCookies: OidcAuthCookies,
 ) : KtorController, AuthApi {
@@ -142,7 +144,13 @@ class OidcController(
 
         val refreshToken = authCookies.readRefreshToken(call.request)
         val userinfo = idpClient.fetchUserinfo(accessToken)
-        return toAuthInfo(userinfo, decodeAccessTokenClaims(accessToken), props, refreshToken)
+        return toAuthInfo(
+            userInfo = userinfo,
+            claims = decodeAccessTokenClaims(accessToken),
+            props = props,
+            groupsClaim = authzProps.jwt.groupsClaim,
+            refreshToken = refreshToken
+        )
     }
 
     override suspend fun forgotPasswordConfirm(forgotPasswordConfirmRequestDto: ForgotPasswordConfirmRequestDto): AckDto {
@@ -198,12 +206,13 @@ private fun toAuthInfo(
     userInfo: OidcUserinfo,
     claims: JsonObject,
     props: OidcProps,
+    groupsClaim: String,
     refreshToken: String?,
 ): AuthInfoDto {
     val now = System.currentTimeMillis() / 1000
     val exp = claims["exp"]?.jsonPrimitive?.longOrNull
 
-    val groups = claims[props.groupsClaim]?.jsonArray
+    val groups = claims[groupsClaim]?.jsonArray
         ?.map { it.jsonPrimitive.content }
         ?.toList()
 

@@ -1,6 +1,7 @@
 package io.github.kperczynski
 
 import io.github.kperczynski.infra.KtorFrameModule
+import io.github.ktor_batterypack.authz.KtorBatterypackAuthzModule
 import io.github.ktor_batterypack.core.KtorBatterypackCoreModule
 import io.github.ktor_batterypack.database.KtorBatterypackDatabaseModule
 import io.github.ktor_batterypack.metrics.KtorBatterypackMetricsModule
@@ -23,6 +24,7 @@ object TestKtorFrameApp
         KtorBatterypackRedisModule::class,
         KtorBatterypackRedisStreamsModule::class,
         TestRedisModule::class,
+        KtorBatterypackAuthzModule::class,
         KtorFrameModule::class
     ]
 )

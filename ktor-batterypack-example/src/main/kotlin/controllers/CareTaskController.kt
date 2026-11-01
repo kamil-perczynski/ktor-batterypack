@@ -1,11 +1,16 @@
 package io.github.kperczynski.controllers
 
 import io.github.kperczynski.controllers.PlantsApiValidator.Companion.plantsApiValidator
+import io.github.kperczynski.infra.oidc.OidcAuthScheme
+import io.github.ktor_batterypack.authz.PermissionChecker
 import io.github.ktor_batterypack.core.ktor.JsonBinder
 import io.github.ktor_batterypack.core.ktor.KtorController
+import io.ktor.server.auth.authenticateWith
+import io.ktor.server.auth.principal
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.util.*
+import io.ktor.utils.io.ExperimentalKtorApi
 import org.koin.core.annotation.Singleton
 import pl.kperczynski.florin.rest.CareTasksApi
 import pl.kperczynski.florin.rest.dto.CareTaskDto
@@ -17,33 +22,41 @@ import java.time.LocalDate
 import java.util.UUID
 
 @Singleton
-class CareTaskController(private val binder: JsonBinder) : KtorController, CareTasksApi {
+class CareTaskController(
+    private val binder: JsonBinder,
+    private val authScheme: OidcAuthScheme,
+    private val permissionChecker: PermissionChecker,
+) : KtorController, CareTasksApi {
 
+    @OptIn(ExperimentalKtorApi::class)
     override fun register(routing: Routing) {
-        routing.post("/api/care-tasks/{taskId}/snooze") {
-            val dto = binder.bindBody<CareTaskSnoozeRequestDto>(
-                call,
-                plantsApiValidator::validateCareTaskSnoozeRequestDto
-            )
+        routing.authenticateWith(authScheme.jwt) {
+            post("/api/care-tasks/{taskId}/snooze") {
+                permissionChecker.checkPermission(call.principal, CARE_TASK_SNOOZE)
+                val dto = binder.bindBody<CareTaskSnoozeRequestDto>(
+                    call,
+                    plantsApiValidator::validateCareTaskSnoozeRequestDto
+                )
 
-            val taskId = call.pathParameters.getOrFail("taskId").let { UUID.fromString(it) }
+                val taskId = call.pathParameters.getOrFail("taskId").let { UUID.fromString(it) }
 
-            val taskDto = snoozeCareTask(taskId, dto)
-            call.respond(taskDto)
+                val taskDto = snoozeCareTask(taskId, dto)
+                call.respond(taskDto)
+            }
+
+            patch("/api/care-tasks/{taskId}/status") {
+                permissionChecker.checkPermission(call.principal, CARE_TASK_UPDATE)
+                val dto = binder.bindBody<CareTaskStatusUpdateDto>(
+                    call,
+                    plantsApiValidator::validateCareTaskStatusUpdateDto
+                )
+
+                val taskId = call.pathParameters.getOrFail("taskId").let { UUID.fromString(it) }
+
+                val taskDto = updateCareTaskStatus(taskId, dto)
+                call.respond(taskDto)
+            }
         }
-
-        routing.patch("/api/care-tasks/{taskId}/status") {
-            val dto = binder.bindBody<CareTaskStatusUpdateDto>(
-                call,
-                plantsApiValidator::validateCareTaskStatusUpdateDto
-            )
-
-            val taskId = call.pathParameters.getOrFail("taskId").let { UUID.fromString(it) }
-
-            val taskDto = updateCareTaskStatus(taskId, dto)
-            call.respond(taskDto)
-        }
-
     }
 
     override suspend fun completeAllTasksForDay(date: LocalDate): List<CareTaskDto> {

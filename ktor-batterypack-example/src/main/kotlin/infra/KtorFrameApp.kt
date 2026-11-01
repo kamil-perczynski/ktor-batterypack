@@ -3,9 +3,10 @@ package io.github.kperczynski.infra
 import io.github.kperczynski.infra.florin.FlorinModule
 import io.github.kperczynski.infra.oidc.OidcProps
 import io.github.kperczynski.infra.oidc.OidcProviderFactory
+import io.github.ktor_batterypack.authz.AuthzProps
+import io.github.ktor_batterypack.authz.KtorBatterypackAuthzModule
 import io.github.ktor_batterypack.core.KtorBatterypackCoreModule
 import io.github.ktor_batterypack.core.di.BootstrapCallback
-import io.github.ktor_batterypack.core.ktor.KtorPlugin
 import io.github.ktor_batterypack.core.ktor.KtorProps
 import io.github.ktor_batterypack.core.ktor.client.KtorHttpClientFactory
 import io.github.ktor_batterypack.core.ktor.client.KtorHttpClientPlugin
@@ -18,7 +19,6 @@ import io.github.ktor_batterypack.metrics.KtorBatterypackMetricsModule
 import io.github.ktor_batterypack.redis.KtorBatterypackRedisModule
 import io.github.ktor_batterypack.redis_stream.KtorBatterypackRedisStreamsModule
 import io.github.ktor_batterypack.redis.RedisProps
-import io.ktor.server.application.Application
 import io.ktor.server.auth.oidc.OidcProvider
 import io.ktor.utils.io.ExperimentalKtorApi
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -36,6 +36,7 @@ import javax.sql.DataSource
         KtorBatterypackCoreModule::class,
         KtorFrameModule::class,
         FlorinModule::class,
+        KtorBatterypackAuthzModule::class,
         KtorBatterypackDatabaseModule::class,
         KtorBatterypackMetricsModule::class,
         KtorBatterypackRedisModule::class,
@@ -88,14 +89,15 @@ class KtorFrameModule {
         return configMap.oidc
     }
 
+    @Singleton
+    fun authzProps(configMap: ConfigMap): AuthzProps {
+        return configMap.authz
+    }
+
     @OptIn(ExperimentalKtorApi::class)
     @Singleton
-    fun oidcProvider(oidcProviderFactory: OidcProviderFactory): KtorPlugin {
-        return object : KtorPlugin {
-            override fun register(app: Application) {
-                oidcProviderFactory.create()
-            }
-        }
+    fun oidcProvider(oidcProviderFactory: OidcProviderFactory): OidcProvider {
+        return oidcProviderFactory.create()
     }
 
     @Singleton(binds = [BootstrapCallback::class])

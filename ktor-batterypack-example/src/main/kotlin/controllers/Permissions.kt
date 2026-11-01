@@ -1,0 +1,15 @@
+package io.github.kperczynski.controllers
+
+const val PLANT_LIST = "plant:list"
+const val PLANT_READ = "plant:read"
+const val PLANT_CREATE = "plant:create"
+const val PLANT_IDENTIFY = "plant:identify"
+const val CARE_TASK_SNOOZE = "care-task:snooze"
+const val CARE_TASK_UPDATE = "care-task:update"
+const val INVOICE_CREATE = "invoice:create"
+const val WALLET_READ = "wallet:read"
+const val WALLET_TOPUP = "wallet:topup"
+const val USER_READ = "user:read"
+const val USER_CREATE = "user:create"
+const val USER_UPDATE = "user:update"
+const val USER_DELETE = "user:delete"

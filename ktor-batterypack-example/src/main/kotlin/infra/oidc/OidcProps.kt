@@ -14,6 +14,5 @@ data class OidcProps(
     val accessTokenCookieName: String = "access_token",
     val refreshTokenCookieName: String = "refresh_token",
 
-    val groupsClaim: String = "cognito:groups",
     val privilegedGroupName: String = "admins",
 )

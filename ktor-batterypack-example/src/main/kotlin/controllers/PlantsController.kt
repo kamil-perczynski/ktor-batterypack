@@ -1,11 +1,16 @@
 package io.github.kperczynski.controllers
 
 import io.github.kperczynski.controllers.PlantsApiValidator.Companion.plantsApiValidator
+import io.github.kperczynski.infra.oidc.OidcAuthScheme
+import io.github.ktor_batterypack.authz.PermissionChecker
 import io.github.ktor_batterypack.core.ktor.JsonBinder
 import io.github.ktor_batterypack.core.ktor.KtorController
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.auth.authenticateWith
+import io.ktor.server.auth.principal
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.utils.io.ExperimentalKtorApi
 import org.koin.core.annotation.Singleton
 import pl.kperczynski.florin.rest.PlantsApi
 import pl.kperczynski.florin.rest.dto.AckDto
@@ -19,21 +24,29 @@ import java.time.LocalDate
 import java.util.UUID
 
 @Singleton
-class PlantsController(private val binder: JsonBinder) : KtorController, PlantsApi {
+class PlantsController(
+    private val binder: JsonBinder,
+    private val authScheme: OidcAuthScheme,
+    private val permissionChecker: PermissionChecker,
+) : KtorController, PlantsApi {
 
+    @OptIn(ExperimentalKtorApi::class)
     override fun register(routing: Routing) {
-        routing.post("/api/plants") {
-            val query = binder.bindQueryParams<ListPlantsParamsParameterDto>(
-                call,
-                plantsApiValidator::checkListPlantsParamsParameterDto
-            )
+        routing.authenticateWith(authScheme.jwt) {
+            post("/api/plants") {
+                permissionChecker.checkPermission(call.principal, PLANT_CREATE)
+                val query = binder.bindQueryParams<ListPlantsParamsParameterDto>(
+                    call,
+                    plantsApiValidator::checkListPlantsParamsParameterDto
+                )
 
-            val body =
-                binder.bindBody<PlantCreateDto>(call, plantsApiValidator::checkPlantCreateDto)
+                val body =
+                    binder.bindBody<PlantCreateDto>(call, plantsApiValidator::checkPlantCreateDto)
 
-            val response = listPlants(query)
+                val response = listPlants(query)
 
-            call.respond(HttpStatusCode.OK, mapOf("body" to body, "query" to query))
+                call.respond(HttpStatusCode.OK, mapOf("body" to body, "query" to query))
+            }
         }
     }
 
