@@ -1,8 +1,8 @@
 package io.github.ktor_batterypack.validation.ksp
 
 import com.squareup.kotlinpoet.TypeName
-import io.github.ktor_batterypack.validation.codegen.ConstraintCall
-import io.github.ktor_batterypack.validation.codegen.ConstraintRegistry
+import io.github.ktor_batterypack.validation.codegen.constraint.ConstraintCall
+import io.github.ktor_batterypack.validation.codegen.constraint.ConstraintRegistry
 import io.github.ktor_batterypack.validation.ksp.CodegenDiagnostic.Severity
 
 private const val MAX_TYPE_METHODS = 1000

@@ -1,6 +1,6 @@
 package io.github.ktor_batterypack.validation.ksp
 
-import io.github.ktor_batterypack.validation.codegen.ConstraintCall
+import io.github.ktor_batterypack.validation.codegen.constraint.ConstraintCall
 
 data class ValueModel(
     val type: CodegenType,

@@ -12,7 +12,7 @@ import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.joinToCode
-import io.github.ktor_batterypack.validation.codegen.ConstraintCall
+import io.github.ktor_batterypack.validation.codegen.constraint.ConstraintCall
 import io.github.ktor_batterypack.validation.ksp.CodegenMode
 import io.github.ktor_batterypack.validation.ksp.EntryMethod
 import io.github.ktor_batterypack.validation.ksp.TypeMethod
